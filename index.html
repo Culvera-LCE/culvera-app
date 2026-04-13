@@ -185,6 +185,43 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
 .empty-title{font-size:1rem;font-weight:500;color:var(--ink);margin-bottom:6px;}
 .empty-sub{font-size:.83rem;line-height:1.6;}
 
+/* ── Welcome screen ─────────────────────────────────────────────────── */
+.welcome-wrap{max-width:860px;margin:0 auto;padding:12px 0 40px;}
+.welcome-hero{display:flex;align-items:flex-start;gap:32px;margin-bottom:36px;padding-bottom:32px;border-bottom:1px solid var(--paper3);}
+.welcome-brand{flex:1;}
+.welcome-wordmark{font-family:'DM Serif Display',serif;font-size:2.8rem;color:var(--ink);letter-spacing:-.5px;line-height:1;}
+.welcome-tagline{font-size:.95rem;color:var(--ink3);margin-top:10px;line-height:1.6;max-width:480px;}
+.welcome-version{display:inline-block;margin-top:12px;font-size:.7rem;font-family:'DM Mono',monospace;background:var(--paper2);border:1px solid var(--paper3);border-radius:4px;padding:2px 8px;color:var(--ink3);}
+.welcome-status-panel{width:280px;flex-shrink:0;background:white;border:1px solid var(--paper3);border-radius:var(--r2);padding:18px 20px;box-shadow:var(--shadow);}
+.welcome-status-title{font-size:.68rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:14px;}
+.welcome-check-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--paper3);font-size:.82rem;}
+.welcome-check-row:last-child{border-bottom:none;}
+.welcome-check-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;flex-shrink:0;}
+.wci-ok{background:var(--green-light);color:var(--green);}
+.wci-warn{background:var(--amber-light);color:var(--amber);}
+.welcome-check-label{flex:1;color:var(--ink);font-size:.82rem;}
+.welcome-check-sub{font-size:.72rem;color:var(--ink3);margin-top:1px;}
+.welcome-sign-btn{width:100%;margin-top:14px;padding:10px;background:var(--ink);color:white;border:none;border-radius:var(--r);font-size:.85rem;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;}
+.welcome-sign-btn:hover:not(:disabled){background:#1e2d3d;}
+.welcome-sign-btn:disabled{background:rgba(26,107,60,.18) !important;color:var(--green) !important;cursor:default;}
+.welcome-features{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;}
+.welcome-feat{background:white;border:1px solid var(--paper3);border-radius:var(--r2);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.welcome-feat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.welcome-feat.f-gold::before{background:var(--gold-mid);}
+.welcome-feat.f-green::before{background:var(--green);}
+.welcome-feat.f-blue::before{background:var(--blue);}
+.welcome-feat.f-amber::before{background:#D4A017;}
+.welcome-feat.f-ink::before{background:var(--ink);}
+.welcome-feat.f-red::before{background:var(--red);}
+.welcome-feat-icon{font-size:1.4rem;margin-bottom:10px;}
+.welcome-feat-title{font-size:.85rem;font-weight:600;color:var(--ink);margin-bottom:6px;}
+.welcome-feat-desc{font-size:.78rem;color:var(--ink3);line-height:1.5;}
+.welcome-cta{text-align:center;padding:24px 28px;background:var(--ink);border-radius:var(--r2);color:white;}
+.welcome-cta-text{font-size:.88rem;color:rgba(255,255,255,.55);margin-bottom:14px;}
+.welcome-cta-btn{display:inline-block;padding:11px 32px;background:var(--gold-mid);color:var(--ink);border:none;border-radius:var(--r);font-size:.9rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s;}
+.welcome-cta-btn:hover:not(:disabled){opacity:.88;}
+.welcome-cta-btn:disabled{opacity:.38;cursor:default;}
+
 /* ── Placeholder screen ──────────────────────────────────────────────── */
 .placeholder-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center;color:var(--ink3);}
 .placeholder-icon{font-size:3rem;margin-bottom:16px;opacity:.2;}
@@ -274,6 +311,58 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
     <div class="topbar-meta" id="topbarMeta">GEMIS Technical Academy</div>
   </div>
   <div class="content">
+
+    <!-- ══ WELCOME ═══════════════════════════════════════════ -->
+    <div class="screen" id="screen-welcome">
+      <div class="welcome-wrap">
+        <div class="welcome-hero">
+          <div class="welcome-brand">
+            <div class="welcome-wordmark">Culvera</div>
+            <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
+            <span class="welcome-version">v1.1 &nbsp;&middot;&nbsp; gemis.tech</span>
+          </div>
+          <div class="welcome-status-panel">
+            <div class="welcome-status-title">Setup checklist</div>
+            <div class="welcome-check-row">
+              <div class="welcome-check-icon wci-warn" id="wc-auth-icon">&#9679;</div>
+              <div><div class="welcome-check-label">Google sign-in</div><div class="welcome-check-sub" id="wc-auth-sub">Not signed in</div></div>
+            </div>
+            <div class="welcome-check-row">
+              <div class="welcome-check-icon wci-warn" id="wc-gclient-icon">&#9679;</div>
+              <div><div class="welcome-check-label">OAuth Client ID</div><div class="welcome-check-sub" id="wc-gclient-sub">Not set</div></div>
+            </div>
+            <div class="welcome-check-row">
+              <div class="welcome-check-icon wci-warn" id="wc-drive-icon">&#9679;</div>
+              <div><div class="welcome-check-label">Drive Root Folder</div><div class="welcome-check-sub" id="wc-drive-sub">Not set</div></div>
+            </div>
+            <div class="welcome-check-row">
+              <div class="welcome-check-icon wci-warn" id="wc-sheet-icon">&#9679;</div>
+              <div><div class="welcome-check-label">Activity Register Sheet</div><div class="welcome-check-sub" id="wc-sheet-sub">Not set</div></div>
+            </div>
+            <div class="welcome-check-row">
+              <div class="welcome-check-icon wci-warn" id="wc-or-icon">&#9679;</div>
+              <div><div class="welcome-check-label">OpenRouter Key</div><div class="welcome-check-sub" id="wc-or-sub">Not set &mdash; needed for AEX/AA</div></div>
+            </div>
+            <button class="welcome-sign-btn" id="welcomeSignBtn" data-action="welcome-signin">
+              <span id="welcomeSignBtnIcon">&#9675;</span>
+              <span id="welcomeSignBtnLabel">Sign in with Google</span>
+            </button>
+          </div>
+        </div>
+        <div class="welcome-features">
+          <div class="welcome-feat f-gold"><div class="welcome-feat-icon">&#8644;</div><div class="welcome-feat-title">Convert</div><div class="welcome-feat-desc">Upload a .docx source document. Culvera auto-detects product line (AEX, AA, AE, EE), parses sections, and lets you review and approve before producing a compliant .txt file.</div></div>
+          <div class="welcome-feat f-green"><div class="welcome-feat-icon">&#10004;</div><div class="welcome-feat-title">Validate</div><div class="welcome-feat-desc">Upload your compliant .txt. AI checks structure, activity descriptions, and product-line compliance. Fix and resubmit until all checks pass.</div></div>
+          <div class="welcome-feat f-blue"><div class="welcome-feat-icon">&#8853;</div><div class="welcome-feat-title">Confirm</div><div class="welcome-feat-desc">One click creates the Drive folder tree, writes register rows, seeds the pipeline queue, and places the A01 gate file &mdash; ready for generation.</div></div>
+          <div class="welcome-feat f-amber"><div class="welcome-feat-icon">&#9645;</div><div class="welcome-feat-title">Courses</div><div class="welcome-feat-desc">Live dashboard of all courses and activities. See generation status, approval state, and 90-day refresh countdowns across every product line.</div></div>
+          <div class="welcome-feat f-ink"><div class="welcome-feat-icon">&#9678;</div><div class="welcome-feat-title">Review &amp; Manage</div><div class="welcome-feat-desc">Warren reads PM, FG, and DN inline. Approve to release the gate and trigger A02&ndash;A05 generation, or request an amendment with a typed note.</div></div>
+          <div class="welcome-feat f-red"><div class="welcome-feat-icon">&#9881;</div><div class="welcome-feat-title">Settings</div><div class="welcome-feat-desc">Store your OAuth Client ID, OpenRouter key, Drive root folder, and Activity Register Sheet ID. All values saved locally in your browser.</div></div>
+        </div>
+        <div class="welcome-cta">
+          <div class="welcome-cta-text" id="welcomeCtaText">Sign in and complete setup above to get started.</div>
+          <button class="welcome-cta-btn" id="welcomeCtaBtn" data-action="welcome-getstarted" disabled>Get started &rarr;</button>
+        </div>
+      </div>
+    </div>
 
     <!-- ══ CONVERT ══════════════════════════════════════════════════════ -->
     <div class="screen active" id="screen-convert">
@@ -707,6 +796,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
 
 // ── App state ─────────────────────────────────────────────────────────────
 var SCREENS = {
+  'welcome':  {title:'Welcome',       meta:'GEMIS Technical Academy · gemis.tech'},
   'convert':  {title:'Convert',       meta:'Source doc → compliant doc'},
   'validate': {title:'Validate',      meta:'Compliant doc → validation report'},
   'confirm':  {title:'Confirm',       meta:'Validated doc → Drive folders + pipeline'},
@@ -2085,8 +2175,80 @@ showScreen = function(name) {
   if(name === 'review'  && isAuthed) loadReviewTab(false);
 };
 
+// ── Welcome screen ─────────────────────────────────────────────────
+function welcomeCheckState() {
+  var s = settings;
+  var checks = {
+    gclient: !!(s.gclient    && s.gclient.length    > 10),
+    drive:   !!(s.drive_root && s.drive_root.length > 10),
+    sheet:   !!(s.sheet_id   && s.sheet_id.length   > 10),
+    or:      !!(s.openrouter && s.openrouter.length  > 10),
+  };
+  function setRow(id, ok, okText, warnText) {
+    var icon = document.getElementById('wc-'+id+'-icon');
+    var sub  = document.getElementById('wc-'+id+'-sub');
+    if(!icon || !sub) return;
+    if(ok) { icon.className='welcome-check-icon wci-ok'; icon.innerHTML='&#10003;'; sub.textContent=okText; }
+    else   { icon.className='welcome-check-icon wci-warn'; icon.innerHTML='&#9679;'; sub.textContent=warnText; }
+  }
+  setRow('gclient', checks.gclient, 'Configured', 'Not set — add in Settings');
+  setRow('drive',   checks.drive,   'Configured', 'Not set — add in Settings');
+  setRow('sheet',   checks.sheet,   'Configured', 'Not set — add in Settings');
+  setRow('or',      checks.or,      'Configured', 'Not set — needed for AEX/AA');
+  var authIcon=document.getElementById('wc-auth-icon');
+  var authSub=document.getElementById('wc-auth-sub');
+  var signBtn=document.getElementById('welcomeSignBtn');
+  if(!authIcon) return;
+  if(isAuthed) {
+    authIcon.className='welcome-check-icon wci-ok'; authIcon.innerHTML='&#10003;';
+    authSub.textContent=document.getElementById('authStatus').textContent;
+    signBtn.disabled=true;
+    document.getElementById('welcomeSignBtnIcon').innerHTML='&#10003;';
+    document.getElementById('welcomeSignBtnLabel').textContent='Signed in';
+  } else {
+    authIcon.className='welcome-check-icon wci-warn'; authIcon.innerHTML='&#9679;';
+    authSub.textContent='Not signed in'; signBtn.disabled=false;
+    document.getElementById('welcomeSignBtnIcon').innerHTML='&#9675;';
+    document.getElementById('welcomeSignBtnLabel').textContent='Sign in with Google';
+  }
+  var coreReady=checks.gclient && checks.drive && checks.sheet && isAuthed;
+  var ctaBtn=document.getElementById('welcomeCtaBtn');
+  var ctaText=document.getElementById('welcomeCtaText');
+  if(!ctaBtn) return;
+  ctaBtn.disabled=!coreReady;
+  if(coreReady) ctaText.textContent='Everything looks good. You’re ready to go.';
+  else if(!isAuthed && !checks.gclient) ctaText.textContent='Add your OAuth Client ID in Settings, then sign in with Google.';
+  else if(!checks.gclient) ctaText.textContent='Add your OAuth Client ID in Settings to enable sign-in.';
+  else if(!isAuthed) ctaText.textContent='Sign in with Google to continue.';
+  else ctaText.textContent='Complete the checklist above to get started.';
+}
+function welcomeShouldShow() {
+  var s=settings;
+  return !(isAuthed && s.gclient && s.gclient.length>10 && s.drive_root && s.drive_root.length>10 && s.sheet_id && s.sheet_id.length>10);
+}
+document.addEventListener('click', function(e) {
+  var btn=e.target.closest('[data-action]');
+  if(!btn) return;
+  var action=btn.getAttribute('data-action');
+  if(action==='welcome-signin')    signIn();
+  if(action==='welcome-getstarted') showScreen('convert');
+});
+var _origSetAuthed=setAuthed;
+setAuthed=function(val,name){
+  _origSetAuthed(val,name);
+  welcomeCheckState();
+  if(val && !welcomeShouldShow()) showScreen('convert');
+};
 loadSettings();
 updateAuthGates();
+if(welcomeShouldShow()){
+  document.getElementById('screen-convert').classList.remove('active');
+  document.getElementById('nav-convert').classList.remove('active');
+  document.getElementById('screen-welcome').classList.add('active');
+  document.getElementById('topbarTitle').textContent=SCREENS['welcome'].title;
+  document.getElementById('topbarMeta').textContent=SCREENS['welcome'].meta;
+  welcomeCheckState();
+}
 </script>
 </body>
 </html>
