@@ -151,7 +151,9 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
 .course-card-id{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--blue);margin-bottom:4px;}
 .course-card-name{font-size:.92rem;font-weight:600;color:var(--ink);margin-bottom:10px;line-height:1.3;}
 .course-card-bar{height:4px;background:var(--paper3);border-radius:2px;overflow:hidden;margin-bottom:8px;}
-.course-card-fill{height:100%;background:var(--green);border-radius:2px;}
+.course-card-fill{height:100%;border-radius:2px;display:flex;overflow:hidden;}
+.course-card-fill-approved{background:var(--green);}
+.course-card-fill-awaiting{background:#F57F17;opacity:.75;}
 .course-card-meta{display:flex;justify-content:space-between;font-size:.75rem;color:var(--ink3);}
 .pl-chip{display:inline-block;padding:2px 8px;border-radius:8px;font-size:.68rem;font-weight:600;margin-bottom:8px;}
 .pl-aex{background:#E3F2FD;color:#1565C0;}
@@ -593,13 +595,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
       <div id="coursesContent" style="display:none;">
         <!-- toolbar -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap;">
-          <div style="display:flex;gap:6px;flex-wrap:wrap;" id="coursesPlFilter">
-            <button class="btn btn-sm btn-ghost courses-pl-btn active" data-pl="ALL">All</button>
-            <button class="btn btn-sm btn-ghost courses-pl-btn" data-pl="AEX">AEX</button>
-            <button class="btn btn-sm btn-ghost courses-pl-btn" data-pl="AA">AA</button>
-            <button class="btn btn-sm btn-ghost courses-pl-btn" data-pl="AE">AE</button>
-            <button class="btn btn-sm btn-ghost courses-pl-btn" data-pl="EE">EE</button>
-          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;" id="coursesPlFilter"></div>
           <button class="btn btn-sm btn-ghost" onclick="loadCoursesTab(true)">↺ Refresh</button>
         </div>
         <!-- status bar -->
@@ -1599,7 +1595,7 @@ async function gSheetsAppend(sid,range,row){
 }
 
 // ── Courses Tab ───────────────────────────────────────────────────────────
-var _coursesData = [];   // raw register rows
+var _coursesData = []; // patch_courses_applied   // raw register rows
 var _coursesPl   = 'ALL'; // active PL filter
 
 async function loadCoursesTab(force) {
@@ -1625,7 +1621,7 @@ async function loadCoursesTab(force) {
     var header = rows[0];
     var colIdx = {};
     header.forEach(function(h,i){ colIdx[h] = i; });
-    _coursesData = rows.slice(1).filter(function(r){ return r[0]; }).map(function(r){
+    var allRows = rows.slice(1).filter(function(r){ return r[0]; }).map(function(r){
       return {
         activityId:   r[colIdx['ActivityID']]   || '',
         productLine:  r[colIdx['ProductLine']]  || '',
@@ -1640,6 +1636,10 @@ async function loadCoursesTab(force) {
         model:        r[colIdx['GenerationModel']]|| '',
       };
     });
+    // Dedup: keep last row per ActivityID (pipeline appends on every status change)
+    var _deduped = {}; var _dedupOrder = [];
+    allRows.forEach(function(a){ if(!_deduped[a.activityId]) _dedupOrder.push(a.activityId); _deduped[a.activityId]=a; });
+    _coursesData = _dedupOrder.map(function(id){ return _deduped[id]; });
     // Update sidebar badge with awaiting_approval count
     var awaitingCount = _coursesData.filter(function(a){
       return a.status === 'awaiting_approval';
@@ -1669,11 +1669,23 @@ function coursesHideStatus() {
   document.getElementById('coursesStatus').style.display = 'none';
 }
 
+function buildPlFilter() {
+  var pls = ['ALL'];
+  _coursesData.forEach(function(a){
+    if(a.productLine && pls.indexOf(a.productLine) < 0) pls.push(a.productLine);
+  });
+  var el = document.getElementById('coursesPlFilter');
+  if(!el) return;
+  el.innerHTML = pls.map(function(pl){
+    var active = pl === _coursesPl ? ' active' : '';
+    return '<button class="btn btn-sm btn-ghost courses-pl-btn' + active + '" data-pl="' + pl + '">' + pl + '</button>';
+  }).join('');
+}
+
 function renderCourses() {
+  buildPlFilter();
   var grid = document.getElementById('coursesGrid');
-  // Group by courseId
-  var courseMap = {};
-  var courseOrder = [];
+  var courseMap = {}; var courseOrder = [];
   _coursesData.forEach(function(a) {
     if(_coursesPl !== 'ALL' && a.productLine !== _coursesPl) return;
     if(!courseMap[a.courseId]) {
@@ -1691,30 +1703,30 @@ function renderCourses() {
     return;
   }
   grid.innerHTML = courseOrder.map(function(cid) {
-    var c = courseMap[cid];
-    var acts = c.activities;
-    var total = acts.length;
-    var approved = acts.filter(function(a){ return a.status === 'approved'; }).length;
-    var awaiting = acts.filter(function(a){ return a.status === 'awaiting_approval'; }).length;
-    var pct = total ? Math.round((approved / total) * 100) : 0;
-    // Derive course name from first activity title (strip activity suffix pattern)
-    var firstName = acts[0] ? acts[0].title : cid;
+    var c = courseMap[cid]; var acts = c.activities; var total = acts.length;
+    var approved = acts.filter(function(a){ return a.status==='approved'||a.status==='complete'; }).length;
+    var awaiting = acts.filter(function(a){ return a.status==='awaiting_approval'; }).length;
+    var generated = approved + awaiting;
+    var pctTotal = total ? Math.round((generated/total)*100) : 0;
+    var a01 = acts.filter(function(a){ return a.activityId.match(/-A01$/); })[0] || acts[0];
+    var courseName = a01 ? a01.title.replace(/\s*[—–].*/, '').trim() : cid;
     var plClass = 'pl-' + c.productLine.toLowerCase();
-    var plLabel = c.productLine;
-    // Awaiting approval indicator
     var awaitingBadge = awaiting
-      ? '<span class="pill pill-awaiting" style="margin-left:6px;">' + awaiting + ' awaiting review</span>'
+      ? '<span class="pill pill-awaiting" style="margin-left:6px;">' + awaiting + ' awaiting</span>'
       : '';
-    return '<div class="course-card" data-cid="' + esc(cid) + '" onclick="openDrawer(' + JSON.stringify(cid) + ')">'
+    var barHtml = '<div class="course-card-bar">'
+      + '<div class="course-card-fill" style="width:' + pctTotal + '%;">'
+      + '<div class="course-card-fill-approved" style="flex:' + (approved||0) + ';min-width:' + (approved?'2px':'0') + ';"></div>'
+      + (awaiting ? '<div class="course-card-fill-awaiting" style="flex:' + awaiting + ';min-width:2px;"></div>' : '')
+      + '</div></div>';
+    var metaLeft = generated + ' generated' + (approved ? ' (' + approved + ' approved)' : '');
+    return '<div class="course-card" data-cid="' + esc(cid) + '" data-action="open-drawer" data-tid="' + esc(cid) + '">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">'
-      + '<span class="pl-chip ' + plClass + '">' + plLabel + '</span>' + awaitingBadge + '</div>'
+      + '<span class="pl-chip ' + plClass + '">' + c.productLine + '</span>' + awaitingBadge + '</div>'
       + '<div class="course-card-id">' + esc(cid) + '</div>'
-      + '<div class="course-card-name">' + esc(firstName.replace(/—.*/,'').trim()) + '</div>'
-      + '<div class="course-card-bar"><div class="course-card-fill" style="width:' + pct + '%"></div></div>'
-      + '<div class="course-card-meta">'
-      + '<span>' + approved + ' / ' + total + ' approved</span>'
-      + '<span>' + pct + '%</span>'
-      + '</div>'
+      + '<div class="course-card-name">' + esc(courseName) + '</div>'
+      + barHtml
+      + '<div class="course-card-meta"><span>' + metaLeft + '</span><span>' + generated + ' / ' + total + '</span></div>'
       + '</div>';
   }).join('');
 }
@@ -1764,6 +1776,8 @@ function statusPill(status) {
 
 // PL filter buttons
 document.addEventListener('click', function(e) {
+  var card = e.target.closest('[data-action="open-drawer"]');
+  if(card) { openDrawer(card.getAttribute('data-tid')); return; }
   var btn = e.target.closest('.courses-pl-btn');
   if(!btn) return;
   document.querySelectorAll('.courses-pl-btn').forEach(function(b){ b.classList.remove('active'); });
