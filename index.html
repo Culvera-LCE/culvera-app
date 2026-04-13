@@ -224,6 +224,32 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
 .welcome-cta-btn:hover:not(:disabled){opacity:.88;}
 .welcome-cta-btn:disabled{opacity:.38;cursor:default;}
 
+/* ── Doc viewer/editor ──────────────────────────────────────────── */
+.act-row-expand{cursor:pointer;user-select:none;}
+.act-row-expand:hover{background:var(--paper2);}
+.act-expand-icon{font-size:.75rem;color:var(--ink3);min-width:16px;text-align:center;}
+.act-doc-panel{display:none;border-top:1px solid var(--paper3);background:var(--paper);}
+.act-doc-panel.open{display:block;}
+.doc-tab-bar{display:flex;gap:0;border-bottom:1px solid var(--paper3);background:white;padding:0 16px;}
+.doc-tab{padding:8px 14px;font-size:.78rem;font-family:'DM Sans',sans-serif;border:none;background:none;cursor:pointer;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:500;transition:color .15s;}
+.doc-tab:hover{color:var(--ink);}
+.doc-tab.active{color:var(--ink);border-bottom-color:var(--gold);}
+.doc-tab.dn-tab.active{border-bottom-color:var(--ink3);}
+.doc-content{padding:18px 20px;min-height:120px;position:relative;}
+.doc-loading{color:var(--ink3);font-size:.82rem;padding:24px 0;text-align:center;}
+.doc-error{color:var(--red);font-size:.82rem;padding:12px 0;}
+.doc-rendered{font-size:.84rem;line-height:1.65;color:var(--ink);max-height:480px;overflow-y:auto;}
+.doc-rendered h1{font-family:'DM Serif Display',serif;font-size:1.2rem;margin:14px 0 8px;}
+.doc-rendered h2{font-size:1rem;font-weight:600;margin:12px 0 6px;color:var(--ink);}
+.doc-rendered h3{font-size:.9rem;font-weight:600;margin:10px 0 4px;color:var(--ink2);}
+.doc-raw{display:none;font-family:'DM Mono',monospace;font-size:.75rem;line-height:1.6;color:var(--ink2);white-space:pre-wrap;max-height:480px;overflow-y:auto;background:var(--paper2);border-radius:var(--r);padding:12px 14px;}
+.doc-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.doc-toolbar-right{margin-left:auto;display:flex;gap:6px;align-items:center;}
+.doc-save-status{font-size:.75rem;color:var(--green);white-space:nowrap;}
+.doc-edit-area{width:100%;font-family:'DM Mono',monospace;font-size:.75rem;line-height:1.6;border:1px solid var(--paper3);border-radius:var(--r);padding:12px 14px;background:white;color:var(--ink);resize:vertical;min-height:320px;box-sizing:border-box;margin-top:2px;}
+.doc-edit-area:focus{outline:none;border-color:var(--gold);}
+.doc-no-file{color:var(--ink3);font-size:.82rem;padding:20px 0;text-align:center;font-style:italic;}
+
 /* ── Placeholder screen ──────────────────────────────────────────────── */
 .placeholder-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center;color:var(--ink3);}
 .placeholder-icon{font-size:3rem;margin-bottom:16px;opacity:.2;}
@@ -1595,7 +1621,7 @@ async function gSheetsAppend(sid,range,row){
 }
 
 // ── Courses Tab ───────────────────────────────────────────────────────────
-var _coursesData = []; // patch_courses_applied   // raw register rows
+var _coursesData = []; // patch_courses_applied patch_doc_editor_applied   // raw register rows
 var _coursesPl   = 'ALL'; // active PL filter
 
 async function loadCoursesTab(force) {
@@ -1731,32 +1757,229 @@ function renderCourses() {
   }).join('');
 }
 
+// ── Doc viewer state ──────────────────────────────────────────────────────
+var _docCache     = {};   // fileId -> text content
+var _docFileIds   = {};   // activityId -> {pm, fg, dn}  (fileId or null)
+var _docExpanded  = null; // currently expanded activityId
+var _docActiveTab = {};   // activityId -> 'pm'|'fg'|'dn'
+var _docEditing   = {};   // activityId+docType -> bool
+var _docDirty     = {};   // activityId+docType -> edited text
+
 function openDrawer(cid) {
   var acts = _coursesData.filter(function(a){ return a.courseId === cid; });
   if(!acts.length) return;
   document.getElementById('drawerCourseId').textContent = cid;
-  // Course name from first activity, stripped
-  document.getElementById('drawerCourseName').textContent = acts[0].title.replace(/—.*/,'').trim();
-  var listEl = document.getElementById('drawerActList');
-  listEl.innerHTML = acts.map(function(a) {
-    var pill = statusPill(a.status);
-    var gateIcon = a.isGate ? '<span style="font-size:.65rem;color:var(--gold);font-weight:700;margin-right:4px;">GATE</span>' : '';
-    var link = a.driveUrl
-      ? '<a href="' + esc(a.driveUrl) + '" target="_blank" class="btn btn-sm btn-ghost" style="padding:3px 8px;" onclick="event.stopPropagation()">↗ Drive</a>'
-      : '';
-    return '<div class="act-list-item">'
-      + '<div class="act-list-id">' + esc(a.activityId) + '</div>'
-      + '<div class="act-list-title">' + gateIcon + esc(a.title) + '</div>'
-      + '<div class="act-list-status" style="display:flex;align-items:center;gap:6px;">' + pill + link + '</div>'
-      + '</div>';
-  }).join('');
+  var a01 = acts.filter(function(a){ return a.activityId.match(/-A01$/); })[0] || acts[0];
+  document.getElementById('drawerCourseName').textContent =
+    a01.title.replace(/\s*[\u2014\u2013].*/, '').trim();
+  _docExpanded = null;
+  _docEditing  = {};
+  _docDirty    = {};
+  renderDrawerList(acts);
   document.getElementById('coursesDrawer').style.display = 'block';
   document.getElementById('coursesDrawer').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
+function renderDrawerList(acts) {
+  var listEl = document.getElementById('drawerActList');
+  listEl.innerHTML = acts.map(function(a) {
+    var pill     = statusPill(a.status);
+    var gateIcon = a.isGate
+      ? '<span style="font-size:.65rem;color:var(--gold);font-weight:700;margin-right:4px;">GATE</span>' : '';
+    var isExpandable = a.driveUrl || true;
+    return '<div class="act-list-item act-row-expand" data-action="toggle-act" data-aid="' + esc(a.activityId) + '">'
+      + '<span class="act-expand-icon" id="expicon-' + esc(a.activityId) + '">&#9654;</span>'
+      + '<div class="act-list-id">' + esc(a.activityId) + '</div>'
+      + '<div class="act-list-title">' + gateIcon + esc(a.title) + '</div>'
+      + '<div class="act-list-status" style="display:flex;align-items:center;gap:6px;">' + pill + '</div>'
+      + '</div>'
+      + '<div class="act-doc-panel" id="docpanel-' + esc(a.activityId) + '"></div>';
+  }).join('');
+}
+
 function closeDrawer() {
   document.getElementById('coursesDrawer').style.display = 'none';
+  _docExpanded = null;
 }
+
+async function toggleActDocs(aid) {
+  var panel   = document.getElementById('docpanel-' + aid);
+  var icon    = document.getElementById('expicon-' + aid);
+  if(!panel) return;
+  if(_docExpanded === aid) {
+    panel.classList.remove('open');
+    icon.innerHTML = '&#9654;';
+    _docExpanded = null;
+    return;
+  }
+  // Close previously open panel
+  if(_docExpanded) {
+    var old = document.getElementById('docpanel-' + _docExpanded);
+    var oldIcon = document.getElementById('expicon-' + _docExpanded);
+    if(old) old.classList.remove('open');
+    if(oldIcon) oldIcon.innerHTML = '&#9654;';
+  }
+  _docExpanded = aid;
+  icon.innerHTML = '&#9660;';
+  panel.classList.add('open');
+  // Render tab bar
+  var tab = _docActiveTab[aid] || 'pm';
+  _docActiveTab[aid] = tab;
+  panel.innerHTML = buildDocTabBar(aid, tab) + '<div class="doc-content" id="doccontent-' + esc(aid) + '"></div>';
+  await loadDocTab(aid, tab);
+}
+
+function buildDocTabBar(aid, activeTab) {
+  return '<div class="doc-tab-bar">'
+    + ['pm','fg','dn'].map(function(t){
+        var cls = 'doc-tab' + (t === 'dn' ? ' dn-tab' : '') + (t === activeTab ? ' active' : '');
+        return '<button class="' + cls + '" data-action="switch-doc-tab" data-aid="' + esc(aid) + '" data-tab="' + t + '">'
+          + t.toUpperCase() + '</button>';
+      }).join('')
+    + '</div>';
+}
+
+async function switchDocTab(aid, tab) {
+  _docActiveTab[aid] = tab;
+  // Update tab bar active state
+  var panel = document.getElementById('docpanel-' + aid);
+  if(!panel) return;
+  panel.querySelectorAll('.doc-tab').forEach(function(btn){
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+  });
+  await loadDocTab(aid, tab);
+}
+
+async function loadDocTab(aid, tab) {
+  var contentEl = document.getElementById('doccontent-' + aid);
+  if(!contentEl) return;
+  contentEl.innerHTML = '<div class="doc-loading">Loading ' + tab.toUpperCase() + '...</div>';
+
+  // Get or fetch file IDs for this activity
+  if(!_docFileIds[aid]) {
+    try {
+      _docFileIds[aid] = await fetchActivityFileIds(aid);
+    } catch(e) {
+      contentEl.innerHTML = '<div class="doc-error">Could not list Drive files: ' + esc(e.message) + '</div>';
+      return;
+    }
+  }
+
+  var fileId = _docFileIds[aid][tab];
+  if(!fileId) {
+    contentEl.innerHTML = '<div class="doc-no-file">' + tab.toUpperCase() + ' not yet generated.</div>';
+    return;
+  }
+
+  // Fetch content if not cached
+  if(!_docCache[fileId]) {
+    try {
+      var r = await fetch(
+        'https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media',
+        { headers: { 'Authorization': 'Bearer ' + authToken } }
+      );
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      _docCache[fileId] = await r.text();
+    } catch(e) {
+      contentEl.innerHTML = '<div class="doc-error">Could not load file: ' + esc(e.message) + '</div>';
+      return;
+    }
+  }
+
+  renderDocContent(aid, tab, fileId, contentEl);
+}
+
+function renderDocContent(aid, tab, fileId, contentEl) {
+  var key      = aid + ':' + tab;
+  var isEditing = !!_docEditing[key];
+  var text     = _docDirty[key] !== undefined ? _docDirty[key] : (_docCache[fileId] || '');
+  var canEdit  = (tab === 'pm' || tab === 'fg');
+  var isRaw    = !!_docEditing[key + ':raw'];
+
+  var toolbar = '<div class="doc-toolbar">';
+  if(canEdit && !isEditing) {
+    toolbar += '<button class="btn btn-sm btn-primary" data-action="doc-edit" data-aid="' + esc(aid) + '" data-tab="' + tab + '">Edit</button>';
+  }
+  if(canEdit && isEditing) {
+    toolbar += '<button class="btn btn-sm btn-gold" data-action="doc-save" data-aid="' + esc(aid) + '" data-tab="' + tab + '" data-fid="' + esc(fileId) + '">Save</button>';
+    toolbar += '<button class="btn btn-sm btn-ghost" data-action="doc-cancel" data-aid="' + esc(aid) + '" data-tab="' + tab + '">Cancel</button>';
+  }
+  toolbar += '<span class="doc-save-status" id="docsavestatus-' + esc(aid) + '-' + tab + '"></span>';
+  if(!isEditing) {
+    toolbar += '<div class="doc-toolbar-right">'
+      + '<button class="btn btn-sm btn-ghost" data-action="doc-toggle-raw" data-aid="' + esc(aid) + '" data-tab="' + tab + '">'
+      + (isRaw ? 'Rendered' : 'Raw') + '</button></div>';
+  }
+  toolbar += '</div>';
+
+  var body = '';
+  if(isEditing) {
+    body = '<textarea class="doc-edit-area" id="docedit-' + esc(aid) + '-' + tab + '">'
+      + esc(text) + '</textarea>';
+  } else if(isRaw) {
+    body = '<div class="doc-raw" style="display:block;">' + esc(text) + '</div>';
+  } else {
+    body = '<div class="doc-rendered">' + mdToHtml(text) + '</div>';
+  }
+
+  contentEl.innerHTML = toolbar + body;
+}
+
+async function fetchActivityFileIds(aid) {
+  // Find the activity folder by searching Drive for folder named like aid
+  var root = settings.drive_root || '1Lo65wGeI-kaImMxAwGvH4LCfGQ-f7lY7';
+  // Search recursively for files matching PM/FG/DN naming
+  var q = encodeURIComponent(
+    'name contains "' + aid + '" and mimeType != "application/vnd.google-apps.folder" and trashed=false'
+  );
+  var r = await gApi('GET',
+    'https://www.googleapis.com/drive/v3/files?q=' + q
+    + '&fields=files(id,name)&pageSize=20'
+    + '&corpora=allDrives&includeItemsFromAllDrives=true&supportsAllDrives=true'
+  );
+  var files = r.files || [];
+  var ids = { pm: null, fg: null, dn: null };
+  files.forEach(function(f) {
+    var n = f.name.toUpperCase();
+    if(n.includes('_PM') || n.endsWith('_PM.TXT')) ids.pm = f.id;
+    else if(n.includes('_FG') || n.endsWith('_FG.TXT')) ids.fg = f.id;
+    else if(n.includes('_DN') || n.endsWith('_DN.TXT')) ids.dn = f.id;
+  });
+  return ids;
+}
+
+async function saveDoc(aid, tab, fileId) {
+  var key      = aid + ':' + tab;
+  var statusEl = document.getElementById('docsavestatus-' + aid + '-' + tab);
+  var textarea = document.getElementById('docedit-' + aid + '-' + tab);
+  if(!textarea) return;
+  var newText  = textarea.value;
+  if(statusEl) statusEl.textContent = 'Saving...';
+
+  try {
+    var blob = new Blob([newText], { type: 'text/plain' });
+    var form = new FormData();
+    form.append('metadata', new Blob(['{}'], { type: 'application/json' }));
+    form.append('file', blob);
+    var r = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files/' + fileId
+      + '?uploadType=multipart&fields=id',
+      { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + authToken }, body: form }
+    );
+    if(!r.ok) { var e = await r.json(); throw new Error(e.error && e.error.message || r.status); }
+    // Update cache and dirty state
+    _docCache[fileId] = newText;
+    delete _docDirty[key];
+    delete _docEditing[key];
+    if(statusEl) { statusEl.textContent = 'Saved ✓'; setTimeout(function(){ statusEl.textContent=''; }, 3000); }
+    // Re-render in read mode
+    var contentEl = document.getElementById('doccontent-' + aid);
+    if(contentEl) renderDocContent(aid, tab, fileId, contentEl);
+  } catch(e) {
+    if(statusEl) statusEl.textContent = 'Error: ' + e.message;
+  }
+}
+
 
 function statusPill(status) {
   var map = {
@@ -1776,8 +1999,40 @@ function statusPill(status) {
 
 // PL filter buttons
 document.addEventListener('click', function(e) {
-  var card = e.target.closest('[data-action="open-drawer"]');
-  if(card) { openDrawer(card.getAttribute('data-tid')); return; }
+  var el = e.target.closest('[data-action]');
+  if(el) {
+    var act = el.getAttribute('data-action');
+    var aid = el.getAttribute('data-aid');
+    var tab = el.getAttribute('data-tab');
+    var fid = el.getAttribute('data-fid');
+    if(act === 'open-drawer')    { openDrawer(el.getAttribute('data-tid')); return; }
+    if(act === 'toggle-act')     { e.stopPropagation(); toggleActDocs(aid); return; }
+    if(act === 'switch-doc-tab') { e.stopPropagation(); switchDocTab(aid, tab); return; }
+    if(act === 'doc-edit') {
+      e.stopPropagation();
+      _docEditing[aid+':'+tab] = true;
+      var ce = document.getElementById('doccontent-'+aid);
+      if(ce) renderDocContent(aid, tab, _docFileIds[aid] && _docFileIds[aid][tab], ce);
+      return;
+    }
+    if(act === 'doc-cancel') {
+      e.stopPropagation();
+      delete _docEditing[aid+':'+tab];
+      delete _docDirty[aid+':'+tab];
+      var ce = document.getElementById('doccontent-'+aid);
+      if(ce) renderDocContent(aid, tab, _docFileIds[aid] && _docFileIds[aid][tab], ce);
+      return;
+    }
+    if(act === 'doc-save') { e.stopPropagation(); saveDoc(aid, tab, fid); return; }
+    if(act === 'doc-toggle-raw') {
+      e.stopPropagation();
+      var rk = aid+':'+tab+':raw';
+      _docEditing[rk] = !_docEditing[rk];
+      var ce = document.getElementById('doccontent-'+aid);
+      if(ce) renderDocContent(aid, tab, _docFileIds[aid] && _docFileIds[aid][tab], ce);
+      return;
+    }
+  }
   var btn = e.target.closest('.courses-pl-btn');
   if(!btn) return;
   document.querySelectorAll('.courses-pl-btn').forEach(function(b){ b.classList.remove('active'); });
