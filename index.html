@@ -623,6 +623,8 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap;">
           <div style="display:flex;gap:6px;flex-wrap:wrap;" id="coursesPlFilter"></div>
           <button class="btn btn-sm btn-ghost" onclick="loadCoursesTab(true)">↺ Refresh</button>
+          <button class="btn btn-sm btn-primary" id="runPipelineBtn" data-action="run-pipeline">&#9654; Run Pipeline</button>
+          <span id="runPipelineStatus" style="font-size:.75rem;color:var(--ink3);margin-left:4px;"></span>
         </div>
         <!-- status bar -->
         <div id="coursesStatus" style="display:none;" class="status-bar wait">
@@ -1544,7 +1546,7 @@ async function cfRunConfirm(){
     btn.textContent='Seeding queue...';
     var q=await gReadQueue(queueId,'gta');
     var eids=new Set((q.activities||[]).map(function(a){return a.id;}));
-    acts.forEach(function(a){if(!eids.has(a.id))q.activities.push({id:a.id,course_id:cid,title:a.title,type:a.type||'',duration:a.duration||'',status:a.id.endsWith('-A01')?'queued':'pending',tenant_id:'gta',seed_company:seed,is_gate:a.id.endsWith('-A01'),named_folder_id:actFolderIds[a.id]||''});});
+    acts.forEach(function(a){if(!eids.has(a.id)){var entry={id:a.id,course_id:cid,title:a.title,type:a.type||'',duration:a.duration||'',status:'queued',tenant_id:'gta',seed_company:seed,is_gate:a.id.endsWith('-A01'),named_folder_id:actFolderIds[a.id]||''};if(a.id.endsWith('-A01'))entry.draft_folder_id=draftId;q.activities.push(entry);}});
     q.updated_at=new Date().toISOString();
     await gWriteJson(queueId,'gta_pipeline_queue.json',q);
     steps.push('✓ Pipeline queue seeded');
@@ -1621,7 +1623,7 @@ async function gSheetsAppend(sid,range,row){
 }
 
 // ── Courses Tab ───────────────────────────────────────────────────────────
-var _coursesData = []; // patch_courses_applied patch_doc_editor_applied   // raw register rows
+var _coursesData = []; // patch_courses_applied patch_doc_editor_applied patch_filefix_applied patch_folderfix_applied   // raw register rows
 var _coursesPl   = 'ALL'; // active PL filter
 
 async function loadCoursesTab(force) {
@@ -1713,6 +1715,7 @@ function renderCourses() {
   var grid = document.getElementById('coursesGrid');
   var courseMap = {}; var courseOrder = [];
   _coursesData.forEach(function(a) {
+    if(!a.courseId) return;
     if(_coursesPl !== 'ALL' && a.productLine !== _coursesPl) return;
     if(!courseMap[a.courseId]) {
       courseMap[a.courseId] = { courseId: a.courseId, productLine: a.productLine, activities: [] };
@@ -1925,25 +1928,45 @@ function renderDocContent(aid, tab, fileId, contentEl) {
   contentEl.innerHTML = toolbar + body;
 }
 
+// Known activity folder IDs — update when new courses confirmed
+var _activityFolderIds = {
+  'EX04-A01': '1KXBXmWlwsYAM3xo4fHI_4mJdpdvCAtZL',
+  'EX04-A02': '1mPHIE3PKXFX37n_p-GJZ84u30rPwocQO',
+  'EX04-A03': '11y4F9U6hNt_SQz1w7OFcn4OOfOIW8nB0',
+  'EX04-A04': '19CxyJ4WJJh_GwkHi47HpAN3Rgmu8ac1b',
+  'EX04-A05': '1iRbJJCKkdYs6ckOEH4BU_y706AxiZo29',
+};
+
 async function fetchActivityFileIds(aid) {
-  // Find the activity folder by searching Drive for folder named like aid
-  var root = settings.drive_root || '1Lo65wGeI-kaImMxAwGvH4LCfGQ-f7lY7';
-  // Search recursively for files matching PM/FG/DN naming
-  var q = encodeURIComponent(
-    'name contains "' + aid + '" and mimeType != "application/vnd.google-apps.folder" and trashed=false'
-  );
-  var r = await gApi('GET',
-    'https://www.googleapis.com/drive/v3/files?q=' + q
-    + '&fields=files(id,name)&pageSize=20'
-    + '&corpora=allDrives&includeItemsFromAllDrives=true&supportsAllDrives=true'
-  );
-  var files = r.files || [];
+  var aidUpper = aid.toUpperCase();
+  var folderId = _activityFolderIds[aid] || _activityFolderIds[aidUpper];
+  var files = [];
+  if(folderId) {
+    var q = encodeURIComponent(
+      '"' + folderId + '" in parents'
+      + ' and mimeType != "application/vnd.google-apps.folder" and trashed=false'
+    );
+    var r = await gApi('GET',
+      'https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id,name)&pageSize=20'
+    );
+    files = r.files || [];
+  } else {
+    var q2 = encodeURIComponent(
+      'name contains "' + aid + '" and mimeType != "application/vnd.google-apps.folder" and trashed=false'
+    );
+    var r2 = await gApi('GET',
+      'https://www.googleapis.com/drive/v3/files?q=' + q2
+      + '&fields=files(id,name)&pageSize=20'
+      + '&corpora=allDrives&includeItemsFromAllDrives=true&supportsAllDrives=true'
+    );
+    files = r2.files || [];
+  }
   var ids = { pm: null, fg: null, dn: null };
   files.forEach(function(f) {
     var n = f.name.toUpperCase();
-    if(n.includes('_PM') || n.endsWith('_PM.TXT')) ids.pm = f.id;
-    else if(n.includes('_FG') || n.endsWith('_FG.TXT')) ids.fg = f.id;
-    else if(n.includes('_DN') || n.endsWith('_DN.TXT')) ids.dn = f.id;
+    if(n.startsWith(aidUpper + '-PM-'))      ids.pm = f.id;
+    else if(n.startsWith(aidUpper + '-FG-')) ids.fg = f.id;
+    else if(n.startsWith(aidUpper + '-DN-')) ids.dn = f.id;
   });
   return ids;
 }
@@ -2399,6 +2422,41 @@ var _pipelineLogVisible = false;
 var _pipelineLogInterval = null;
 var _pipelineLogBase = "http://localhost:5050";
 
+// ── Run Pipeline ──────────────────────────────────────────────────────────
+async function runPipeline() {
+  var btn    = document.getElementById('runPipelineBtn');
+  var status = document.getElementById('runPipelineStatus');
+  if(!btn) return;
+  btn.disabled = true;
+  status.textContent = 'Starting...';
+  status.style.color = 'var(--amber)';
+  try {
+    var r = await fetch(_pipelineLogBase + '/api/run_pipeline', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'}
+    });
+    var data = await r.json();
+    if(data.status === 'started') {
+      status.textContent = 'Pipeline started ✓';
+      status.style.color = 'var(--green)';
+      // Start polling log
+      if(!_pipelineLogVisible) togglePipelineLog();
+    } else if(data.status === 'already_running') {
+      status.textContent = 'Already running';
+      status.style.color = 'var(--amber)';
+    } else {
+      status.textContent = 'Error: ' + (data.message || 'unknown');
+      status.style.color = 'var(--red)';
+    }
+  } catch(e) {
+    status.textContent = 'Dashboard offline';
+    status.style.color = 'var(--red)';
+  }
+  setTimeout(function(){ btn.disabled = false; }, 5000);
+  setTimeout(function(){ status.textContent = ''; }, 8000);
+}
+
+
 function togglePipelineLog() {
   _pipelineLogVisible = !_pipelineLogVisible;
   document.getElementById('pipelineLogPanel').style.display = _pipelineLogVisible ? 'block' : 'none';
@@ -2501,6 +2559,7 @@ document.addEventListener('click', function(e) {
   var action=btn.getAttribute('data-action');
   if(action==='welcome-signin')    signIn();
   if(action==='welcome-getstarted') showScreen('convert');
+  if(action==='run-pipeline')      runPipeline();
 });
 var _origSetAuthed=setAuthed;
 setAuthed=function(val,name){
