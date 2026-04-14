@@ -17,6 +17,7 @@
   --blue:#1A3A6B; --blue-light:#EEF3FB;
   --amber:#7A4F00; --amber-light:#FEF7E6;
   --r:8px; --r2:14px;
+  --color-text-secondary:var(--ink3); --color-text-tertiary:var(--ink3); --color-text-danger:var(--red); --color-border-tertiary:var(--paper3);
   --shadow:0 1px 3px rgba(15,25,35,.08), 0 4px 16px rgba(15,25,35,.06);
   --shadow-lg:0 8px 32px rgba(15,25,35,.12);
 }
@@ -318,6 +319,10 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
       <span class="nav-icon">◎</span> Review &amp; Manage
       <span class="nav-badge" id="navBadgeReview" style="display:none">0</span>
     </div>
+    <div class="nav-section" style="margin-top:8px;">Reference Data</div>
+    <div class="nav-item" onclick="showScreen('companies')" id="nav-companies">
+      <span class="nav-icon">&#9632;</span> Company Profiles
+    </div>
     <div class="nav-section" style="margin-top:8px;">System</div>
     <div class="nav-item" onclick="showScreen('settings')" id="nav-settings">
       <span class="nav-icon">⚙</span> Settings
@@ -541,11 +546,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
               <div class="fr" id="cf_stream_row" style="display:none;"><span class="fl">Stream</span><input class="fi" id="cf_stream"></div>
               <div class="fr"><span class="fl">Seed Company</span>
                 <select class="fi" id="cf_seed">
-                  <option value="">None / not applicable</option>
-                  <option value="Crestline Advisory Group">Crestline Advisory Group</option>
-                  <option value="Hartland Consumer Goods">Hartland Consumer Goods</option>
-                  <option value="Stonegate Retail Group">Stonegate Retail Group</option>
-                  <option value="Ubuntu Skills Foundation">Ubuntu Skills Foundation</option>
+                  <option value="">Loading companies...</option>
                 </select></div>
             </div>
             <div class="card">
@@ -743,6 +744,54 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
     </div>
 
     <!-- ══ SETTINGS ═══════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-companies">
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Company Profiles</span>
+          <button class="btn btn-sm btn-primary" onclick="cpShowAdd()">+ Add Company</button>
+        </div>
+        <div id="cp-status" style="font-size:.83rem;color:var(--color-text-secondary);margin-bottom:12px;"></div>
+        <div id="cp-list"></div>
+      </div>
+      <!-- Add / Edit modal -->
+      <div id="cp-modal" style="display:none;">
+        <div class="card" style="margin-top:16px;">
+          <div class="card-title" id="cp-modal-title">Add Company</div>
+          <div style="display:grid;gap:10px;">
+            <div class="fr"><span class="fl">Company Name *</span><input class="fi" id="cp_name" placeholder="e.g. Hartland Consumer Goods"></div>
+            <div class="fr"><span class="fl">ID (slug) *</span><input class="fi" id="cp_id" placeholder="e.g. hartland_consumer_goods"></div>
+            <div class="fr"><span class="fl">Sector</span><input class="fi" id="cp_sector" placeholder="e.g. Consumer Goods"></div>
+            <div class="fr"><span class="fl">Sub-sector</span><input class="fi" id="cp_sub_sector" placeholder="e.g. FMCG"></div>
+            <div class="fr"><span class="fl">Size</span>
+              <select class="fi" id="cp_size">
+                <option value="small">Small</option>
+                <option value="mid-market">Mid-market</option>
+                <option value="large">Large</option>
+                <option value="enterprise">Enterprise</option>
+              </select></div>
+            <div class="fr"><span class="fl">HQ</span><input class="fi" id="cp_hq" placeholder="e.g. Johannesburg, South Africa"></div>
+            <div class="fr"><span class="fl">Founded</span><input class="fi" id="cp_founded" type="number" placeholder="e.g. 1994"></div>
+            <div class="fr"><span class="fl">Tagline</span><input class="fi" id="cp_tagline" placeholder="One sentence description"></div>
+            <div class="fr"><span class="fl">Prompt context *</span><textarea class="fi" id="cp_prompt_context" rows="3" placeholder="2-3 sentences injected into generation prompts. Describe the company, size, revenue, sector, reporting style."></textarea></div>
+            <div class="fr"><span class="fl">Reporting style</span>
+              <select class="fi" id="cp_reporting_style">
+                <option value="management">Management</option>
+                <option value="formal-board">Formal board</option>
+                <option value="operational">Operational</option>
+                <option value="ngo-impact">NGO impact</option>
+              </select></div>
+            <div class="fr"><span class="fl">Terminology</span><input class="fi" id="cp_terminology" placeholder="Comma-separated terms e.g. SKU, basket size, planogram"></div>
+            <div class="fr"><span class="fl">Avoid</span><input class="fi" id="cp_avoid" placeholder="Comma-separated words to avoid"></div>
+            <div id="cp-modal-err" style="display:none;color:var(--color-text-danger);font-size:.83rem;"></div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary" onclick="cpSave()">Save Company</button>
+              <button class="btn btn-ghost" onclick="cpCancelModal()">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="screen" id="screen-settings">
       <div class="card">
         <div class="card-title">API Keys</div>
@@ -827,6 +876,7 @@ var SCREENS = {
   'courses':  {title:'Courses',       meta:'Pipeline status dashboard'},
   'review':   {title:'Review & Manage', meta:'Approve, amend, queue activities'},
   'settings': {title:'Settings',      meta:'API keys and tenant configuration'},
+  'companies':{title:'Company Profiles', meta:'Reference data · seed companies'},
 };
 var isAuthed = false;
 var authToken = '';
@@ -839,10 +889,172 @@ var convActCnt = 0;
 var convDocMeta = {};
 
 // ── Navigation ────────────────────────────────────────────────────────────
+// patch_company_profiles_applied
+// ── Reference Data folder ID cache ────────────────────────────────────────
+var _refDataFolderId = null;
+var _companyProfiles = [];
+
+async function getRefDataFolderId() {
+  if(_refDataFolderId) return _refDataFolderId;
+  if(!isAuthed) return null;
+  var tenantRoot = settings.drive_root || '1Lo65wGeI-kaImMxAwGvH4LCfGQ-f7lY7';
+  try {
+    var folders = await gDriveListFolders(tenantRoot);
+    var f = folders.find(function(x){return x.name==='Reference Data';});
+    _refDataFolderId = f ? f.id : null;
+  } catch(e) { _refDataFolderId = null; }
+  return _refDataFolderId;
+}
+
+async function loadCompanyProfiles() {
+  var fid = await getRefDataFolderId();
+  if(!fid) { _companyProfiles=[]; return []; }
+  try {
+    var q = encodeURIComponent("'"+fid+"' in parents and mimeType='application/json' and trashed=false");
+    var r = await gApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name,modifiedTime)&pageSize=50');
+    var files = r.files||[];
+    var profiles = [];
+    for(var i=0;i<files.length;i++){
+      try {
+        var content = await fetch('https://www.googleapis.com/drive/v3/files/'+files[i].id+'?alt=media',{headers:{'Authorization':'Bearer '+authToken}});
+        var p = await content.json();
+        p._fileId = files[i].id;
+        profiles.push(p);
+      } catch(e){}
+    }
+    _companyProfiles = profiles;
+    return profiles;
+  } catch(e){ _companyProfiles=[]; return []; }
+}
+
+async function populateSeedDropdown() {
+  var sel = document.getElementById('cf_seed');
+  if(!sel) return;
+  if(!isAuthed){ sel.innerHTML='<option value="">Sign in to load companies</option>'; return; }
+  sel.innerHTML='<option value="">Loading...</option>';
+  var profiles = _companyProfiles.length ? _companyProfiles : await loadCompanyProfiles();
+  sel.innerHTML='<option value="">None / not applicable</option>';
+  profiles.forEach(function(p){
+    var opt=document.createElement('option');
+    opt.value=p.name;opt.textContent=p.name;
+    sel.appendChild(opt);
+  });
+  if(!profiles.length) sel.innerHTML='<option value="">No companies in Reference Data</option>';
+}
+
+// ── Company Profiles screen ────────────────────────────────────────────────
+var _cpEditing = null;
+
+async function loadCompaniesScreen() {
+  var listEl = document.getElementById('cp-list');
+  var statusEl = document.getElementById('cp-status');
+  if(!isAuthed){statusEl.textContent='Sign in to manage company profiles.';return;}
+  statusEl.textContent='Loading...';
+  var profiles = await loadCompanyProfiles();
+  statusEl.textContent = profiles.length+' company profile'+(profiles.length===1?'':'s')+' in Reference Data/';
+  listEl.innerHTML='';
+  if(!profiles.length){
+    listEl.innerHTML='<div style="color:var(--color-text-tertiary);font-size:.85rem;padding:12px 0;">No company profiles found. Add one to get started.</div>';
+    return;
+  }
+  profiles.forEach(function(p){
+    var div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--color-border-tertiary);';
+    div.innerHTML='<div><div style="font-weight:500;font-size:.9rem;">'+esc(p.name)+'</div>'
+      +'<div style="font-size:.78rem;color:var(--color-text-tertiary);">'+esc(p.sector||'')+(p.sub_sector?' — '+esc(p.sub_sector):'')+'  ·  '+esc(p.hq||'')+'</div></div>'
+      +'<div style="display:flex;gap:6px;">'
+      +'<button class="btn btn-sm btn-ghost" data-action="cp-edit" data-cid="'+esc(p.id)+'">Edit</button>'
+      +'<button class="btn btn-sm btn-ghost" style="color:var(--color-text-danger)" data-action="cp-delete" data-cid="'+esc(p.id)+'">Delete</button>'
+      +'</div>';
+    listEl.appendChild(div);
+  });
+}
+
+function cpShowAdd(){
+  _cpEditing=null;
+  document.getElementById('cp-modal-title').textContent='Add Company';
+  ['cp_name','cp_id','cp_sector','cp_sub_sector','cp_hq','cp_tagline','cp_prompt_context','cp_terminology','cp_avoid'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('cp_size').value='mid-market';
+  document.getElementById('cp_reporting_style').value='management';
+  document.getElementById('cp_founded').value='';
+  document.getElementById('cp-modal-err').style.display='none';
+  document.getElementById('cp-modal').style.display='';
+  document.getElementById('cp_name').focus();
+}
+
+function cpShowEdit(cid){
+  var p=_companyProfiles.find(function(x){return x.id===cid;});
+  if(!p)return;
+  _cpEditing=p;
+  document.getElementById('cp-modal-title').textContent='Edit — '+p.name;
+  document.getElementById('cp_name').value=p.name||'';
+  document.getElementById('cp_id').value=p.id||'';
+  document.getElementById('cp_sector').value=p.sector||'';
+  document.getElementById('cp_sub_sector').value=p.sub_sector||'';
+  document.getElementById('cp_size').value=p.size||'mid-market';
+  document.getElementById('cp_hq').value=p.hq||'';
+  document.getElementById('cp_founded').value=p.founded||'';
+  document.getElementById('cp_tagline').value=p.tagline||'';
+  document.getElementById('cp_prompt_context').value=(p.voice&&p.voice.prompt_context)||'';
+  document.getElementById('cp_reporting_style').value=(p.voice&&p.voice.reporting_style)||'management';
+  document.getElementById('cp_terminology').value=((p.voice&&p.voice.terminology)||[]).join(', ');
+  document.getElementById('cp_avoid').value=((p.voice&&p.voice.avoid)||[]).join(', ');
+  document.getElementById('cp-modal-err').style.display='none';
+  document.getElementById('cp-modal').style.display='';
+}
+
+function cpCancelModal(){document.getElementById('cp-modal').style.display='none';_cpEditing=null;}
+
+async function cpSave(){
+  var name=document.getElementById('cp_name').value.trim();
+  var id=document.getElementById('cp_id').value.trim();
+  var errEl=document.getElementById('cp-modal-err');
+  if(!name||!id){errEl.textContent='Company Name and ID are required.';errEl.style.display='';return;}
+  if(!document.getElementById('cp_prompt_context').value.trim()){errEl.textContent='Prompt context is required.';errEl.style.display='';return;}
+  var fid=await getRefDataFolderId();
+  if(!fid){errEl.textContent='Reference Data/ folder not found on Drive. Create it first.';errEl.style.display='';return;}
+  var profile={
+    schema_version:'1.0',tenant_id:'gta',
+    id:id,name:name,
+    sector:document.getElementById('cp_sector').value.trim(),
+    sub_sector:document.getElementById('cp_sub_sector').value.trim(),
+    size:document.getElementById('cp_size').value,
+    founded:parseInt(document.getElementById('cp_founded').value)||null,
+    hq:document.getElementById('cp_hq').value.trim(),
+    tagline:document.getElementById('cp_tagline').value.trim(),
+    voice:{
+      prompt_context:document.getElementById('cp_prompt_context').value.trim(),
+      reporting_style:document.getElementById('cp_reporting_style').value,
+      terminology:document.getElementById('cp_terminology').value.split(',').map(function(s){return s.trim();}).filter(Boolean),
+      avoid:document.getElementById('cp_avoid').value.split(',').map(function(s){return s.trim();}).filter(Boolean)
+    }
+  };
+  try {
+    await gWriteJson(fid, id+'.json', profile);
+    _companyProfiles=[];_refDataFolderId=null;
+    document.getElementById('cp-modal').style.display='none';
+    _cpEditing=null;
+    await loadCompaniesScreen();
+  } catch(e){errEl.textContent='Save failed: '+e;errEl.style.display='';}
+}
+
+async function cpDelete(cid){
+  var p=_companyProfiles.find(function(x){return x.id===cid;});
+  if(!p||!p._fileId)return;
+  if(!confirm('Delete company profile for '+p.name+'? This cannot be undone.'))return;
+  try {
+    await gApi('DELETE','https://www.googleapis.com/drive/v3/files/'+p._fileId);
+    _companyProfiles=[];_refDataFolderId=null;
+    await loadCompaniesScreen();
+  } catch(e){alert('Delete failed: '+e);}
+}
+
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
   document.getElementById('screen-'+name).classList.add('active');
+  if(name==='companies') loadCompaniesScreen();
+  if(name==='confirm') populateSeedDropdown();
   document.getElementById('nav-'+name).classList.add('active');
   document.getElementById('topbarTitle').textContent = SCREENS[name].title;
   document.getElementById('topbarMeta').textContent = SCREENS[name].meta;
@@ -1432,8 +1644,7 @@ function cfPopulateReview(identity,activities,filename){
   var pl=identity['Product Line']||'';
   document.getElementById('cf_sector_row').style.display=pl==='AE'?'grid':'none';
   document.getElementById('cf_stream_row').style.display=pl==='EE'?'grid':'none';
-  var seeds={EX01:'Crestline Advisory Group',EX02:'Crestline Advisory Group',EX03:'Hartland Consumer Goods',EX04:'Stonegate Retail Group'};
-  document.getElementById('cf_seed').value=identity['Seed Company']||seeds[identity['Course ID']]||'';
+  // Seed company: user selects manually from dropdown
   document.getElementById('cfActCount').textContent=activities.length;
   var list=document.getElementById('cfActList');list.innerHTML='';
   activities.forEach(function(a){
@@ -1599,22 +1810,27 @@ async function gFindOrCreate(name,pid){
   return r.id;
 }
 async function gWriteJson(pid,filename,data){
+  // patch_gwritejson_delete_first_applied
+  // Delete ALL existing files with this name (any owner) then create fresh.
   var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  var sn=filename.replace(/'/g,"\'");
+  var sn=filename.replace(/'/g,"\\'");
   var q=encodeURIComponent("name='"+sn+"' and '"+pid+"' in parents and trashed=false");
-  var ex=await gApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id)&pageSize=1');
-  var eid=ex.files&&ex.files.length?ex.files[0].id:null;
-  var meta=JSON.stringify(eid?{}:{name:filename,parents:[pid]});
+  var ex=await gApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id)&pageSize=10');
+  if(ex.files&&ex.files.length){
+    for(var i=0;i<ex.files.length;i++){
+      try{await gApi('DELETE','https://www.googleapis.com/drive/v3/files/'+ex.files[i].id);}catch(e){}
+    }
+  }
+  var meta=JSON.stringify({name:filename,parents:[pid]});
   var form=new FormData();form.append('metadata',new Blob([meta],{type:'application/json'}));form.append('file',blob);
-  var url=eid?'https://www.googleapis.com/upload/drive/v3/files/'+eid+'?uploadType=multipart&fields=id':'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id';
-  var r=await fetch(url,{method:eid?'PATCH':'POST',headers:{'Authorization':'Bearer '+authToken},body:form});
+  var r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Authorization':'Bearer '+authToken},body:form});
   if(!r.ok){var e=await r.json();throw new Error(e.error&&e.error.message||r.status);}
   return r.json();
 }
 async function gReadQueue(pid,tid){
-  var fn=tid+'_pipeline_queue.json';var sn=fn.replace(/'/g,"\'");
+  var fn=tid+'_pipeline_queue.json';var sn=fn.replace(/'/g,"\\'");
   var q=encodeURIComponent("name='"+sn+"' and '"+pid+"' in parents and trashed=false");
-  var r=await gApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id)&pageSize=1');
+  var r=await gApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,modifiedTime)&pageSize=10&orderBy=modifiedTime+desc');
   if(!r.files||!r.files.length)return{activities:[],tenant_id:tid};
   return fetch('https://www.googleapis.com/drive/v3/files/'+r.files[0].id+'?alt=media',{headers:{'Authorization':'Bearer '+authToken}}).then(function(r){return r.json();});
 }
@@ -2558,6 +2774,8 @@ document.addEventListener('click', function(e) {
   if(!btn) return;
   var action=btn.getAttribute('data-action');
   if(action==='welcome-signin')    signIn();
+  if(action==='cp-edit'){var cid=btn.getAttribute('data-cid');cpShowEdit(cid);}
+  if(action==='cp-delete'){var cid=btn.getAttribute('data-cid');cpDelete(cid);}
   if(action==='welcome-getstarted') showScreen('convert');
   if(action==='run-pipeline')      runPipeline();
 });
