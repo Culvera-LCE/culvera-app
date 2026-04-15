@@ -298,7 +298,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.0.4</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.0.5</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -353,7 +353,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.0.4 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.0.5 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -2630,17 +2630,15 @@ async function reviewApprove() {
     delete updatedGate._pending_folder_id;
     delete updatedGate._gates_folder_id;
 
-    // 2. Move gate file from Pending to Released (Editor access sufficient)
-    await gApi('PATCH',
-      'https://www.googleapis.com/drive/v3/files/' + gate._file_id
-      + '?addParents=' + releasedId
-      + '&removeParents=' + pendingId
-      + '&supportsAllDrives=true&fields=id,parents',
-      {}
-    );
-
-    // 3. Update gate content with released status
+    // 2+3. Write updated gate to Released/ then delete from Pending/
+    // (avoids PATCH addParents/removeParents which requires elevated scope)
+    // approve_move_fix_applied
     await gWriteJson(releasedId, 'GATE_' + gate.activity_id + '.json', updatedGate);
+    try {
+      await gApi('DELETE', 'https://www.googleapis.com/drive/v3/files/' + gate._file_id);
+    } catch(e) {
+      console.warn('Could not delete gate from Pending/ — may already be removed:', e.message);
+    }
 
     // 4. Update Sheets register — find row and update Status col (Q) and ApprovedBy (K), ApprovalDate (L)
     var now = new Date().toISOString().slice(0,10);
