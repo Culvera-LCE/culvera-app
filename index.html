@@ -298,6 +298,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.0.2</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -352,7 +353,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.1 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.0.2 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -2858,7 +2859,7 @@ var _origSetAuthed=setAuthed;
 setAuthed=function(val,name){
   _origSetAuthed(val,name);
   welcomeCheckState();
-  if(val && !welcomeShouldShow()) showScreen('convert');
+  if(val && !welcomeShouldShow()) showScreen('welcome');
 };
 loadSettings();
 updateAuthGates();
