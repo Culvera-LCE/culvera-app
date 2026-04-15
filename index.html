@@ -298,7 +298,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.0.5</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.0.6</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -353,7 +353,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.0.5 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.0.6 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -1116,7 +1116,7 @@ function signIn() {
     redirect_uri: window.location.href.split('#')[0].split('?')[0],
     response_type: 'token',
     scope: 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets',
-    prompt: 'select_account',
+    prompt: 'consent',  // force full scope grant — select_account may skip Drive re-grant
   });
   var popup = window.open(
     'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString(),
@@ -1131,7 +1131,22 @@ function signIn() {
         authToken = token;
         clearInterval(window._authInterval);
         popup.close();
-        setAuthed(true, 'Google account');
+        // prompt_consent_fix — verify Drive scope granted before marking authed
+        fetch('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token='+token)
+          .then(function(r){return r.json();})
+          .then(function(info){
+            if((info.scope||'').indexOf('drive')===-1){
+              authToken='';
+              document.getElementById('authStatus').textContent='Drive access not granted — please sign in again and click Allow';
+              document.getElementById('authStatus').style.color='rgba(255,160,160,.9)';
+              return;
+            }
+            var ei=parseInt(info.expires_in||'3600');
+            _tokenExpiry=Date.now()+ei*1000;
+            setAuthed(true,'Google account');
+            _startTokenTimer();
+          })
+          .catch(function(){ setAuthed(true,'Google account'); _startTokenTimer(); });
       }
     } catch(e) {}
   }, 500);
