@@ -1695,9 +1695,22 @@ function cfPopulateReview(identity,activities,filename){
   // Seed company: user selects manually from dropdown
   document.getElementById('cfActCount').textContent=activities.length;
   var list=document.getElementById('cfActList');list.innerHTML='';
+  var multiCompany = _companyProfiles.length > 1;
+  var courseDefault = document.getElementById('cf_seed').value;
   activities.forEach(function(a){
     var row=document.createElement('div');row.className='act-list-item';
-    row.innerHTML='<span class="act-list-id">'+esc(a.id)+'</span><span class="act-list-title">'+esc(a.title)+'</span>'+(a.is_gate?'<span class="badge badge-gate">Gate A01</span>':'')+'<span class="act-list-status"><span class="badge" style="background:var(--paper2);color:var(--ink3);">'+esc(a.duration||'')+'</span></span>';
+    row.style.cssText='flex-wrap:wrap;gap:6px;padding:8px 14px;';
+    var overrideHtml='';
+    if(multiCompany){
+      var opts='<option value="">— same as course —</option>';
+      _companyProfiles.forEach(function(p){opts+='<option value="'+esc(p.name)+'">'+esc(p.name)+'</option>';});
+      overrideHtml='<select class="fi" id="cfActSeed_'+esc(a.id)+'" style="font-size:.72rem;padding:3px 6px;height:auto;min-width:180px;flex-shrink:0;" title="Override seed company for this activity">'+opts+'</select>';
+    }
+    row.innerHTML='<span class="act-list-id">'+esc(a.id)+'</span>'
+      +'<span class="act-list-title" style="flex:1;">'+esc(a.title)+'</span>'
+      +(a.is_gate?'<span class="badge badge-gate">Gate A01</span>':'')
+      +'<span class="act-list-status"><span class="badge" style="background:var(--paper2);color:var(--ink3);">'+esc(a.duration||'')+'</span></span>'
+      +overrideHtml;
     list.appendChild(row);
   });
   cfStatus('ok','Parsed '+activities.length+' activities from '+filename+'. Review details below.');
@@ -1728,11 +1741,13 @@ function cfProceedToConfirm(){
   var pl=document.getElementById('cf_pl').value;
   var seed=document.getElementById('cf_seed').value;
   var acts=cfParsed.activities;
+  var overrideCount=0;
+  acts.forEach(function(a){var el=document.getElementById('cfActSeed_'+a.id);if(el&&el.value)overrideCount++;});
   var gateId=acts.length?acts.find(function(a){return a.id.endsWith('-A01');}):null;
   var s='<strong>Course:</strong> '+esc(cid)+' · '+esc(cname)+'<br>';
   s+='<strong>Product Line:</strong> '+esc(pl)+'<br>';
   s+='<strong>Activities:</strong> '+acts.length+'<br>';
-  s+='<strong>Seed Company:</strong> '+(seed||'none')+'<br><br>';
+  s+='<strong>Seed Company:</strong> '+(seed||'none')+(overrideCount?' ('+overrideCount+' activit'+(overrideCount===1?'y':'ies')+' overridden)':'')+'<br><br>';
   s+='<strong>Will create on Drive:</strong><br>';
   s+='&nbsp;&nbsp;• '+esc(cid+'  ·  '+cname)+'/ (course folder)<br>';
   s+='&nbsp;&nbsp;• _Draft Initial Activity/, Prop Prompts/, Source Documents/<br>';
@@ -1805,7 +1820,7 @@ async function cfRunConfirm(){
     btn.textContent='Seeding queue...';
     var q=await gReadQueue(queueId,'gta');
     var eids=new Set((q.activities||[]).map(function(a){return a.id;}));
-    acts.forEach(function(a){if(!eids.has(a.id)){var entry={id:a.id,course_id:cid,title:a.title,type:a.type||'',duration:a.duration||'',status:'queued',tenant_id:'gta',seed_company:seed,is_gate:a.id.endsWith('-A01'),named_folder_id:actFolderIds[a.id]||''};if(a.id.endsWith('-A01'))entry.draft_folder_id=draftId;q.activities.push(entry);}});
+    acts.forEach(function(a){if(!eids.has(a.id)){var overrideEl=document.getElementById('cfActSeed_'+a.id);var actSeed=overrideEl&&overrideEl.value?overrideEl.value:seed;var entry={id:a.id,course_id:cid,title:a.title,type:a.type||'',duration:a.duration||'',status:'queued',tenant_id:'gta',seed_company:actSeed,is_gate:a.id.endsWith('-A01'),named_folder_id:actFolderIds[a.id]||''};if(a.id.endsWith('-A01'))entry.draft_folder_id=draftId;q.activities.push(entry);}});
     q.updated_at=new Date().toISOString();
     await gWriteJson(queueId,'gta_pipeline_queue.json',q);
     steps.push('✓ Pipeline queue seeded');
