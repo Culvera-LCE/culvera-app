@@ -298,7 +298,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.0.2</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.0.3</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -353,7 +353,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.0.2 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.0.3 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -628,7 +628,11 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap;">
           <div style="display:flex;gap:6px;flex-wrap:wrap;" id="coursesPlFilter"></div>
           <button class="btn btn-sm btn-ghost" onclick="loadCoursesTab(true)">↺ Refresh</button>
-          <button class="btn btn-sm btn-primary" id="runPipelineBtn" data-action="run-pipeline">&#9654; Run Pipeline</button>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button class="btn btn-sm btn-primary" id="runPipelineBtn" data-action="run-pipeline" disabled title="Checking dashboard...">▶ Run Pipeline</button>
+            <span id="dashboardStatusDot" style="width:8px;height:8px;border-radius:50%;background:var(--ink3);flex-shrink:0;display:inline-block;"></span>
+            <span id="dashboardStatusLabel" style="font-size:.72rem;color:var(--ink3);">Checking...</span>
+          </div>
           <span id="runPipelineStatus" style="font-size:.75rem;color:var(--ink3);margin-left:4px;"></span>
         </div>
         <!-- status bar -->
@@ -2713,12 +2717,51 @@ document.addEventListener('click', function(e) {
 var _pipelineLogVisible = false;
 var _pipelineLogInterval = null;
 var _pipelineLogBase = "http://localhost:5050";
+var _dashboardOnline = false;
+var _dashboardPollInterval = null;
+
+async function checkDashboard() {
+  var dot   = document.getElementById('dashboardStatusDot');
+  var label = document.getElementById('dashboardStatusLabel');
+  var btn   = document.getElementById('runPipelineBtn');
+  try {
+    var r = await fetch(_pipelineLogBase + '/api/pipeline_log?n=1', {cache:'no-store'});
+    _dashboardOnline = r.ok;
+  } catch(e) {
+    _dashboardOnline = false;
+  }
+  if(dot) {
+    dot.style.background = _dashboardOnline ? 'var(--green)' : 'var(--red)';
+  }
+  if(label) {
+    label.textContent = _dashboardOnline ? 'Dashboard online' : 'Dashboard offline — start dashboard.py';
+    label.style.color = _dashboardOnline ? 'var(--green)' : 'var(--red)';
+  }
+  if(btn) {
+    btn.disabled = !_dashboardOnline;
+    btn.title    = _dashboardOnline ? '' : 'Dashboard is offline — run: python3 ~/.lce/dashboard.py';
+  }
+}
+function startDashboardPoll() {
+  checkDashboard();
+  if(_dashboardPollInterval) clearInterval(_dashboardPollInterval);
+  _dashboardPollInterval = setInterval(checkDashboard, 30000);
+}
+function stopDashboardPoll() {
+  if(_dashboardPollInterval) { clearInterval(_dashboardPollInterval); _dashboardPollInterval = null; }
+}
 
 // ── Run Pipeline ──────────────────────────────────────────────────────────
 async function runPipeline() {
   var btn    = document.getElementById('runPipelineBtn');
   var status = document.getElementById('runPipelineStatus');
   if(!btn) return;
+  if(!_dashboardOnline) {
+    status.textContent = 'Dashboard offline — start dashboard.py first';
+    status.style.color = 'var(--red)';
+    setTimeout(function(){ status.textContent=''; }, 6000);
+    return;
+  }
   btn.disabled = true;
   status.textContent = 'Starting...';
   status.style.color = 'var(--amber)';
@@ -2790,7 +2833,8 @@ async function fetchPipelineLog() {
 var _origShowScreen = showScreen;
 showScreen = function(name) {
   _origShowScreen(name);
-  if(name === 'courses' && isAuthed) loadCoursesTab(false);
+  if(name === 'courses' && isAuthed) { loadCoursesTab(false); startDashboardPoll(); }
+  else { stopDashboardPoll(); }
   if(name === 'review'  && isAuthed) loadReviewTab(false);
 };
 
