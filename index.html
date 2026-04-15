@@ -3,11 +3,2858 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Culvera — Livi<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Culvera — Living Curriculum Infrastructure</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
+:root {
+  --ink:#0F1923; --ink2:#2C3E50; --ink3:#64748B;
+  --paper:#FAFAF8; --paper2:#F3F3EF; --paper3:#E8E8E2;
+  --gold:#B8860B; --gold-light:#FDF6DC; --gold-mid:#E8C84A;
+  --green:#1A6B3C; --green-light:#EAF4EE;
+  --red:#8B1A1A; --red-light:#FDF0F0;
+  --blue:#1A3A6B; --blue-light:#EEF3FB;
+  --amber:#7A4F00; --amber-light:#FEF7E6;
+  --r:8px; --r2:14px;
+  --color-text-secondary:var(--ink3); --color-text-tertiary:var(--ink3); --color-text-danger:var(--red); --color-border-tertiary:var(--paper3);
+  --shadow:0 1px 3px rgba(15,25,35,.08), 0 4px 16px rgba(15,25,35,.06);
+  --shadow-lg:0 8px 32px rgba(15,25,35,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);font-size:15px;line-height:1.6;min-height:100vh;}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────── */
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:220px;background:var(--ink);color:white;display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:50;}
+.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.08);}
+.sidebar-logo-mark{font-family:'DM Serif Display',serif;font-size:1.5rem;color:white;letter-spacing:-.5px;}
+.sidebar-logo-sub{font-size:.68rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px;}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto;}
+.nav-section{padding:8px 18px 4px;font-size:.65rem;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,.25);font-weight:600;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;font-size:.85rem;color:rgba(255,255,255,.6);transition:all .15s;border-left:2px solid transparent;position:relative;}
+.nav-item:hover{color:white;background:rgba(255,255,255,.05);}
+.nav-item.active{color:white;background:rgba(255,255,255,.08);border-left-color:var(--gold-mid);}
+.nav-item .nav-icon{font-size:1rem;width:18px;text-align:center;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--gold-mid);color:var(--ink);font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:10px;}
+.sidebar-footer{padding:16px 18px;border-top:1px solid rgba(255,255,255,.08);}
+.auth-btn{width:100%;padding:8px 12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:var(--r);color:rgba(255,255,255,.8);font-size:.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:8px;}
+.auth-btn:hover{background:rgba(255,255,255,.14);color:white;}
+.auth-status{font-size:.7rem;color:rgba(255,255,255,.35);margin-top:8px;line-height:1.4;}
+
+/* ── Main ────────────────────────────────────────────────────────────── */
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{background:white;border-bottom:1px solid var(--paper3);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;}
+.topbar-title{font-family:'DM Serif Display',serif;font-size:1.15rem;color:var(--ink);}
+.topbar-meta{font-size:.78rem;color:var(--ink3);}
+.content{padding:28px;flex:1;}
+
+/* ── Screens ─────────────────────────────────────────────────────────── */
+.screen{display:none;animation:fadeIn .2s ease;}
+.screen.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── Cards ───────────────────────────────────────────────────────────── */
+.card{background:white;border-radius:var(--r2);border:1px solid var(--paper3);padding:22px 24px;margin-bottom:18px;box-shadow:var(--shadow);}
+.card-title{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-bottom:14px;}
+
+/* ── Steps ───────────────────────────────────────────────────────────── */
+.steps{display:flex;gap:0;margin-bottom:24px;background:white;border:1px solid var(--paper3);border-radius:var(--r2);overflow:hidden;}
+.step-item{flex:1;display:flex;align-items:center;gap:8px;padding:12px 16px;font-size:.8rem;color:var(--ink3);border-right:1px solid var(--paper3);cursor:default;}
+.step-item:last-child{border-right:none;}
+.step-item.active{background:var(--gold-light);color:var(--ink);}
+.step-item.done{background:var(--green-light);color:var(--green);}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--paper3);color:var(--ink3);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-item.active .step-num{background:var(--gold-mid);color:var(--ink);}
+.step-item.done .step-num{background:var(--green);color:white;}
+
+/* ── Upload zone ─────────────────────────────────────────────────────── */
+.upload-zone{border:2px dashed var(--paper3);border-radius:var(--r2);padding:48px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--paper);}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--gold);background:var(--gold-light);}
+.upload-zone-icon{font-size:2.2rem;margin-bottom:10px;opacity:.5;}
+.upload-zone-label{font-size:.9rem;color:var(--ink3);margin-bottom:4px;}
+.upload-zone-sub{font-size:.75rem;color:var(--ink3);opacity:.6;}
+
+/* ── Status bar ──────────────────────────────────────────────────────── */
+.status-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r);margin-bottom:16px;font-size:.83rem;border:1px solid var(--paper3);background:var(--paper2);}
+.status-bar.ok{background:var(--green-light);border-color:#C3E6D3;color:var(--green);}
+.status-bar.err{background:var(--red-light);border-color:#F5C6C6;color:var(--red);}
+.status-bar.wait{background:var(--amber-light);border-color:#F5DFA0;color:var(--amber);}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:currentColor;}
+.status-bar.wait .status-dot{animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+
+/* ── Tabs ────────────────────────────────────────────────────────────── */
+.tab-row{display:flex;gap:0;border-bottom:2px solid var(--paper3);margin-bottom:18px;overflow-x:auto;}
+.tab-btn{padding:9px 16px;border:none;background:none;cursor:pointer;font-size:.82rem;font-family:'DM Sans',sans-serif;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;display:flex;align-items:center;gap:5px;transition:color .15s;}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{color:var(--ink);font-weight:600;border-bottom-color:var(--gold);}
+.tab-btn.approved{color:var(--green);}
+.tab-btn.approved.active{border-bottom-color:var(--green);}
+.tab-check{font-size:.75rem;}
+
+/* ── Progress ────────────────────────────────────────────────────────── */
+.progress-wrap{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.progress-bar{flex:1;height:5px;background:var(--paper3);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--green);border-radius:3px;transition:width .4s ease;}
+.progress-label{font-size:.75rem;color:var(--ink3);min-width:90px;text-align:right;}
+
+/* ── Field rows ──────────────────────────────────────────────────────── */
+.fr{display:grid;grid-template-columns:170px 1fr;gap:8px;align-items:start;margin-bottom:9px;}
+.fl{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);padding-top:9px;}
+.fi{padding:8px 11px;border:1px solid var(--paper3);border-radius:var(--r);font-size:.875rem;font-family:'DM Sans',sans-serif;width:100%;background:white;color:var(--ink);transition:border-color .15s;}
+.fi:focus{outline:none;border-color:var(--gold);}
+textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
+
+/* ── Activity cards ──────────────────────────────────────────────────── */
+.act-card{border:1px solid var(--paper3);border-radius:var(--r);margin-bottom:7px;overflow:hidden;transition:box-shadow .15s;}
+.act-card:hover{box-shadow:var(--shadow);}
+.act-hdr{display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--paper2);cursor:pointer;user-select:none;}
+.act-hdr:hover{background:var(--paper3);}
+.act-id{font-family:'DM Mono',monospace;font-size:.72rem;font-weight:500;color:var(--blue);min-width:125px;}
+.act-title{flex:1;font-size:.83rem;font-weight:500;}
+.act-tog{font-size:.75rem;color:var(--ink3);}
+.act-body{padding:14px 16px;}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:600;}
+.badge-show{background:var(--amber-light);color:var(--amber);}
+.badge-gate{background:var(--blue-light);color:var(--blue);}
+.badge-ok{background:var(--green-light);color:var(--green);}
+.badge-wait{background:var(--amber-light);color:var(--amber);}
+.badge-err{background:var(--red-light);color:var(--red);}
+
+/* ── Approve bar ─────────────────────────────────────────────────────── */
+.approve-bar{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:var(--r);margin-top:14px;border:1px solid var(--paper3);background:var(--paper2);font-size:.83rem;}
+.approve-bar.approved{background:var(--green-light);border-color:#C3E6D3;}
+.approve-bar-msg{color:var(--ink3);}
+.approve-bar.approved .approve-bar-msg{color:var(--green);font-weight:500;}
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+.btn{padding:8px 18px;border-radius:var(--r);border:1px solid var(--paper3);font-size:.85rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+.btn:hover{opacity:.85;}
+.btn-primary{background:var(--ink);color:white;border-color:var(--ink);}
+.btn-gold{background:var(--gold-mid);color:var(--ink);border-color:var(--gold-mid);}
+.btn-green{background:var(--green);color:white;border-color:var(--green);}
+.btn-ghost{background:transparent;color:var(--ink3);}
+.btn-ghost:hover{background:var(--paper2);color:var(--ink);}
+.btn-sm{padding:5px 12px;font-size:.78rem;}
+.btn-danger{background:var(--red-light);color:var(--red);border-color:#F5C6C6;}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+.form-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;align-items:center;}
+
+/* ── Error banner ────────────────────────────────────────────────────── */
+.err-banner{background:var(--red-light);color:var(--red);border:1px solid #F5C6C6;padding:10px 14px;border-radius:var(--r);font-size:.83rem;margin:10px 0;}
+
+/* ── Courses grid ────────────────────────────────────────────────────── */
+.courses-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+.course-card{background:white;border:1px solid var(--paper3);border-radius:var(--r2);padding:18px 20px;box-shadow:var(--shadow);transition:box-shadow .2s;cursor:pointer;}
+.course-card:hover{box-shadow:var(--shadow-lg);}
+.course-card-id{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--blue);margin-bottom:4px;}
+.course-card-name{font-size:.92rem;font-weight:600;color:var(--ink);margin-bottom:10px;line-height:1.3;}
+.course-card-bar{height:4px;background:var(--paper3);border-radius:2px;overflow:hidden;margin-bottom:8px;}
+.course-card-fill{height:100%;border-radius:2px;display:flex;overflow:hidden;}
+.course-card-fill-approved{background:var(--green);}
+.course-card-fill-awaiting{background:#F57F17;opacity:.75;}
+.course-card-meta{display:flex;justify-content:space-between;font-size:.75rem;color:var(--ink3);}
+.pl-chip{display:inline-block;padding:2px 8px;border-radius:8px;font-size:.68rem;font-weight:600;margin-bottom:8px;}
+.pl-aex{background:#E3F2FD;color:#1565C0;}
+.pl-aa{background:#F3E5F5;color:#6A1B9A;}
+.pl-ae{background:#E8F5E9;color:#2E7D32;}
+.pl-ee{background:#FFF3E0;color:#E65100;}
+
+/* ── Activity list ───────────────────────────────────────────────────── */
+.act-list-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--paper3);font-size:.83rem;transition:background .1s;}
+.act-list-item:last-child{border-bottom:none;}
+.act-list-item:hover{background:var(--paper2);}
+.act-list-id{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--blue);min-width:120px;}
+.act-list-title{flex:1;color:var(--ink);}
+.act-list-status{min-width:90px;text-align:right;}
+
+/* ── Doc reader ──────────────────────────────────────────────────────── */
+.doc-reader{background:white;border:1px solid var(--paper3);border-radius:var(--r2);overflow:hidden;}
+.doc-reader-tabs{display:flex;border-bottom:1px solid var(--paper3);padding:0 16px;}
+.doc-reader-tab{padding:10px 14px;font-size:.82rem;cursor:pointer;border-bottom:2px solid transparent;color:var(--ink3);margin-bottom:-1px;}
+.doc-reader-tab.active{color:var(--ink);font-weight:600;border-bottom-color:var(--gold);}
+.doc-reader-body{padding:20px 24px;font-size:.85rem;line-height:1.7;color:var(--ink2);max-height:420px;overflow-y:auto;}
+.doc-reader-body h1,.doc-reader-body h2,.doc-reader-body h3{color:var(--ink);margin:12px 0 6px;font-family:'DM Serif Display',serif;}
+
+/* ── Amendment form ──────────────────────────────────────────────────── */
+.amendment-form{background:var(--amber-light);border:1px solid #F5DFA0;border-radius:var(--r2);padding:18px 20px;margin-top:14px;}
+.amendment-title{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--amber);margin-bottom:12px;}
+
+/* ── Empty states ────────────────────────────────────────────────────── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--ink3);}
+.empty-icon{font-size:2.5rem;margin-bottom:14px;opacity:.3;}
+.empty-title{font-size:1rem;font-weight:500;color:var(--ink);margin-bottom:6px;}
+.empty-sub{font-size:.83rem;line-height:1.6;}
+
+/* ── Welcome screen ─────────────────────────────────────────────────── */
+.welcome-wrap{max-width:860px;margin:0 auto;padding:12px 0 40px;}
+.welcome-hero{display:flex;align-items:flex-start;gap:32px;margin-bottom:36px;padding-bottom:32px;border-bottom:1px solid var(--paper3);}
+.welcome-brand{flex:1;}
+.welcome-wordmark{font-family:'DM Serif Display',serif;font-size:2.8rem;color:var(--ink);letter-spacing:-.5px;line-height:1;}
+.welcome-tagline{font-size:.95rem;color:var(--ink3);margin-top:10px;line-height:1.6;max-width:480px;}
+.welcome-version{display:inline-block;margin-top:12px;font-size:.7rem;font-family:'DM Mono',monospace;background:var(--paper2);border:1px solid var(--paper3);border-radius:4px;padding:2px 8px;color:var(--ink3);}
+.welcome-status-panel{width:280px;flex-shrink:0;background:white;border:1px solid var(--paper3);border-radius:var(--r2);padding:18px 20px;box-shadow:var(--shadow);}
+.welcome-status-title{font-size:.68rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:14px;}
+.welcome-check-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--paper3);font-size:.82rem;}
+.welcome-check-row:last-child{border-bottom:none;}
+.welcome-check-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;flex-shrink:0;}
+.wci-ok{background:var(--green-light);color:var(--green);}
+.wci-warn{background:var(--amber-light);color:var(--amber);}
+.welcome-check-label{flex:1;color:var(--ink);font-size:.82rem;}
+.welcome-check-sub{font-size:.72rem;color:var(--ink3);margin-top:1px;}
+.welcome-sign-btn{width:100%;margin-top:14px;padding:10px;background:var(--ink);color:white;border:none;border-radius:var(--r);font-size:.85rem;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;}
+.welcome-sign-btn:hover:not(:disabled){background:#1e2d3d;}
+.welcome-sign-btn:disabled{background:rgba(26,107,60,.18) !important;color:var(--green) !important;cursor:default;}
+.welcome-features{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;}
+.welcome-feat{background:white;border:1px solid var(--paper3);border-radius:var(--r2);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.welcome-feat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.welcome-feat.f-gold::before{background:var(--gold-mid);}
+.welcome-feat.f-green::before{background:var(--green);}
+.welcome-feat.f-blue::before{background:var(--blue);}
+.welcome-feat.f-amber::before{background:#D4A017;}
+.welcome-feat.f-ink::before{background:var(--ink);}
+.welcome-feat.f-red::before{background:var(--red);}
+.welcome-feat-icon{font-size:1.4rem;margin-bottom:10px;}
+.welcome-feat-title{font-size:.85rem;font-weight:600;color:var(--ink);margin-bottom:6px;}
+.welcome-feat-desc{font-size:.78rem;color:var(--ink3);line-height:1.5;}
+.welcome-cta{text-align:center;padding:24px 28px;background:var(--ink);border-radius:var(--r2);color:white;}
+.welcome-cta-text{font-size:.88rem;color:rgba(255,255,255,.55);margin-bottom:14px;}
+.welcome-cta-btn{display:inline-block;padding:11px 32px;background:var(--gold-mid);color:var(--ink);border:none;border-radius:var(--r);font-size:.9rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s;}
+.welcome-cta-btn:hover:not(:disabled){opacity:.88;}
+.welcome-cta-btn:disabled{opacity:.38;cursor:default;}
+
+/* ── Doc viewer/editor ──────────────────────────────────────────── */
+.act-row-expand{cursor:pointer;user-select:none;}
+.act-row-expand:hover{background:var(--paper2);}
+.act-expand-icon{font-size:.75rem;color:var(--ink3);min-width:16px;text-align:center;}
+.act-doc-panel{display:none;border-top:1px solid var(--paper3);background:var(--paper);}
+.act-doc-panel.open{display:block;}
+.doc-tab-bar{display:flex;gap:0;border-bottom:1px solid var(--paper3);background:white;padding:0 16px;}
+.doc-tab{padding:8px 14px;font-size:.78rem;font-family:'DM Sans',sans-serif;border:none;background:none;cursor:pointer;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:500;transition:color .15s;}
+.doc-tab:hover{color:var(--ink);}
+.doc-tab.active{color:var(--ink);border-bottom-color:var(--gold);}
+.doc-tab.dn-tab.active{border-bottom-color:var(--ink3);}
+.doc-content{padding:18px 20px;min-height:120px;position:relative;}
+.doc-loading{color:var(--ink3);font-size:.82rem;padding:24px 0;text-align:center;}
+.doc-error{color:var(--red);font-size:.82rem;padding:12px 0;}
+.doc-rendered{font-size:.84rem;line-height:1.65;color:var(--ink);max-height:480px;overflow-y:auto;}
+.doc-rendered h1{font-family:'DM Serif Display',serif;font-size:1.2rem;margin:14px 0 8px;}
+.doc-rendered h2{font-size:1rem;font-weight:600;margin:12px 0 6px;color:var(--ink);}
+.doc-rendered h3{font-size:.9rem;font-weight:600;margin:10px 0 4px;color:var(--ink2);}
+.doc-raw{display:none;font-family:'DM Mono',monospace;font-size:.75rem;line-height:1.6;color:var(--ink2);white-space:pre-wrap;max-height:480px;overflow-y:auto;background:var(--paper2);border-radius:var(--r);padding:12px 14px;}
+.doc-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.doc-toolbar-right{margin-left:auto;display:flex;gap:6px;align-items:center;}
+.doc-save-status{font-size:.75rem;color:var(--green);white-space:nowrap;}
+.doc-edit-area{width:100%;font-family:'DM Mono',monospace;font-size:.75rem;line-height:1.6;border:1px solid var(--paper3);border-radius:var(--r);padding:12px 14px;background:white;color:var(--ink);resize:vertical;min-height:320px;box-sizing:border-box;margin-top:2px;}
+.doc-edit-area:focus{outline:none;border-color:var(--gold);}
+.doc-no-file{color:var(--ink3);font-size:.82rem;padding:20px 0;text-align:center;font-style:italic;}
+
+/* ── Placeholder screen ──────────────────────────────────────────────── */
+.placeholder-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center;color:var(--ink3);}
+.placeholder-icon{font-size:3rem;margin-bottom:16px;opacity:.2;}
+.placeholder-title{font-size:1.1rem;font-weight:600;color:var(--ink);margin-bottom:8px;}
+.placeholder-sub{font-size:.85rem;max-width:440px;line-height:1.7;}
+.coming-soon{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:6px 14px;background:var(--gold-light);border:1px solid var(--gold-mid);border-radius:20px;font-size:.75rem;font-weight:600;color:var(--gold);}
+
+/* ── Settings ────────────────────────────────────────────────────────── */
+.settings-row{display:flex;align-items:start;gap:24px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--paper3);}
+.settings-row:last-child{border-bottom:none;margin-bottom:0;}
+.settings-label{min-width:180px;padding-top:8px;}
+.settings-label-title{font-size:.85rem;font-weight:500;color:var(--ink);}
+.settings-label-sub{font-size:.75rem;color:var(--ink3);margin-top:2px;line-height:1.4;}
+.settings-control{flex:1;}
+
+/* ── Download item ───────────────────────────────────────────────────── */
+.dl-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--paper3);border-radius:var(--r);margin-bottom:8px;background:white;}
+.dl-info{flex:1;}
+.dl-id{font-family:'DM Mono',monospace;font-size:.75rem;color:var(--blue);font-weight:500;}
+.dl-name{font-size:.8rem;color:var(--ink3);margin-top:2px;}
+
+/* ── Courses tab status pills ────────────────────────────────────────── */
+.pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:600;white-space:nowrap;}
+.pill-queued{background:#E3F2FD;color:#1565C0;}
+.pill-generating{background:var(--amber-light);color:var(--amber);}
+.pill-awaiting{background:#FFF8E1;color:#F57F17;}
+.pill-approved{background:var(--green-light);color:var(--green);}
+.pill-pending{background:var(--paper2);color:var(--ink3);}
+.pill-failed{background:var(--red-light);color:var(--red);}
+.pill-qcfailed{background:var(--red-light);color:var(--red);}
+.courses-pl-btn.active{background:var(--ink);color:white;border-color:var(--ink);}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--paper3);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+<!-- ── SIDEBAR ──────────────────────────────────────────────────────── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-mark">Culvera</div>
+    <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section">Curriculum</div>
+    <div class="nav-item active" onclick="showScreen('convert')" id="nav-convert">
+      <span class="nav-icon">⇄</span> Convert
+    </div>
+    <div class="nav-item" onclick="showScreen('validate')" id="nav-validate">
+      <span class="nav-icon">✔</span> Validate
+    </div>
+    <div class="nav-item" onclick="showScreen('confirm')" id="nav-confirm">
+      <span class="nav-icon">⊕</span> Confirm
+    </div>
+    <div class="nav-section" style="margin-top:8px;">Pipeline</div>
+    <div class="nav-item" onclick="showScreen('courses')" id="nav-courses">
+      <span class="nav-icon">◫</span> Courses
+      <span class="nav-badge" id="navBadgeCourses" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="showScreen('review')" id="nav-review">
+      <span class="nav-icon">◎</span> Review &amp; Manage
+      <span class="nav-badge" id="navBadgeReview" style="display:none">0</span>
+    </div>
+    <div class="nav-section" style="margin-top:8px;">Reference Data</div>
+    <div class="nav-item" onclick="showScreen('companies')" id="nav-companies">
+      <span class="nav-icon">&#9632;</span> Company Profiles
+    </div>
+    <div class="nav-section" style="margin-top:8px;">System</div>
+    <div class="nav-item" onclick="showScreen('settings')" id="nav-settings">
+      <span class="nav-icon">⚙</span> Settings
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="auth-btn" id="authBtn" onclick="toggleAuth()">
+      <span id="authBtnIcon">◯</span>
+      <span id="authBtnLabel">Sign in with Google</span>
+    </button>
+    <div class="auth-status" id="authStatus">Required for Confirm, Courses &amp; Review</div>
+  </div>
+</nav>
+
+<!-- ── MAIN ──────────────────────────────────────────────────────────── -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Convert</div>
+    <div class="topbar-meta" id="topbarMeta">GEMIS Technical Academy</div>
+  </div>
+  <div class="content">
+
+    <!-- ══ WELCOME ═══════════════════════════════════════════ -->
+    <div class="screen" id="screen-welcome">
+      <div class="welcome-wrap">
+        <div class="welcome-hero">
+          <div class="welcome-brand">
+            <div class="welcome-wordmark">Culvera</div>
+            <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
+            <span class="welcome-version">v1.1 &nbsp;&middot;&nbsp; gemis.tech</span>
+          </div>
+          <div class="welcome-status-panel">
+            <div class="welcome-status-title">Setup checklist</div>
+            <div class="welcome-check-row">
+              <div class="welcome-check-icon wci-warn" id="wc-auth-icon">&#9679;</div>
+              <div><div class="welcome-check-label">Google sign-in</div><div class="welcome-check-sub" id="wc-auth-sub">Not signed in</div></div>
+            </div>
+            <div class="welcome-check-row">
+              <div class="welcome-check-icon wci-warn" id="wc-gclient-icon">&#9679;</div>
+              <div><div class="welcome-check-label">OAuth Client ID</div><div class="welcome-check-sub" id="wc-gclient-sub">Not set</div></div>
+            </div>
+            <div class="welcome-check-row">
+              <div class="welcome-check-icon wci-warn" id="wc-drive-icon">&#9679;</div>
+              <div><div class="welcome-check-label">Drive Root Folder</div><div class="welcome-check-sub" id="wc-drive-sub">Not set</div></div>
+            </div>
+            <div class="welcome-check-row">
+              <div class="welcome-check-icon wci-warn" id="wc-sheet-icon">&#9679;</div>
+              <div><div class="welcome-check-label">Activity Register Sheet</div><div class="welcome-check-sub" id="wc-sheet-sub">Not set</div></div>
+            </div>
+            <div class="welcome-check-row">
+              <div class="welcome-check-icon wci-warn" id="wc-or-icon">&#9679;</div>
+              <div><div class="welcome-check-label">OpenRouter Key</div><div class="welcome-check-sub" id="wc-or-sub">Not set &mdash; needed for AEX/AA</div></div>
+            </div>
+            <button class="welcome-sign-btn" id="welcomeSignBtn" data-action="welcome-signin">
+              <span id="welcomeSignBtnIcon">&#9675;</span>
+              <span id="welcomeSignBtnLabel">Sign in with Google</span>
+            </button>
+          </div>
+        </div>
+        <div class="welcome-features">
+          <div class="welcome-feat f-gold"><div class="welcome-feat-icon">&#8644;</div><div class="welcome-feat-title">Convert</div><div class="welcome-feat-desc">Upload a .docx source document. Culvera auto-detects product line (AEX, AA, AE, EE), parses sections, and lets you review and approve before producing a compliant .txt file.</div></div>
+          <div class="welcome-feat f-green"><div class="welcome-feat-icon">&#10004;</div><div class="welcome-feat-title">Validate</div><div class="welcome-feat-desc">Upload your compliant .txt. AI checks structure, activity descriptions, and product-line compliance. Fix and resubmit until all checks pass.</div></div>
+          <div class="welcome-feat f-blue"><div class="welcome-feat-icon">&#8853;</div><div class="welcome-feat-title">Confirm</div><div class="welcome-feat-desc">One click creates the Drive folder tree, writes register rows, seeds the pipeline queue, and places the A01 gate file &mdash; ready for generation.</div></div>
+          <div class="welcome-feat f-amber"><div class="welcome-feat-icon">&#9645;</div><div class="welcome-feat-title">Courses</div><div class="welcome-feat-desc">Live dashboard of all courses and activities. See generation status, approval state, and 90-day refresh countdowns across every product line.</div></div>
+          <div class="welcome-feat f-ink"><div class="welcome-feat-icon">&#9678;</div><div class="welcome-feat-title">Review &amp; Manage</div><div class="welcome-feat-desc">Warren reads PM, FG, and DN inline. Approve to release the gate and trigger A02&ndash;A05 generation, or request an amendment with a typed note.</div></div>
+          <div class="welcome-feat f-red"><div class="welcome-feat-icon">&#9881;</div><div class="welcome-feat-title">Settings</div><div class="welcome-feat-desc">Store your OAuth Client ID, OpenRouter key, Drive root folder, and Activity Register Sheet ID. All values saved locally in your browser.</div></div>
+        </div>
+        <div class="welcome-cta">
+          <div class="welcome-cta-text" id="welcomeCtaText">Sign in and complete setup above to get started.</div>
+          <button class="welcome-cta-btn" id="welcomeCtaBtn" data-action="welcome-getstarted" disabled>Get started &rarr;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CONVERT ══════════════════════════════════════════════════════ -->
+    <div class="screen active" id="screen-convert">
+      <div class="steps" id="convSteps">
+        <div class="step-item active" id="cst1"><div class="step-num">1</div>Upload</div>
+        <div class="step-item" id="cst2"><div class="step-num">2</div>Review &amp; Approve</div>
+        <div class="step-item" id="cst3"><div class="step-num">3</div>Download</div>
+      </div>
+
+      <div id="convPhaseUpload">
+        <div class="card">
+          <div class="card-title">Upload source document</div>
+          <p style="font-size:.83rem;color:var(--ink3);margin-bottom:16px;line-height:1.6;">
+            Upload any existing Culvera source document (.docx). The converter detects the product line and splits the document into sections for individual approval.<br>
+            <strong style="color:var(--ink);">AEX/AA:</strong> 1 section &nbsp;·&nbsp; <strong style="color:var(--ink);">AE:</strong> 4 tabs (T01–T04) &nbsp;·&nbsp; <strong style="color:var(--ink);">EE:</strong> 10 tabs (C01–C10)
+          </p>
+          <div class="upload-zone" id="convDrop"
+               onclick="document.getElementById('convFile').click()"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="convDrop(event)">
+            <div class="upload-zone-icon">📄</div>
+            <div class="upload-zone-label" id="convDropLabel">Drop .docx file here or click to browse</div>
+            <div class="upload-zone-sub">Supported: .docx</div>
+          </div>
+          <input type="file" id="convFile" accept=".docx" style="display:none" onchange="convHandleFile(this.files[0])">
+        </div>
+      </div>
+
+      <div id="convPhaseReview" style="display:none;">
+        <div class="status-bar wait" id="convStatus">
+          <div class="status-dot"></div>
+          <span id="convStatusMsg">Parsing document...</span>
+        </div>
+        <div id="convReviewContent" style="display:none;">
+          <div class="card" id="convIdentityCard">
+            <div class="card-title">Document identity</div>
+            <div class="fr"><span class="fl">Product Line</span>
+              <select class="fi" id="hdr_pl" onchange="hdrPlChange()">
+                <option value="AEX">AEX — AI Advantage Express</option>
+                <option value="AA">AA — AI Advantage</option>
+                <option value="AE">AE — AI Enterprise</option>
+                <option value="EE">EE — Education Excellence</option>
+              </select></div>
+            <div class="fr"><span class="fl">Course / Stream ID</span><input class="fi" id="hdr_id"></div>
+            <div class="fr"><span class="fl">Course / Stream Name</span><input class="fi" id="hdr_name"></div>
+            <div class="fr" id="hdr_sector_row" style="display:none;"><span class="fl">Sector</span><input class="fi" id="hdr_sector"></div>
+            <div class="fr" id="hdr_stream_row" style="display:none;"><span class="fl">EE Stream Code</span><input class="fi" id="hdr_stream"></div>
+            <div class="fr"><span class="fl">Delivery Mode</span><input class="fi" id="hdr_mode"></div>
+          </div>
+          <div class="card" style="padding:16px 20px;">
+            <div class="progress-wrap">
+              <span style="font-size:.78rem;font-weight:600;color:var(--ink);min-width:130px;">Approval progress</span>
+              <div class="progress-bar"><div class="progress-fill" id="convProgFill" style="width:0%"></div></div>
+              <div class="progress-label" id="convProgLabel">0 / 0 approved</div>
+            </div>
+            <div class="tab-row" id="convTabRow"></div>
+            <div id="convTabContent"></div>
+          </div>
+          <div id="convErr" class="err-banner" style="display:none;"></div>
+          <div class="form-actions">
+            <button class="btn btn-primary" id="convGenBtn" onclick="convGenerate()" disabled>Download document</button>
+            <button class="btn btn-ghost" onclick="convReset()">Start over</button>
+            <span id="convGenHint" style="font-size:.78rem;color:var(--ink3);">Approve all sections to enable download</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="convPhaseDone" style="display:none;">
+        <div class="card" style="text-align:center;padding:40px 24px;">
+          <div style="font-size:2.5rem;margin-bottom:14px;">✅</div>
+          <h2 style="font-family:'DM Serif Display',serif;color:var(--ink);margin-bottom:8px;" id="convDoneTitle">Document ready</h2>
+          <p style="font-size:.85rem;color:var(--ink3);margin-bottom:20px;" id="convDoneMsg"></p>
+          <div id="convDlList" style="max-width:560px;margin:0 auto 20px;text-align:left;"></div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-gold" onclick="showScreen('validate')">Next: Validate →</button>
+            <button class="btn btn-ghost" onclick="convReset()">Convert another</button>
+          </div>
+          <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--paper3);font-size:.78rem;color:var(--ink3);line-height:1.6;">
+            Next step: upload the downloaded file to <strong>Validate</strong> to confirm it parses cleanly, then <strong>Confirm</strong> to create Drive folders and seed the pipeline.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ VALIDATE ══════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-validate">
+      <div class="placeholder-screen">
+        <div class="placeholder-icon">✔</div>
+        <div class="placeholder-title">Validate</div>
+        <div class="placeholder-sub">Upload a compliant curriculum document to validate its structure before confirming to the pipeline. The AI checks each activity description and reports blocking issues and advisory suggestions.</div>
+        <div class="coming-soon">⚡ Coming next</div>
+      </div>
+    </div>
+
+    <!-- ══ CONFIRM ═══════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-confirm">
+      <div id="confirmAuthGate" style="display:none;">
+        <div class="placeholder-screen">
+          <div class="placeholder-icon">⊕</div>
+          <div class="placeholder-title">Sign in to confirm</div>
+          <div class="placeholder-sub">Confirming a curriculum creates Drive folders, writes register rows, and seeds the pipeline queue. This requires your Google account.</div>
+          <button class="btn btn-primary" onclick="toggleAuth()" style="margin-top:16px;">Sign in with Google</button>
+        </div>
+      </div>
+      <div id="confirmContent" style="display:none;">
+
+        <!-- Step indicator -->
+        <div class="steps" id="cfSteps">
+          <div class="step-item active" id="cfst1"><div class="step-num">1</div>Upload</div>
+          <div class="step-item" id="cfst2"><div class="step-num">2</div>Review</div>
+          <div class="step-item" id="cfst3"><div class="step-num">3</div>Confirm</div>
+          <div class="step-item" id="cfst4"><div class="step-num">4</div>Done</div>
+        </div>
+
+        <!-- Phase 1: Upload -->
+        <div id="cfPhaseUpload">
+          <div class="card">
+            <div class="card-title">Upload validated curriculum document</div>
+            <p style="font-size:.83rem;color:var(--ink3);margin-bottom:16px;line-height:1.6;">
+              Upload a <strong>.txt</strong> curriculum document that has passed the Validate step.
+              This will create Drive folders, write register rows, seed the pipeline queue, and create the A01 gate file.
+            </p>
+            <div class="upload-zone" id="cfDropZone"
+                 onclick="document.getElementById('cfFile').click()"
+                 ondragover="event.preventDefault();this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="cfDrop(event)">
+              <div class="upload-zone-icon">📋</div>
+              <div class="upload-zone-label" id="cfDropLabel">Drop .txt curriculum file here or click to browse</div>
+              <div class="upload-zone-sub">Supported: .txt (from Convert + Validate steps)</div>
+            </div>
+            <input type="file" id="cfFile" accept=".txt" style="display:none" onchange="cfHandleFile(this.files[0])">
+          </div>
+        </div>
+
+        <!-- Phase 2: Review -->
+        <div id="cfPhaseReview" style="display:none;">
+          <div class="status-bar wait" id="cfStatus"><div class="status-dot"></div><span id="cfStatusMsg">Parsing document...</span></div>
+          <div id="cfReviewContent" style="display:none;">
+            <div class="card">
+              <div class="card-title">Course identity — confirm before proceeding</div>
+              <div class="fr"><span class="fl">Product Line</span><input class="fi" id="cf_pl" readonly style="background:var(--paper2);"></div>
+              <div class="fr"><span class="fl">Course ID</span><input class="fi" id="cf_cid" readonly style="background:var(--paper2);"></div>
+              <div class="fr"><span class="fl">Course Name</span><input class="fi" id="cf_cname"></div>
+              <div class="fr"><span class="fl">Delivery Mode</span><input class="fi" id="cf_mode"></div>
+              <div class="fr" id="cf_sector_row" style="display:none;"><span class="fl">Sector</span><input class="fi" id="cf_sector"></div>
+              <div class="fr" id="cf_stream_row" style="display:none;"><span class="fl">Stream</span><input class="fi" id="cf_stream"></div>
+              <div class="fr"><span class="fl">Seed Company</span>
+                <select class="fi" id="cf_seed">
+                  <option value="">Loading companies...</option>
+                </select></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Product line folder on Drive</div>
+              <div id="cfPlFolderLoading" style="font-size:.83rem;color:var(--ink3);">Loading Drive folders...</div>
+              <div id="cfPlFolderList" style="display:none;">
+                <div class="fr"><span class="fl">Product Line Folder</span>
+                  <select class="fi" id="cf_pl_folder">
+                    <option value="">Select existing folder...</option>
+                  </select></div>
+                <div style="font-size:.75rem;color:var(--ink3);margin-top:4px;" id="cfPlFolderHint"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Activities to register — <span id="cfActCount">0</span> activities</div>
+              <div id="cfActList" style="border:1px solid var(--paper3);border-radius:var(--r);overflow:hidden;"></div>
+            </div>
+            <div id="cfReviewErr" class="err-banner" style="display:none;"></div>
+            <div class="form-actions">
+              <button class="btn btn-primary" onclick="cfProceedToConfirm()">Review complete — proceed →</button>
+              <button class="btn btn-ghost" onclick="cfReset()">Start over</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase 3: Confirm -->
+        <div id="cfPhaseConfirm" style="display:none;">
+          <div class="card" style="border:2px solid var(--gold-mid);">
+            <div class="card-title" style="color:var(--gold);">⚠ Final check before committing</div>
+            <p style="font-size:.85rem;color:var(--ink2);line-height:1.7;margin-bottom:16px;">
+              Clicking <strong>Confirm</strong> will permanently create the following on Google Drive and Sheets.
+              This cannot be undone automatically.
+            </p>
+            <div id="cfSummary" style="background:var(--paper2);border-radius:var(--r);padding:14px 16px;font-size:.83rem;line-height:1.8;"></div>
+            <div class="form-actions" style="margin-top:16px;">
+              <button class="btn btn-primary" id="cfConfirmBtn" onclick="cfRunConfirm()">⊕ Confirm — create folders and seed pipeline</button>
+              <button class="btn btn-ghost" onclick="cfBackToReview()">← Back</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase 4: Done -->
+        <div id="cfPhaseDone" style="display:none;">
+          <div class="card" style="text-align:center;padding:40px 24px;">
+            <div style="font-size:2.5rem;margin-bottom:14px;">✅</div>
+            <h2 style="font-family:'DM Serif Display',serif;color:var(--ink);margin-bottom:8px;" id="cfDoneTitle">Course confirmed</h2>
+            <p style="font-size:.85rem;color:var(--ink3);margin-bottom:20px;" id="cfDoneMsg"></p>
+            <div id="cfDoneSteps" style="text-align:left;background:var(--paper2);border-radius:var(--r);padding:14px 16px;margin-bottom:20px;font-size:.82rem;line-height:1.8;max-width:600px;margin-left:auto;margin-right:auto;"></div>
+            <div id="cfDoneErrors" style="display:none;text-align:left;background:var(--red-light);border:1px solid #F5C6C6;border-radius:var(--r);padding:14px 16px;margin-bottom:20px;font-size:.82rem;color:var(--red);max-width:600px;margin-left:auto;margin-right:auto;"></div>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+              <button class="btn btn-gold" onclick="showScreen('courses')">View Courses →</button>
+              <button class="btn btn-ghost" onclick="cfReset()">Confirm another</button>
+            </div>
+            <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--paper3);font-size:.78rem;color:var(--ink3);line-height:1.6;">
+              The pipeline will detect the new queue entry and gate file on its next poll cycle and begin generating the A01 activity.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ COURSES ════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-courses">
+      <div id="coursesAuthGate" style="display:none;">
+        <div class="placeholder-screen">
+          <div class="placeholder-icon">◫</div>
+          <div class="placeholder-title">Sign in to view courses</div>
+          <div class="placeholder-sub">Course status reads from the Activity Register in Google Sheets.</div>
+          <button class="btn btn-primary" onclick="toggleAuth()" style="margin-top:16px;">Sign in with Google</button>
+        </div>
+      </div>
+      <div id="coursesContent" style="display:none;">
+        <!-- toolbar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap;">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;" id="coursesPlFilter"></div>
+          <button class="btn btn-sm btn-ghost" onclick="loadCoursesTab(true)">↺ Refresh</button>
+          <button class="btn btn-sm btn-primary" id="runPipelineBtn" data-action="run-pipeline">&#9654; Run Pipeline</button>
+          <span id="runPipelineStatus" style="font-size:.75rem;color:var(--ink3);margin-left:4px;"></span>
+        </div>
+        <!-- status bar -->
+        <div id="coursesStatus" style="display:none;" class="status-bar wait">
+          <div class="status-dot"></div><span id="coursesStatusMsg">Loading register...</span>
+        </div>
+        <!-- course grid -->
+        <div class="courses-grid" id="coursesGrid"></div>
+        <!-- pipeline log panel -->
+        <div style="margin-top:24px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);">Pipeline Log</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:.72rem;color:var(--ink3);" id="pipelineLogStatus"></span>
+              <button class="btn btn-sm btn-ghost" onclick="togglePipelineLog()">
+                <span id="pipelineLogToggleLabel">&#9660; Show</span>
+              </button>
+            </div>
+          </div>
+          <div id="pipelineLogPanel" style="display:none;">
+            <div style="background:#0d1117;border-radius:var(--r);padding:14px 16px;font-family:monospace;font-size:.72rem;line-height:1.6;color:#c9d1d9;max-height:320px;overflow-y:auto;" id="pipelineLogBody">
+              <span style="color:#6e7681;">Waiting for log...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- activity detail drawer -->
+        <div id="coursesDrawer" style="display:none;margin-top:20px;">
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--paper3);">
+              <div>
+                <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--blue);" id="drawerCourseId"></div>
+                <div style="font-size:.95rem;font-weight:600;color:var(--ink);margin-top:2px;" id="drawerCourseName"></div>
+              </div>
+              <button class="btn btn-sm btn-ghost" onclick="closeDrawer()">✕ Close</button>
+            </div>
+            <div id="drawerActList" style="padding:0;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ REVIEW ═════════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-review">
+      <div id="reviewAuthGate" style="display:none;">
+        <div class="placeholder-screen">
+          <div class="placeholder-icon">◎</div>
+          <div class="placeholder-title">Sign in to review</div>
+          <div class="placeholder-sub">Reading generated documents and approving activities requires access to Google Drive.</div>
+          <button class="btn btn-primary" onclick="toggleAuth()" style="margin-top:16px;">Sign in with Google</button>
+        </div>
+      </div>
+      <div id="reviewContent2" style="display:none;">
+        <!-- toolbar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+          <div style="font-size:.83rem;color:var(--ink3);" id="reviewSubtitle">Gates awaiting approval</div>
+          <button class="btn btn-sm btn-ghost" onclick="loadReviewTab(true)">↺ Refresh</button>
+        </div>
+        <!-- status bar -->
+        <div id="reviewStatus" style="display:none;" class="status-bar wait">
+          <div class="status-dot"></div><span id="reviewStatusMsg">Loading gates...</span>
+        </div>
+        <!-- gate list -->
+        <div id="reviewGateList"></div>
+        <!-- document reader panel -->
+        <div id="reviewPanel" style="display:none;margin-top:20px;">
+          <div class="card" style="padding:0;overflow:hidden;">
+            <!-- panel header -->
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--paper3);flex-wrap:wrap;gap:10px;">
+              <div>
+                <div style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--blue);" id="rpActivityId"></div>
+                <div style="font-size:.95rem;font-weight:600;color:var(--ink);margin-top:2px;" id="rpTitle"></div>
+                <div style="font-size:.75rem;color:var(--ink3);margin-top:2px;" id="rpMeta"></div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-sm btn-ghost" onclick="closeReviewPanel()">✕ Close</button>
+              </div>
+            </div>
+            <!-- doc reader tabs -->
+            <div class="doc-reader-tabs" id="rpDocTabs">
+              <div class="doc-reader-tab active" data-doc="pm" onclick="rpShowDoc('pm')">Participant Manual</div>
+              <div class="doc-reader-tab" data-doc="fg" onclick="rpShowDoc('fg')">Facilitator Guide</div>
+              <div class="doc-reader-tab" data-doc="dn" onclick="rpShowDoc('dn')">Design Notes</div>
+            </div>
+            <!-- doc body -->
+            <div class="doc-reader-body" id="rpDocBody">
+              <div style="text-align:center;padding:40px;color:var(--ink3);">Select a document tab to load</div>
+            </div>
+            <!-- action bar -->
+            <div style="padding:14px 18px;border-top:1px solid var(--paper3);display:flex;align-items:center;gap:10px;flex-wrap:wrap;" id="rpActionBar">
+              <button class="btn btn-green" id="rpApproveBtn" onclick="reviewApprove()">&#10003; Approve</button>
+              <button class="btn btn-ghost" id="rpAmendBtn" onclick="reviewToggleAmend()">&#9998; Request Amendment</button>
+              <span style="flex:1"></span>
+              <span style="font-size:.75rem;color:var(--ink3);" id="rpActionStatus"></span>
+            </div>
+            <!-- amendment form -->
+            <div id="rpAmendForm" style="display:none;">
+              <div class="amendment-form" style="margin:0 18px 16px;border-radius:var(--r);">
+                <div class="amendment-title">Amendment Request</div>
+                <div style="font-size:.78rem;color:var(--ink3);margin-bottom:8px;">Describe what needs to change. The pipeline will regenerate with this note attached.</div>
+                <select class="fi" id="rpAmendTarget" style="margin-bottom:8px;">
+                  <option value="all">All documents (PM, FG, DN)</option>
+                  <option value="participant_manual">Participant Manual only</option>
+                  <option value="facilitator_guide">Facilitator Guide only</option>
+                  <option value="design_notes">Design Notes only</option>
+                </select>
+                <textarea class="fi" id="rpAmendNote" rows="4" placeholder="e.g. The tool steps in Section 6 assume a paid Gamma account. Rewrite for free tier only." style="resize:vertical;"></textarea>
+                <div style="display:flex;gap:8px;margin-top:10px;">
+                  <button class="btn btn-sm btn-primary" onclick="reviewSubmitAmend()">Send Amendment</button>
+                  <button class="btn btn-sm btn-ghost" onclick="reviewToggleAmend()">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SETTINGS ═══════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-companies">
+      <div class="card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Company Profiles</span>
+          <button class="btn btn-sm btn-primary" onclick="cpShowAdd()">+ Add Company</button>
+        </div>
+        <div id="cp-status" style="font-size:.83rem;color:var(--color-text-secondary);margin-bottom:12px;"></div>
+        <div id="cp-list"></div>
+      </div>
+      <!-- Add / Edit modal -->
+      <div id="cp-modal" style="display:none;">
+        <div class="card" style="margin-top:16px;">
+          <div class="card-title" id="cp-modal-title">Add Company</div>
+          <div style="display:grid;gap:10px;">
+            <div class="fr"><span class="fl">Company Name *</span><input class="fi" id="cp_name" placeholder="e.g. Hartland Consumer Goods"></div>
+            <div class="fr"><span class="fl">ID (slug) *</span><input class="fi" id="cp_id" placeholder="e.g. hartland_consumer_goods"></div>
+            <div class="fr"><span class="fl">Sector</span><input class="fi" id="cp_sector" placeholder="e.g. Consumer Goods"></div>
+            <div class="fr"><span class="fl">Sub-sector</span><input class="fi" id="cp_sub_sector" placeholder="e.g. FMCG"></div>
+            <div class="fr"><span class="fl">Size</span>
+              <select class="fi" id="cp_size">
+                <option value="small">Small</option>
+                <option value="mid-market">Mid-market</option>
+                <option value="large">Large</option>
+                <option value="enterprise">Enterprise</option>
+              </select></div>
+            <div class="fr"><span class="fl">HQ</span><input class="fi" id="cp_hq" placeholder="e.g. Johannesburg, South Africa"></div>
+            <div class="fr"><span class="fl">Founded</span><input class="fi" id="cp_founded" type="number" placeholder="e.g. 1994"></div>
+            <div class="fr"><span class="fl">Tagline</span><input class="fi" id="cp_tagline" placeholder="One sentence description"></div>
+            <div class="fr"><span class="fl">Prompt context *</span><textarea class="fi" id="cp_prompt_context" rows="3" placeholder="2-3 sentences injected into generation prompts. Describe the company, size, revenue, sector, reporting style."></textarea></div>
+            <div class="fr"><span class="fl">Reporting style</span>
+              <select class="fi" id="cp_reporting_style">
+                <option value="management">Management</option>
+                <option value="formal-board">Formal board</option>
+                <option value="operational">Operational</option>
+                <option value="ngo-impact">NGO impact</option>
+              </select></div>
+            <div class="fr"><span class="fl">Terminology</span><input class="fi" id="cp_terminology" placeholder="Comma-separated terms e.g. SKU, basket size, planogram"></div>
+            <div class="fr"><span class="fl">Avoid</span><input class="fi" id="cp_avoid" placeholder="Comma-separated words to avoid"></div>
+            <div id="cp-modal-err" style="display:none;color:var(--color-text-danger);font-size:.83rem;"></div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary" onclick="cpSave()">Save Company</button>
+              <button class="btn btn-ghost" onclick="cpCancelModal()">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="screen" id="screen-settings">
+      <div class="card">
+        <div class="card-title">API Keys</div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <div class="settings-label-title">OpenRouter API Key</div>
+            <div class="settings-label-sub">Used for document analysis and activity description assessment. Free tier is sufficient.</div>
+          </div>
+          <div class="settings-control">
+            <input type="password" class="fi" id="set_openrouter" placeholder="sk-or-v1-...">
+            <div style="margin-top:6px;display:flex;gap:8px;">
+              <button class="btn btn-sm btn-primary" onclick="saveSettings()">Save</button>
+              <a href="https://openrouter.ai/keys" target="_blank" class="btn btn-sm btn-ghost">Get key ↗</a>
+            </div>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <div class="settings-label-title">Google OAuth Client ID</div>
+            <div class="settings-label-sub">Required for Drive and Sheets access. Create at Google Cloud Console.</div>
+          </div>
+          <div class="settings-control">
+            <input type="text" class="fi" id="set_gclient" placeholder="123456789-abc.apps.googleusercontent.com">
+            <div style="margin-top:6px;display:flex;gap:8px;">
+              <button class="btn btn-sm btn-primary" onclick="saveSettings()">Save</button>
+              <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="btn btn-sm btn-ghost">Cloud Console ↗</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Tenant</div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <div class="settings-label-title">Tenant Name</div>
+            <div class="settings-label-sub">Appears on all generated documents.</div>
+          </div>
+          <div class="settings-control">
+            <input type="text" class="fi" id="set_tenant" value="GEMIS Technical Academy">
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <div class="settings-label-title">Drive Root Folder ID</div>
+            <div class="settings-label-sub">The GTA tenant root folder in Google Drive.</div>
+          </div>
+          <div class="settings-control">
+            <input type="text" class="fi" id="set_drive_root" placeholder="1Lo65wGeI-kaImMxAwGvH4LCfGQ-f7lY7">
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <div class="settings-label-title">Activity Register Sheet ID</div>
+            <div class="settings-label-sub">Google Sheets ID for the GTA activity register.</div>
+          </div>
+          <div class="settings-control">
+            <input type="text" class="fi" id="set_sheet_id" placeholder="1Zy76ERiYbOJ7zozlz2nf8AMVICvYCI5gvjBsb6kxxIQ">
+            <div style="margin-top:6px;">
+              <button class="btn btn-sm btn-primary" onclick="saveSettings()">Save all settings</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="settingsSaved" class="status-bar ok" style="display:none;">
+        <div class="status-dot"></div> Settings saved to browser storage.
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script>
+
+// ── App state ─────────────────────────────────────────────────────────────
+var SCREENS = {
+  'welcome':  {title:'Welcome',       meta:'GEMIS Technical Academy · gemis.tech'},
+  'convert':  {title:'Convert',       meta:'Source doc → compliant doc'},
+  'validate': {title:'Validate',      meta:'Compliant doc → validation report'},
+  'confirm':  {title:'Confirm',       meta:'Validated doc → Drive folders + pipeline'},
+  'courses':  {title:'Courses',       meta:'Pipeline status dashboard'},
+  'review':   {title:'Review & Manage', meta:'Approve, amend, queue activities'},
+  'settings': {title:'Settings',      meta:'API keys and tenant configuration'},
+  'companies':{title:'Company Profiles', meta:'Reference data · seed companies'},
+};
+var isAuthed = false;
+var authToken = '';
+var _tokenExpiry = 0;
+var _tokenWarningTimer = null;
+var _tokenExpiryTimer = null;
+var settings = {};
+
+// Convert state
+var convSections = [];
+var convCurTab = 0;
+var convActCnt = 0;
+var convDocMeta = {};
+
+// ── Navigation ────────────────────────────────────────────────────────────
+// patch_company_profiles_applied
+// ── Reference Data folder ID cache ────────────────────────────────────────
+var _refDataFolderId = null;
+var _companyProfiles = [];
+
+async function getRefDataFolderId() {
+  if(_refDataFolderId) return _refDataFolderId;
+  if(!isAuthed) return null;
+  var tenantRoot = settings.drive_root || '1Lo65wGeI-kaImMxAwGvH4LCfGQ-f7lY7';
+  try {
+    var folders = await gDriveListFolders(tenantRoot);
+    var f = folders.find(function(x){return x.name==='Reference Data';});
+    _refDataFolderId = f ? f.id : null;
+  } catch(e) { _refDataFolderId = null; }
+  return _refDataFolderId;
+}
+
+async function loadCompanyProfiles() {
+  var fid = await getRefDataFolderId();
+  if(!fid) { _companyProfiles=[]; return []; }
+  try {
+    var q = encodeURIComponent("'"+fid+"' in parents and mimeType='application/json' and trashed=false");
+    var r = await gApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name,modifiedTime)&pageSize=50');
+    var files = r.files||[];
+    var profiles = [];
+    for(var i=0;i<files.length;i++){
+      try {
+        var content = await fetch('https://www.googleapis.com/drive/v3/files/'+files[i].id+'?alt=media',{headers:{'Authorization':'Bearer '+authToken}});
+        var p = await content.json();
+        p._fileId = files[i].id;
+        profiles.push(p);
+      } catch(e){}
+    }
+    _companyProfiles = profiles;
+    return profiles;
+  } catch(e){ _companyProfiles=[]; return []; }
+}
+
+async function populateSeedDropdown() {
+  var sel = document.getElementById('cf_seed');
+  if(!sel) return;
+  if(!isAuthed){ sel.innerHTML='<option value="">Sign in to load companies</option>'; return; }
+  sel.innerHTML='<option value="">Loading...</option>';
+  var profiles = _companyProfiles.length ? _companyProfiles : await loadCompanyProfiles();
+  sel.innerHTML='<option value="">None / not applicable</option>';
+  profiles.forEach(function(p){
+    var opt=document.createElement('option');
+    opt.value=p.name;opt.textContent=p.name;
+    sel.appendChild(opt);
+  });
+  if(!profiles.length) sel.innerHTML='<option value="">No companies in Reference Data</option>';
+}
+
+// ── Company Profiles screen ────────────────────────────────────────────────
+var _cpEditing = null;
+
+async function loadCompaniesScreen() {
+  var listEl = document.getElementById('cp-list');
+  var statusEl = document.getElementById('cp-status');
+  if(!isAuthed){statusEl.textContent='Sign in to manage company profiles.';return;}
+  statusEl.textContent='Loading...';
+  var profiles = await loadCompanyProfiles();
+  statusEl.textContent = profiles.length+' company profile'+(profiles.length===1?'':'s')+' in Reference Data/';
+  listEl.innerHTML='';
+  if(!profiles.length){
+    listEl.innerHTML='<div style="color:var(--color-text-tertiary);font-size:.85rem;padding:12px 0;">No company profiles found. Add one to get started.</div>';
+    return;
+  }
+  profiles.forEach(function(p){
+    var div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--color-border-tertiary);';
+    div.innerHTML='<div><div style="font-weight:500;font-size:.9rem;">'+esc(p.name)+'</div>'
+      +'<div style="font-size:.78rem;color:var(--color-text-tertiary);">'+esc(p.sector||'')+(p.sub_sector?' — '+esc(p.sub_sector):'')+'  ·  '+esc(p.hq||'')+'</div></div>'
+      +'<div style="display:flex;gap:6px;">'
+      +'<button class="btn btn-sm btn-ghost" data-action="cp-edit" data-cid="'+esc(p.id)+'">Edit</button>'
+      +'<button class="btn btn-sm btn-ghost" style="color:var(--color-text-danger)" data-action="cp-delete" data-cid="'+esc(p.id)+'">Delete</button>'
+      +'</div>';
+    listEl.appendChild(div);
+  });
+}
+
+function cpShowAdd(){
+  _cpEditing=null;
+  document.getElementById('cp-modal-title').textContent='Add Company';
+  ['cp_name','cp_id','cp_sector','cp_sub_sector','cp_hq','cp_tagline','cp_prompt_context','cp_terminology','cp_avoid'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('cp_size').value='mid-market';
+  document.getElementById('cp_reporting_style').value='management';
+  document.getElementById('cp_founded').value='';
+  document.getElementById('cp-modal-err').style.display='none';
+  document.getElementById('cp-modal').style.display='';
+  document.getElementById('cp_name').focus();
+}
+
+function cpShowEdit(cid){
+  var p=_companyProfiles.find(function(x){return x.id===cid;});
+  if(!p)return;
+  _cpEditing=p;
+  document.getElementById('cp-modal-title').textContent='Edit — '+p.name;
+  document.getElementById('cp_name').value=p.name||'';
+  document.getElementById('cp_id').value=p.id||'';
+  document.getElementById('cp_sector').value=p.sector||'';
+  document.getElementById('cp_sub_sector').value=p.sub_sector||'';
+  document.getElementById('cp_size').value=p.size||'mid-market';
+  document.getElementById('cp_hq').value=p.hq||'';
+  document.getElementById('cp_founded').value=p.founded||'';
+  document.getElementById('cp_tagline').value=p.tagline||'';
+  document.getElementById('cp_prompt_context').value=(p.voice&&p.voice.prompt_context)||'';
+  document.getElementById('cp_reporting_style').value=(p.voice&&p.voice.reporting_style)||'management';
+  document.getElementById('cp_terminology').value=((p.voice&&p.voice.terminology)||[]).join(', ');
+  document.getElementById('cp_avoid').value=((p.voice&&p.voice.avoid)||[]).join(', ');
+  document.getElementById('cp-modal-err').style.display='none';
+  document.getElementById('cp-modal').style.display='';
+}
+
+function cpCancelModal(){document.getElementById('cp-modal').style.display='none';_cpEditing=null;}
+
+async function cpSave(){
+  var name=document.getElementById('cp_name').value.trim();
+  var id=document.getElementById('cp_id').value.trim();
+  var errEl=document.getElementById('cp-modal-err');
+  if(!name||!id){errEl.textContent='Company Name and ID are required.';errEl.style.display='';return;}
+  if(!document.getElementById('cp_prompt_context').value.trim()){errEl.textContent='Prompt context is required.';errEl.style.display='';return;}
+  var fid=await getRefDataFolderId();
+  if(!fid){errEl.textContent='Reference Data/ folder not found on Drive. Create it first.';errEl.style.display='';return;}
+  var profile={
+    schema_version:'1.0',tenant_id:'gta',
+    id:id,name:name,
+    sector:document.getElementById('cp_sector').value.trim(),
+    sub_sector:document.getElementById('cp_sub_sector').value.trim(),
+    size:document.getElementById('cp_size').value,
+    founded:parseInt(document.getElementById('cp_founded').value)||null,
+    hq:document.getElementById('cp_hq').value.trim(),
+    tagline:document.getElementById('cp_tagline').value.trim(),
+    voice:{
+      prompt_context:document.getElementById('cp_prompt_context').value.trim(),
+      reporting_style:document.getElementById('cp_reporting_style').value,
+      terminology:document.getElementById('cp_terminology').value.split(',').map(function(s){return s.trim();}).filter(Boolean),
+      avoid:document.getElementById('cp_avoid').value.split(',').map(function(s){return s.trim();}).filter(Boolean)
+    }
+  };
+  try {
+    await gWriteJson(fid, id+'.json', profile);
+    _companyProfiles=[];_refDataFolderId=null;
+    document.getElementById('cp-modal').style.display='none';
+    _cpEditing=null;
+    await loadCompaniesScreen();
+  } catch(e){errEl.textContent='Save failed: '+e;errEl.style.display='';}
+}
+
+async function cpDelete(cid){
+  var p=_companyProfiles.find(function(x){return x.id===cid;});
+  if(!p||!p._fileId)return;
+  if(!confirm('Delete company profile for '+p.name+'? This cannot be undone.'))return;
+  try {
+    await gApi('DELETE','https://www.googleapis.com/drive/v3/files/'+p._fileId);
+    _companyProfiles=[];_refDataFolderId=null;
+    await loadCompaniesScreen();
+  } catch(e){alert('Delete failed: '+e);}
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  document.getElementById('screen-'+name).classList.add('active');
+  if(name==='companies') loadCompaniesScreen();
+  if(name==='confirm') populateSeedDropdown();
+  document.getElementById('nav-'+name).classList.add('active');
+  document.getElementById('topbarTitle').textContent = SCREENS[name].title;
+  document.getElementById('topbarMeta').textContent = SCREENS[name].meta;
+  if(name === 'confirm')  updateAuthGates();
+  if(name === 'courses')  updateAuthGates();
+  if(name === 'review')   updateAuthGates();
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────
+function loadSettings() {
+  try { settings = JSON.parse(localStorage.getItem('culvera_settings') || '{}'); } catch(e){ settings={}; }
+  if(settings.openrouter) document.getElementById('set_openrouter').value = settings.openrouter;
+  if(settings.gclient)    document.getElementById('set_gclient').value    = settings.gclient;
+  if(settings.tenant)     document.getElementById('set_tenant').value     = settings.tenant;
+  if(settings.drive_root) document.getElementById('set_drive_root').value = settings.drive_root;
+  if(settings.sheet_id)   document.getElementById('set_sheet_id').value   = settings.sheet_id;
+}
+function saveSettings() {
+  settings.openrouter = document.getElementById('set_openrouter').value.trim();
+  settings.gclient    = document.getElementById('set_gclient').value.trim();
+  settings.tenant     = document.getElementById('set_tenant').value.trim();
+  settings.drive_root = document.getElementById('set_drive_root').value.trim();
+  settings.sheet_id   = document.getElementById('set_sheet_id').value.trim();
+  localStorage.setItem('culvera_settings', JSON.stringify(settings));
+  var el = document.getElementById('settingsSaved');
+  el.style.display = 'flex';
+  setTimeout(function(){el.style.display='none';}, 3000);
+}
+
+// ── Google Auth ───────────────────────────────────────────────────────────
+function toggleAuth() {
+  if(isAuthed) {
+    signOut();
+  } else {
+    signIn();
+  }
+}
+function signIn() {
+  var clientId = settings.gclient || document.getElementById('set_gclient').value.trim();
+  if(!clientId) {
+    alert('Enter your Google OAuth Client ID in Settings first.');
+    showScreen('settings');
+    return;
+  }
+  // Google OAuth2 implicit flow
+  var params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: window.location.href.split('#')[0].split('?')[0],
+    response_type: 'token',
+    scope: 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets',
+    prompt: 'select_account',
+  });
+  var popup = window.open(
+    'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString(),
+    'googleAuth', 'width=520,height=620,left=200,top=80'
+  );
+  window._authInterval = setInterval(function() {
+    try {
+      if(!popup || popup.closed) { clearInterval(window._authInterval); return; }
+      var hash = new URLSearchParams(popup.location.hash.slice(1));
+      var token = hash.get('access_token');
+      if(token) {
+        authToken = token;
+        clearInterval(window._authInterval);
+        popup.close();
+        setAuthed(true, 'Google account');
+      }
+    } catch(e) {}
+  }, 500);
+}
+function signOut() {
+  isAuthed = false; authToken = ''; _tokenExpiry = 0;
+  if(_tokenWarningTimer){clearInterval(_tokenWarningTimer);_tokenWarningTimer=null;}
+  if(_tokenExpiryTimer){clearTimeout(_tokenExpiryTimer);_tokenExpiryTimer=null;}
+  document.getElementById('authStatus').style.color = '';
+  document.getElementById('authBtn').style.borderColor = '';
+  setAuthed(false);
+}
+function _handleAuthExpiry() {
+  if(!isAuthed) return;
+  isAuthed = false; authToken = ''; _tokenExpiry = 0;
+  if(_tokenWarningTimer){clearInterval(_tokenWarningTimer);_tokenWarningTimer=null;}
+  if(_tokenExpiryTimer){clearTimeout(_tokenExpiryTimer);_tokenExpiryTimer=null;}
+  document.getElementById('authBtnIcon').textContent = '◯';
+  document.getElementById('authBtnLabel').textContent = 'Sign in with Google';
+  document.getElementById('authBtn').style.background = '';
+  document.getElementById('authBtn').style.borderColor = 'rgba(139,26,26,.6)';
+  document.getElementById('authStatus').textContent = 'Session expired — sign in again';
+  document.getElementById('authStatus').style.color = 'rgba(255,160,160,.9)';
+  updateAuthGates();
+}
+function _startTokenTimer() {
+  if(_tokenWarningTimer){clearInterval(_tokenWarningTimer);}
+  if(_tokenExpiryTimer){clearTimeout(_tokenExpiryTimer);}
+  _tokenWarningTimer = setInterval(function() {
+    var msLeft = _tokenExpiry - Date.now();
+    var statusEl = document.getElementById('authStatus');
+    if(!isAuthed || msLeft <= 0) { clearInterval(_tokenWarningTimer); return; }
+    if(msLeft < 5*60*1000) {
+      var minsLeft = Math.max(1, Math.ceil(msLeft/60000));
+      statusEl.textContent = 'Session expires in '+minsLeft+'m — save your work';
+      statusEl.style.color = 'rgba(255,200,80,.9)';
+      document.getElementById('authBtn').style.borderColor = 'rgba(255,200,80,.4)';
+    } else {
+      var totalMins = Math.floor(msLeft/60000);
+      statusEl.textContent = 'Session active · '+totalMins+'m remaining';
+      statusEl.style.color = '';
+      document.getElementById('authBtn').style.borderColor = '';
+    }
+  }, 30000);
+  var msLeft = _tokenExpiry - Date.now();
+  if(msLeft > 0) { _tokenExpiryTimer = setTimeout(function(){ _handleAuthExpiry(); }, msLeft); }
+}
+function setAuthed(val, name) {
+  isAuthed = val;
+  document.getElementById('authBtnIcon').textContent = val ? '●' : '◯';
+  document.getElementById('authBtnLabel').textContent = val ? 'Signed in' : 'Sign in with Google';
+  document.getElementById('authBtn').style.background = val ? 'rgba(26,107,60,.3)' : '';
+  document.getElementById('authStatus').textContent = val ? (name||'Connected') : 'Required for Confirm, Courses & Review';
+  updateAuthGates();
+}
+// Handle OAuth redirect token on page load
+(function(){
+  var hash = new URLSearchParams(window.location.hash.slice(1));
+  var token = hash.get('access_token');
+  if(token) {
+    if(window.opener) {
+      // We are the popup — send token to parent and close
+      var ei=parseInt(new URLSearchParams(window.location.hash.slice(1)).get('expires_in')||'3600');
+      window.opener.postMessage({type:'oauth_token', token: token, expires_in: ei}, window.location.origin);
+      window.close();
+    } else {
+      // We are the main window (redirect flow fallback)
+      authToken = token;
+      var ei2=parseInt(new URLSearchParams(window.location.hash.slice(1)).get('expires_in')||'3600');
+      _tokenExpiry=Date.now()+ei2*1000;
+      window.location.hash = '';
+      setAuthed(true, 'Google account');
+      _startTokenTimer();
+    }
+  }
+})();
+
+// Listen for token from popup
+window.addEventListener('message', function(e) {
+  if(e.origin !== window.location.origin) return;
+  if(e.data && e.data.type === 'oauth_token') {
+    authToken = e.data.token;
+    _tokenExpiry = Date.now() + (e.data.expires_in||3600)*1000;
+    if(window._authInterval) { clearInterval(window._authInterval); window._authInterval = null; }
+    setAuthed(true, 'Google account');
+    _startTokenTimer();
+  }
+});
+function updateAuthGates() {
+  ['confirm','courses','review'].forEach(function(name){
+    var gate = document.getElementById(name+'AuthGate');
+    var content = document.getElementById(name+'Content') || document.getElementById(name+'Content2');
+    if(!gate) return;
+    gate.style.display = isAuthed ? 'none' : 'block';
+    if(content) content.style.display = isAuthed ? 'block' : 'none';
+  });
+}
+
+// ── Convert helpers ───────────────────────────────────────────────────────
+function mk(tag,cls){var el=document.createElement(tag);if(cls)el.className=cls;return el;}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function convSetStep(n){
+  ['cst1','cst2','cst3'].forEach(function(id,i){
+    var el=document.getElementById(id);
+    el.className='step-item'+(i+1===n?' active':i+1<n?' done':'');
+  });
+}
+function convStatus(type,msg){
+  var bar=document.getElementById('convStatus');
+  bar.className='status-bar '+type;
+  document.getElementById('convStatusMsg').textContent=msg;
+}
+function hdrPlChange(){
+  var pl=document.getElementById('hdr_pl').value;
+  document.getElementById('hdr_sector_row').style.display=pl==='AE'?'grid':'none';
+  document.getElementById('hdr_stream_row').style.display=pl==='EE'?'grid':'none';
+}
+
+// ── Convert upload ────────────────────────────────────────────────────────
+function convDrop(e){e.preventDefault();document.getElementById('convDrop').classList.remove('drag-over');convHandleFile(e.dataTransfer.files[0]);}
+function convHandleFile(file){
+  if(!file||!file.name.toLowerCase().endsWith('.docx')){alert('Please upload a .docx file.');return;}
+  document.getElementById('convDropLabel').textContent=file.name;
+  document.getElementById('convPhaseUpload').style.display='none';
+  document.getElementById('convPhaseReview').style.display='';
+  convSetStep(2);
+  convStatus('wait','Reading '+file.name+'...');
+  var reader=new FileReader();
+  reader.onload=function(e){
+    mammoth.extractRawText({arrayBuffer:e.target.result})
+      .then(function(r){convDetect(r.value,file.name);})
+      .catch(function(){convStatus('err','Could not read file.');});
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── Convert detection ─────────────────────────────────────────────────────
+function convDetect(text,filename){
+  var lines=text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+  var aeMatch=text.match(/E\d{2}-T(\d{2})-A\d{2}/g);
+  var aeTopics=aeMatch?[...new Set(aeMatch.map(function(m){var tm=m.match(/-T(\d{2})-/);return tm?'T'+tm[1]:'';}))].filter(Boolean):[];
+  var eeMatch=text.match(/EE-[A-Z]+-C\d{2}(?=-A|\s|\u00b7|$)/g);
+  var eeCourses=eeMatch?[...new Set(eeMatch)]:[];
+
+  if(aeTopics.length>=2){
+    convStatus('wait','AE document detected ('+aeTopics.length+' topics). Parsing...');
+    convParseAE(lines,text,filename);
+  } else if(eeCourses.length>=2){
+    convStatus('wait','EE document detected ('+eeCourses.length+' courses). Parsing...');
+    convParseEE(lines,text,filename);
+  } else {
+    var orKey=settings.openrouter||document.getElementById('set_openrouter').value.trim();
+    if(!orKey){
+      convStatus('err','No OpenRouter key found. Add it in Settings for AEX/AA documents.');
+      convParseEE([],text,filename);
+      return;
+    }
+    convStatus('wait','Single-course document. Analysing with AI...');
+    convCallAI(text,filename,orKey);
+  }
+}
+
+// ── AE Parser ─────────────────────────────────────────────────────────────
+function convParseAE(lines,text,filename){
+  var TOPIC_RE=/^T(\d{2})\s*[\u2014\u2013\-]+\s*(.+)/;
+  var ACT_RE=/^[★\*]?\s*(E\d{2}-T(\d{2})-A(\d{2}))\s*[\u2014\-]+\s*(.+?)\s*\|\s*(Standard|Showstopper)\s*\|\s*(\d+\s*min)/i;
+  var SKIP=['Pipeline','Improvement','Find Public','Carry Forward','Green','Amber','Blue','Purple'];
+
+  var topics={};var topicOrder=[];var curTopic=null;var curAct=null;var descBuf=[];
+  var courseId='',courseName='',sector='';
+
+  for(var h=0;h<Math.min(6,lines.length);h++){
+    var hm=lines[h].match(/^(E\d{2})\s*(?:[\u2014\u2013\-]+|:)\s*(.+)/);
+    if(hm){courseId=hm[1];courseName=hm[2].trim();break;}
+  }
+  var sectorKW={Insurance:'Insurance',Healthcare:'Healthcare',Legal:'Legal',Education:'Education',Retail:'Retail',Finance:'Finance',Construction:'Construction',Agriculture:'Agriculture',Mining:'Mining',Government:'Government'};
+  Object.keys(sectorKW).forEach(function(k){if(courseName.toLowerCase().indexOf(k.toLowerCase())>-1)sector=k;});
+
+  function flushA(){
+    if(curAct&&curTopic){
+      if(!curAct.description&&descBuf.length) curAct.description=descBuf.slice(0,3).join(' ').slice(0,400);
+      topics[curTopic].activities.push(curAct);curAct=null;descBuf=[];
+    }
+  }
+  lines.forEach(function(line){
+    var tm=TOPIC_RE.exec(line);var am=ACT_RE.exec(line);
+    if(tm&&!am){
+      flushA();var tid='T'+tm[1].padStart(2,'0');curTopic=tid;
+      if(!topics[tid]){topics[tid]={name:tm[2].trim(),activities:[]};topicOrder.push(tid);}
+      curAct=null;
+    } else if(am){
+      flushA();
+      curAct={id:am[1],title:am[4].trim(),type:'Hands-on Practice',duration:am[6],grouping:'',description:'',showstopper:am[5]==='Showstopper'};
+      descBuf=[];
+    } else if(curAct){
+      var skip=SKIP.some(function(s){return line.startsWith(s);});
+      if(!skip&&line.length>20) descBuf.push(line);
+    }
+  });
+  flushA();
+
+  convSections=topicOrder.map(function(tid){
+    return {id:tid,name:topics[tid].name,approved:false,activities:topics[tid].activities,
+            meta:{pl:'AE',cid:courseId,cname:courseName,mode:'Onsite',dur:'1 day',tools:'Claude',seed:'',sector:sector,stream:''}};
+  });
+  convDocMeta={pl:'AE',id:courseId,name:courseName,sector:sector,stream:'',mode:'Onsite'};
+  document.getElementById('hdr_pl').value='AE';hdrPlChange();
+  document.getElementById('hdr_id').value=courseId;
+  document.getElementById('hdr_name').value=courseName;
+  document.getElementById('hdr_sector').value=sector;
+  document.getElementById('hdr_mode').value='Onsite';
+  convStatus('ok','Parsed '+convSections.length+' topics from '+filename+'. Review each tab and approve.');
+  convRenderReview();
+}
+
+// ── EE Parser ─────────────────────────────────────────────────────────────
+function convParseEE(lines,text,filename){
+  var SAME_LINE_RE=/^(EE-[A-Z]+-C\d{2})\s*[\u00b7\u2014\-]+\s*(.+)/;
+  var COURSE_ID_RE=/^(EE-([A-Z]+)-C(\d{2}))$/;
+  var ACT_ID_RE=/^(EE-[A-Z]+-C\d{2}-A\d{2})$/;
+  var ACT_SL_RE=/^(EE-[A-Z]+-C\d{2}-A\d{2})\s*[\u00b7\u2014\-]+\s*(.+)/;
+  var DUR_RE=/^(\d+\s*min|\d+\s*hour)/i;
+  var SKIP=['Pipeline','Improvement','Find Public','Carry Forward','Domain Note','Stream','How to Read','Version','GEMIS','Confidential','Exhibit','Rec ','Cohort','Audience','Duration','Source'];
+  function skipLine(l){return SKIP.some(function(s){return l.startsWith(s);});}
+
+  var courses={};var courseOrder=[];var curC=null;var curA=null;var buf=[];var stream='';
+
+  function flushA(){
+    if(curA&&curC){
+      if(!curA.description&&buf.length) curA.description=buf.filter(function(l){return l.length>40;}).slice(0,2).join(' ').slice(0,400);
+      courses[curC].activities.push(curA);curA=null;buf=[];
+    }
+  }
+
+  var i=0;
+  while(i<lines.length){
+    var line=lines[i];var nxt=i+1<lines.length?lines[i+1]:'';
+    var asl=ACT_SL_RE.exec(line);
+    if(asl){flushA();curA={id:asl[1],title:asl[2].trim(),type:'Hands-on Practice',duration:'',grouping:'',description:''};buf=[];i++;continue;}
+    var aid=ACT_ID_RE.exec(line);
+    if(aid&&nxt&&!ACT_ID_RE.test(nxt)&&!COURSE_ID_RE.test(nxt)){flushA();curA={id:aid[1],title:nxt.trim(),type:'Hands-on Practice',duration:'',grouping:'',description:''};buf=[];i+=2;continue;}
+    var csl=SAME_LINE_RE.exec(line);
+    if(csl&&!ACT_SL_RE.test(line)){flushA();var sm=csl[1].match(/EE-([A-Z]+)-C/);if(sm)stream=sm[1];curC=csl[1];curA=null;if(!courses[curC]){courses[curC]={name:csl[2].trim(),activities:[]};courseOrder.push(curC);}i++;continue;}
+    var cid=COURSE_ID_RE.exec(line);
+    if(cid&&nxt&&!COURSE_ID_RE.test(nxt)&&!ACT_ID_RE.test(nxt)&&nxt.length>5){flushA();var sm2=cid[1].match(/EE-([A-Z]+)-C/);if(sm2)stream=sm2[1];curC=cid[1];curA=null;if(!courses[curC]){courses[curC]={name:nxt.trim(),activities:[]};courseOrder.push(curC);}i+=2;continue;}
+    if(curA&&DUR_RE.test(line)&&!curA.duration){curA.duration=line;i++;continue;}
+    if(curA&&line.length>40&&!skipLine(line)&&!line.match(/^EE-/)&&!DUR_RE.test(line)) buf.push(line);
+    i++;
+  }
+  flushA();
+
+  if(!courseOrder.length){convStatus('err','Could not parse EE structure.');return;}
+  var streamName='';
+  for(var h=0;h<Math.min(10,lines.length);h++){
+    if(lines[h].indexOf('EE-'+stream)>-1&&h+1<lines.length){
+      var cand=lines[h+1];
+      if(cand.length>5&&!cand.match(/^EE-/)&&!cand.match(/Source|Version|Confidential/)){streamName=cand;break;}
+    }
+  }
+  if(!streamName&&courseOrder.length) streamName=courses[courseOrder[0]].name.replace(/\u2014.*/,'').trim();
+
+  convSections=courseOrder.map(function(cid2){
+    return {id:cid2,name:courses[cid2].name,approved:false,activities:courses[cid2].activities,
+            meta:{pl:'EE',cid:cid2,cname:courses[cid2].name,mode:'School Programme',dur:'',tools:'',seed:'',sector:'',stream:stream}};
+  });
+  convDocMeta={pl:'EE',id:'EE-'+stream,name:streamName,sector:'',stream:stream,mode:'School Programme'};
+  document.getElementById('hdr_pl').value='EE';hdrPlChange();
+  document.getElementById('hdr_id').value='EE-'+stream;
+  document.getElementById('hdr_name').value=streamName;
+  document.getElementById('hdr_stream').value=stream;
+  document.getElementById('hdr_mode').value='School Programme';
+  convStatus('ok','Parsed '+courseOrder.length+' courses from '+filename+'. Review each tab and approve.');
+  convRenderReview();
+}
+
+// ── AI (AEX/AA) ───────────────────────────────────────────────────────────
+function convCallAI(text,filename,apiKey){
+  var tr=text.length>12000?text.slice(0,12000)+'...[truncated]':text;
+  var prompt='You are the Culvera curriculum parser. Return ONLY a JSON object.\n\nShape: {"product_line":"AEX","course_id":"EX04","course_name":"","delivery_mode":"Live Zoom","duration":"4 hours","tools":"","seed_company":"","sector":"","stream":"","activities":[{"id":"EX04-A01","title":"","type":"Hands-on Practice","duration":"45 minutes","grouping":"","description":""}]}\n\nRules: product_line one of AEX/AA. Activity ID: AEX=EX04-A01, AA=AA-A01. type one of: Hands-on Practice, Discussion, Case Study, Assessment, Reflection, Demonstration. description: 2-4 sentences from document content only. seed_company: one of the four GTA companies or empty. Extract ALL activities. SA context.\n\nDocument:\n'+tr;
+  var models=['deepseek/deepseek-chat','qwen/qwen-2.5-72b-instruct','moonshotai/kimi-k2','x-ai/grok-3-mini','google/gemini-2.0-flash-001'];
+  function try_(i){
+    if(i>=models.length){convStatus('err','All AI models failed. Check your OpenRouter key in Settings.');return;}
+    fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
+      headers:{'Authorization':'Bearer '+apiKey,'Content-Type':'application/json','HTTP-Referer':'https://culvera.gemis.tech'},
+      body:JSON.stringify({model:models[i],max_tokens:1200,messages:[{role:'user',content:prompt}]})
+    }).then(function(r){return r.json();}).then(function(data){
+      if(data.error)throw new Error();
+      var raw=data.choices[0].message.content.trim().replace(/```json|```/g,'').trim();
+      var d=JSON.parse(raw);
+      convSections=[{id:d.course_id||'C01',name:d.course_name||'',approved:false,activities:d.activities||[],
+        meta:{pl:d.product_line,cid:d.course_id,cname:d.course_name,mode:d.delivery_mode,dur:d.duration,tools:d.tools,seed:d.seed_company,sector:d.sector,stream:d.stream}}];
+      convDocMeta={pl:d.product_line,id:d.course_id,name:d.course_name,sector:d.sector,stream:d.stream,mode:d.delivery_mode};
+      document.getElementById('hdr_pl').value=d.product_line||'AEX';hdrPlChange();
+      document.getElementById('hdr_id').value=d.course_id||'';
+      document.getElementById('hdr_name').value=d.course_name||'';
+      document.getElementById('hdr_mode').value=d.delivery_mode||'';
+      convStatus('ok','Extracted using '+models[i]+'. Review and approve.');
+      convRenderReview();
+    }).catch(function(){try_(i+1);});
+  }
+  try_(0);
+}
+
+// ── Convert review UI ─────────────────────────────────────────────────────
+function convRenderReview(){
+  document.getElementById('convReviewContent').style.display='';
+  convBuildTabs();convShowTab(0);convUpdateProgress();
+}
+function convBuildTabs(){
+  var bar=document.getElementById('convTabRow');bar.innerHTML='';
+  convSections.forEach(function(sec,i){
+    var btn=mk('button','tab-btn'+(i===0?' active':'')+(sec.approved?' approved':''));
+    btn.id='ctab_'+i;
+    btn.innerHTML=(sec.approved?'<span class="tab-check">✔</span> ':'')+esc(sec.id);
+    btn.title=sec.name;
+    btn.onclick=(function(idx){return function(){convShowTab(idx);};})(i);
+    bar.appendChild(btn);
+  });
+}
+function convShowTab(idx){
+  convCurTab=idx;
+  convSections.forEach(function(sec,i){
+    var btn=document.getElementById('ctab_'+i);if(!btn)return;
+    btn.className='tab-btn'+(i===idx?' active':'')+(sec.approved?' approved':'');
+    btn.innerHTML=(sec.approved?'<span class="tab-check">✔</span> ':'')+esc(sec.id);
+  });
+  var sec=convSections[idx];
+  var content=document.getElementById('convTabContent');content.innerHTML='';
+
+  var hdr=mk('div','');hdr.style.cssText='display:flex;align-items:baseline;gap:12px;margin-bottom:14px;';
+  hdr.innerHTML='<span style="font-family:DM Mono,monospace;font-size:.82rem;font-weight:500;color:var(--blue);">'+esc(sec.id)+'</span>'+
+    '<span style="flex:1;font-size:.9rem;font-weight:500;">'+esc(sec.name)+'</span>'+
+    (sec.approved?'<span style="color:var(--green);font-size:.78rem;font-weight:600;">✔ Approved</span>':'');
+  content.appendChild(hdr);
+
+  var pl=document.getElementById('hdr_pl').value;
+  if(pl==='AE'||pl==='EE'){
+    var mf=mk('div','');mf.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;';
+    mf.innerHTML='<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);display:block;margin-bottom:4px;">Duration</label><input class="fi" id="sec_dur_'+idx+'" value="'+esc(sec.meta.dur||'')+'" placeholder="e.g. 1 day"></div>'+
+      (pl==='AE'?'<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);display:block;margin-bottom:4px;">Tools</label><input class="fi" id="sec_tools_'+idx+'" value="'+esc(sec.meta.tools||'')+'" placeholder="e.g. Claude"></div>':'<div></div>');
+    content.appendChild(mf);
+  }
+
+  var actWrap=mk('div','');actWrap.id='caw_'+idx;
+  sec.activities.forEach(function(a,ai){actWrap.appendChild(convBuildActCard(idx,ai,a));});
+  content.appendChild(actWrap);
+
+  var addBtn=mk('button','btn btn-ghost btn-sm');addBtn.textContent='+ Add activity';addBtn.style.margin='6px 0 14px';
+  addBtn.onclick=(function(si){return function(){
+    var newA={id:'',title:'',type:'Hands-on Practice',duration:'',grouping:'',description:''};
+    convSections[si].activities.push(newA);
+    document.getElementById('caw_'+si).appendChild(convBuildActCard(si,convSections[si].activities.length-1,newA));
+  };})(idx);
+  content.appendChild(addBtn);
+
+  var abar=mk('div','approve-bar'+(sec.approved?' approved':''));abar.id='cabar_'+idx;
+  if(sec.approved){
+    abar.innerHTML='<span class="approve-bar-msg">✔ This section is approved and will be included in the download.</span><button class="btn btn-sm btn-ghost" onclick="convUnapprove('+idx+')">Edit</button>';
+  } else {
+    abar.innerHTML='<span class="approve-bar-msg">Review all activities then approve this section.</span><button class="btn btn-sm btn-green" onclick="convApprove('+idx+')">✔ Approve this section</button>';
+  }
+  content.appendChild(abar);
+}
+function convBuildActCard(sidx,aidx,a){
+  var TO=['Hands-on Practice','Discussion','Demonstration','Case Study','Assessment','Reflection'];
+  var key=sidx+'_'+aidx+'_'+(convActCnt++);
+  var div=mk('div','act-card');div.id='cac_'+key;
+  var badges=(a.showstopper?'<span class="badge badge-show">Showstopper</span> ':'')+
+             (aidx===0?'<span class="badge badge-gate">Gate</span> ':'');
+  div.innerHTML=
+    '<div class="act-hdr" onclick="convTogAC(\''+key+'\')">' +
+      '<span class="act-id" id="caid_lbl_'+key+'">'+(a.id||'new')+'</span>' +
+      '<span class="act-title" id="catl_lbl_'+key+'">'+(a.title||'untitled')+'</span>'+badges+
+      '<span class="act-tog" id="catog_'+key+'">\u25b2</span></div>' +
+    '<div class="act-body" id="cab_'+key+'">' +
+      '<div class="fr"><span class="fl">Activity ID</span><input class="fi" id="ca_id_'+key+'" value="'+esc(a.id||'')+'" oninput="convUpdAL(\''+key+'\')"></div>' +
+      '<div class="fr"><span class="fl">Title</span><input class="fi" id="ca_t_'+key+'" value="'+esc(a.title||'')+'" oninput="convUpdAL(\''+key+'\')"></div>' +
+      '<div class="fr"><span class="fl">Type</span><select class="fi" id="ca_tp_'+key+'">'+TO.map(function(t){return '<option'+(a.type===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div>' +
+      '<div class="fr"><span class="fl">Duration</span><input class="fi" id="ca_dur_'+key+'" value="'+esc(a.duration||'')+'"></div>' +
+      '<div class="fr"><span class="fl">Description</span><textarea class="fi" id="ca_dsc_'+key+'">'+esc(a.description||'')+'</textarea></div>' +
+      '<div style="text-align:right;margin-top:6px;"><button class="btn btn-sm btn-danger" onclick="document.getElementById(\'cac_'+key+'\').remove();convSections['+sidx+'].approved=false;convUpdABar('+sidx+');">Remove</button></div>' +
+    '</div>';
+  return div;
+}
+function convTogAC(k){var b=document.getElementById('cab_'+k);var t=document.getElementById('catog_'+k);if(!b)return;b.classList.toggle('act-body');b.classList.toggle('act-body-closed');if(b.style.display==='none'){b.style.display='';t.textContent='\u25b2';}else{b.style.display='none';t.textContent='\u25bc';}}
+function convUpdAL(k){document.getElementById('caid_lbl_'+k).textContent=document.getElementById('ca_id_'+k).value||'new';document.getElementById('catl_lbl_'+k).textContent=document.getElementById('ca_t_'+k).value||'untitled';}
+
+function convCollectSection(idx){
+  var sec=convSections[idx];
+  var durEl=document.getElementById('sec_dur_'+idx);var toolsEl=document.getElementById('sec_tools_'+idx);
+  if(durEl) sec.meta.dur=durEl.value.trim();
+  if(toolsEl) sec.meta.tools=toolsEl.value.trim();
+  var newActs=[];
+  var wrap=document.getElementById('caw_'+idx);
+  if(wrap){
+    wrap.querySelectorAll('[id^="cac_"]').forEach(function(card){
+      var k=card.id.replace('cac_','');
+      var idEl=document.getElementById('ca_id_'+k);if(!idEl)return;
+      newActs.push({id:idEl.value.trim(),title:document.getElementById('ca_t_'+k).value.trim(),type:document.getElementById('ca_tp_'+k).value.trim(),duration:document.getElementById('ca_dur_'+k).value.trim(),grouping:'',description:document.getElementById('ca_dsc_'+k).value.trim()});
+    });
+    sec.activities=newActs;
+  }
+}
+function convApprove(idx){convCollectSection(idx);convSections[idx].approved=true;convUpdABar(idx);convBuildTabs();convUpdateProgress();for(var i=idx+1;i<convSections.length;i++){if(!convSections[i].approved){convShowTab(i);return;}}convShowTab(idx);}
+function convUnapprove(idx){convSections[idx].approved=false;convUpdABar(idx);convBuildTabs();convUpdateProgress();convShowTab(idx);}
+function convUpdABar(idx){
+  var bar=document.getElementById('cabar_'+idx);if(!bar)return;
+  var sec=convSections[idx];bar.className='approve-bar'+(sec.approved?' approved':'');
+  if(sec.approved){bar.innerHTML='<span class="approve-bar-msg">✔ This section is approved and will be included in the download.</span><button class="btn btn-sm btn-ghost" onclick="convUnapprove('+idx+')">Edit</button>';}
+  else{bar.innerHTML='<span class="approve-bar-msg">Review all activities then approve this section.</span><button class="btn btn-sm btn-green" onclick="convApprove('+idx+')">✔ Approve this section</button>';}
+}
+function convUpdateProgress(){
+  var total=convSections.length;var done=convSections.filter(function(s){return s.approved;}).length;
+  var pct=total>0?Math.round(done/total*100):0;
+  document.getElementById('convProgFill').style.width=pct+'%';
+  document.getElementById('convProgLabel').textContent=done+' / '+total+' approved';
+  var allDone=done===total&&total>0;
+  document.getElementById('convGenBtn').disabled=!allDone;
+  document.getElementById('convGenHint').style.display=allDone?'none':'';
+}
+
+// ── Convert generate ──────────────────────────────────────────────────────
+function convGenerate(){
+  convCollectSection(convCurTab);
+  var pl=document.getElementById('hdr_pl').value;
+  var hdrId=document.getElementById('hdr_id').value.trim();
+  var hdrName=document.getElementById('hdr_name').value.trim();
+  var hdrSector=document.getElementById('hdr_sector').value.trim();
+  var hdrStream=document.getElementById('hdr_stream').value.trim();
+  var hdrMode=document.getElementById('hdr_mode').value.trim();
+  var fileId=hdrId||(convSections.length>0?convSections[0].meta.cid||convSections[0].id:'DOC');
+  var fileName=hdrName||(convSections.length>0?convSections[0].meta.cname||convSections[0].name:'');
+  var safeName=fileName.replace(/[^A-Za-z0-9\s]/g,'').trim().replace(/\s+/g,'_').slice(0,50);
+  var filename=fileId+(safeName?'_'+safeName:'')+'_Curriculum_v2_0.txt';
+  var text='';
+
+  if(pl==='AE'){
+    var allActs=[];
+    convSections.forEach(function(sec){sec.activities.filter(function(a){return a.id;}).forEach(function(a){allActs.push(a);});});
+    var dur=document.getElementById('sec_dur_0')?document.getElementById('sec_dur_0').value.trim():'1 day';
+    var tools=document.getElementById('sec_tools_0')?document.getElementById('sec_tools_0').value.trim():'Claude';
+    text=convBuildText(pl,hdrId,hdrName,hdrMode,dur,tools,'',hdrSector,'',allActs);
+  } else if(pl==='EE'){
+    var L=[];
+    L.push('GEMIS Technical Academy');
+    L.push('Culvera Curriculum Source Document  \u00b7  Version 2.0  \u00b7  2026  \u00b7  Confidential');
+    L.push('Product Line: EE');L.push('Stream: '+hdrStream);L.push('Stream Name: '+hdrName);L.push('');
+    convSections.forEach(function(sec,i){
+      var cname=document.getElementById('mcn_'+i)?document.getElementById('mcn_'+i).value.trim():sec.meta.cname||sec.name;
+      var dur=document.getElementById('sec_dur_'+i)?document.getElementById('sec_dur_'+i).value.trim():sec.meta.dur||'';
+      var acts=sec.activities.filter(function(a){return a.id;});
+      L.push('---');L.push('COURSE IDENTITY');L.push('Product Line: EE');L.push('Course ID: '+sec.id);
+      L.push('Course Name: '+cname);L.push('Delivery Mode: '+(hdrMode||'School Programme'));
+      L.push('Duration: '+dur);L.push('Stream: '+hdrStream);L.push('');L.push('ACTIVITIES');L.push('');
+      acts.forEach(function(a){L.push((a.id||'')+'  \u00b7  '+(a.title||''));L.push('Type: '+(a.type||'Hands-on Practice'));L.push('Duration: '+(a.duration||''));L.push('Description:');L.push(a.description||'');L.push('');});
+    });
+    L.push('End of curriculum source document  \u00b7  GEMIS Technical Academy  \u00b7  gemis.tech');
+    text=L.join('\n');
+  } else {
+    var sec=convSections[0];var acts=sec.activities.filter(function(a){return a.id;});
+    text=convBuildText(pl,sec.meta.cid||hdrId,hdrName,hdrMode,sec.meta.dur||'',sec.meta.tools||'',sec.meta.seed||'',hdrSector,hdrStream,acts);
+  }
+
+  var blob=new Blob([text],{type:'text/plain'});var url=URL.createObjectURL(blob);
+  document.getElementById('convPhaseReview').style.display='none';
+  document.getElementById('convPhaseDone').style.display='';
+  convSetStep(3);
+  document.getElementById('convDoneTitle').textContent=fileId+' ready';
+  document.getElementById('convDoneMsg').textContent=fileName;
+  var list=document.getElementById('convDlList');list.innerHTML='';
+  var item=mk('div','dl-item');
+  item.innerHTML='<div class="dl-info"><div class="dl-id">'+esc(fileId)+'</div><div class="dl-name">'+esc(fileName)+'</div></div>'+
+    '<a href="'+url+'" download="'+esc(filename)+'" class="btn btn-primary btn-sm" style="text-decoration:none;">\u2b07 Download</a>';
+  list.appendChild(item);
+}
+
+function convBuildText(pl,cid,cname,mode,dur,tools,seed,sector,stream,acts){
+  var L=[];
+  L.push('GEMIS Technical Academy');
+  L.push('Culvera Curriculum Source Document  \u00b7  Version 2.0  \u00b7  2026  \u00b7  Confidential');
+  L.push('');L.push('COURSE IDENTITY');
+  L.push('Product Line: '+pl);L.push('Course ID: '+cid);L.push('Course Name: '+cname);
+  L.push('Delivery Mode: '+(mode||''));L.push('Duration: '+(dur||''));
+  if(tools) L.push('Tools: '+tools);if(seed) L.push('Seed Company: '+seed);
+  if(sector)L.push('Sector: '+sector);if(stream)L.push('Stream: '+stream);
+  L.push('');L.push('ACTIVITIES');L.push('');
+  acts.forEach(function(a){
+    L.push((a.id||'')+'  \u00b7  '+(a.title||''));L.push('Type: '+(a.type||'Hands-on Practice'));
+    L.push('Duration: '+(a.duration||''));if(a.grouping)L.push('Grouping: '+a.grouping);
+    L.push('Description:');L.push(a.description||'');L.push('');
+  });
+  L.push('End of curriculum source document  \u00b7  GEMIS Technical Academy  \u00b7  gemis.tech');
+  return L.join('\n');
+}
+
+function convReset(){
+  convSections=[];convCurTab=0;convActCnt=0;
+  document.getElementById('convPhaseUpload').style.display='';
+  document.getElementById('convPhaseReview').style.display='none';
+  document.getElementById('convPhaseDone').style.display='none';
+  document.getElementById('convReviewContent').style.display='none';
+  document.getElementById('convDropLabel').textContent='Drop .docx file here or click to browse';
+  convSetStep(1);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+
+// ── Confirm tab ───────────────────────────────────────────────────────────
+var cfParsed={};
+
+function cfSetStep(n){
+  ['cfst1','cfst2','cfst3','cfst4'].forEach(function(id,i){
+    var el=document.getElementById(id);if(!el)return;
+    el.className='step-item'+(i+1===n?' active':i+1<n?' done':'');
+  });
+}
+function cfStatus(type,msg){
+  var bar=document.getElementById('cfStatus');
+  bar.className='status-bar '+type;
+  document.getElementById('cfStatusMsg').textContent=msg;
+}
+function cfDrop(e){e.preventDefault();document.getElementById('cfDropZone').classList.remove('drag-over');cfHandleFile(e.dataTransfer.files[0]);}
+function cfHandleFile(file){
+  if(!file||!file.name.toLowerCase().endsWith('.txt')){alert('Upload a .txt curriculum file from the Convert step.');return;}
+  document.getElementById('cfDropLabel').textContent=file.name;
+  document.getElementById('cfPhaseUpload').style.display='none';
+  document.getElementById('cfPhaseReview').style.display='';
+  cfSetStep(2);cfStatus('wait','Parsing '+file.name+'...');
+  var reader=new FileReader();
+  reader.onload=function(e){cfParseCurriculum(e.target.result,file.name);};
+  reader.readAsText(file);
+}
+function cfParseCurriculum(text,filename){
+  var lines=text.split('\n').map(function(l){return l.trim();});
+  var identity={};var activities=[];var inActs=false;var curAct=null;var descBuf=[];
+  function flushAct(){if(curAct){if(!curAct.description&&descBuf.length)curAct.description=descBuf.join(' ').slice(0,400);activities.push(curAct);curAct=null;descBuf=[];}}
+  lines.forEach(function(line){
+    if(!line)return;
+    if(line==='COURSE IDENTITY'){inActs=false;return;}
+    if(line==='ACTIVITIES'){inActs=true;return;}
+    if(line.startsWith('---'))return;
+    if(!inActs){var cm=line.match(/^([A-Za-z ]+):\s*(.+)/);if(cm)identity[cm[1].trim()]=cm[2].trim();return;}
+    var am=line.match(/^([A-Z0-9\-]+)\s+[·—\-]+\s+(.+)/);
+    if(am&&am[1].match(/[A-Z].*-A\d{2}$/)){flushAct();curAct={id:am[1].trim(),title:am[2].trim(),type:'Hands-on Practice',duration:'',is_gate:am[1].endsWith('-A01')};descBuf=[];return;}
+    if(curAct){
+      if(line.startsWith('Type:'))    {curAct.type=line.slice(5).trim();return;}
+      if(line.startsWith('Duration:')){curAct.duration=line.slice(9).trim();return;}
+      if(line.startsWith('Description:')||line.startsWith('Grouping:')){return;}
+      if(!line.startsWith('End of'))  descBuf.push(line);
+    }
+  });
+  flushAct();
+  if(!identity['Course ID']||!activities.length){cfStatus('err','Could not parse curriculum. Ensure the file is from the Convert step.');return;}
+  cfParsed={identity:identity,activities:activities};
+  cfPopulateReview(identity,activities,filename);
+  cfLoadPlFolders(identity['Product Line']);
+}
+function cfPopulateReview(identity,activities,filename){
+  document.getElementById('cf_pl').value=identity['Product Line']||'';
+  document.getElementById('cf_cid').value=identity['Course ID']||'';
+  document.getElementById('cf_cname').value=identity['Course Name']||'';
+  document.getElementById('cf_mode').value=identity['Delivery Mode']||'';
+  document.getElementById('cf_sector').value=identity['Sector']||'';
+  document.getElementById('cf_stream').value=identity['Stream']||'';
+  var pl=identity['Product Line']||'';
+  document.getElementById('cf_sector_row').style.display=pl==='AE'?'grid':'none';
+  document.getElementById('cf_stream_row').style.display=pl==='EE'?'grid':'none';
+  // Seed company: user selects manually from dropdown
+  document.getElementById('cfActCount').textContent=activities.length;
+  var list=document.getElementById('cfActList');list.innerHTML='';
+  activities.forEach(function(a){
+    var row=document.createElement('div');row.className='act-list-item';
+    row.innerHTML='<span class="act-list-id">'+esc(a.id)+'</span><span class="act-list-title">'+esc(a.title)+'</span>'+(a.is_gate?'<span class="badge badge-gate">Gate A01</span>':'')+'<span class="act-list-status"><span class="badge" style="background:var(--paper2);color:var(--ink3);">'+esc(a.duration||'')+'</span></span>';
+    list.appendChild(row);
+  });
+  cfStatus('ok','Parsed '+activities.length+' activities from '+filename+'. Review details below.');
+  document.getElementById('cfReviewContent').style.display='';
+}
+function cfLoadPlFolders(pl){
+  var root=settings.drive_root||'1Lo65wGeI-kaImMxAwGvH4LCfGQ-f7lY7';
+  document.getElementById('cfPlFolderLoading').style.display='';
+  document.getElementById('cfPlFolderList').style.display='none';
+  gDriveListFolders(root).then(function(folders){
+    var sel=document.getElementById('cf_pl_folder');
+    sel.innerHTML='<option value="">Select product line folder...</option>';
+    var preferred={AEX:'AI Advantage Express',AA:'AI Advantage',AE:'AI Enterprise',EE:'Education Excellence'}[pl]||'';
+    folders.forEach(function(f){var opt=document.createElement('option');opt.value=f.id;opt.textContent=f.name;if(f.name===preferred)opt.selected=true;sel.appendChild(opt);});
+    document.getElementById('cfPlFolderLoading').style.display='none';
+    document.getElementById('cfPlFolderList').style.display='';
+    document.getElementById('cfPlFolderHint').textContent=folders.length+' folders found in tenant root';
+  }).catch(function(e){document.getElementById('cfPlFolderLoading').textContent='Could not load folders: '+e;});
+}
+function cfProceedToConfirm(){
+  var cname=document.getElementById('cf_cname').value.trim();
+  var plId=document.getElementById('cf_pl_folder').value;
+  var eb=document.getElementById('cfReviewErr');
+  if(!cname){eb.textContent='Course Name is required.';eb.style.display='';return;}
+  if(!plId){eb.textContent='Select a product line folder on Drive.';eb.style.display='';return;}
+  eb.style.display='none';
+  var cid=cfParsed.identity['Course ID'];
+  var pl=document.getElementById('cf_pl').value;
+  var seed=document.getElementById('cf_seed').value;
+  var acts=cfParsed.activities;
+  var gateId=acts.length?acts.find(function(a){return a.id.endsWith('-A01');}):null;
+  var s='<strong>Course:</strong> '+esc(cid)+' · '+esc(cname)+'<br>';
+  s+='<strong>Product Line:</strong> '+esc(pl)+'<br>';
+  s+='<strong>Activities:</strong> '+acts.length+'<br>';
+  s+='<strong>Seed Company:</strong> '+(seed||'none')+'<br><br>';
+  s+='<strong>Will create on Drive:</strong><br>';
+  s+='&nbsp;&nbsp;• '+esc(cid+'  ·  '+cname)+'/ (course folder)<br>';
+  s+='&nbsp;&nbsp;• _Draft Initial Activity/, Prop Prompts/, Source Documents/<br>';
+  s+='&nbsp;&nbsp;• '+acts.length+' activity folders + Source Documents<br>';
+  s+='&nbsp;&nbsp;• Gates/Pending/GATE_'+(gateId?esc(gateId.id):'A01')+'.json<br>';
+  s+='&nbsp;&nbsp;• Queue/gta_pipeline_queue.json (updated)<br><br>';
+  s+='<strong>Will write to Sheets:</strong><br>';
+  s+='&nbsp;&nbsp;• '+acts.length+' rows to Activity Register';
+  document.getElementById('cfSummary').innerHTML=s;
+  document.getElementById('cfPhaseReview').style.display='none';
+  document.getElementById('cfPhaseConfirm').style.display='';
+  cfSetStep(3);
+}
+function cfBackToReview(){
+  document.getElementById('cfPhaseConfirm').style.display='none';
+  document.getElementById('cfPhaseReview').style.display='';
+  cfSetStep(2);
+}
+async function cfRunConfirm(){
+  var btn=document.getElementById('cfConfirmBtn');
+  btn.disabled=true;btn.textContent='Working...';
+  var identity=cfParsed.identity;var acts=cfParsed.activities;
+  var cid=identity['Course ID'];
+  var cname=document.getElementById('cf_cname').value.trim();
+  var pl=document.getElementById('cf_pl').value;
+  var mode=document.getElementById('cf_mode').value.trim();
+  var seed=document.getElementById('cf_seed').value;
+  var sector=document.getElementById('cf_sector').value.trim();
+  var stream=document.getElementById('cf_stream').value.trim();
+  var plFolderId=document.getElementById('cf_pl_folder').value;
+  var tenantRoot=settings.drive_root||'1Lo65wGeI-kaImMxAwGvH4LCfGQ-f7lY7';
+  var sheetId=settings.sheet_id||'1Zy76ERiYbOJ7zozlz2nf8AMVICvYCI5gvjBsb6kxxIQ';
+  var steps=[];var errors=[];
+  try{
+    btn.textContent='Creating Gates folders...';
+    var gatesId=await gFindOrCreate('Gates',tenantRoot);
+    var pendingId=await gFindOrCreate('Pending',gatesId);
+    await gFindOrCreate('Released',gatesId);
+    steps.push('✓ Gates/Pending/ and Gates/Released/ ready');
+    btn.textContent='Creating Queue folder...';
+    var queueId=await gFindOrCreate('Queue',tenantRoot);
+    steps.push('✓ Queue/ folder ready');
+    btn.textContent='Creating course folder...';
+    var cfName=cid+'  ·  '+cname;
+    var cfId=await gFindOrCreate(cfName,plFolderId);
+    steps.push('✓ Course folder: '+cfName);
+    btn.textContent='Creating subfolders...';
+    var draftId=await gFindOrCreate('_Draft Initial Activity',cfId);
+    await gFindOrCreate('Prop Prompts',cfId);
+    await gFindOrCreate('Source Documents',cfId);
+    steps.push('✓ Standard subfolders created');
+    btn.textContent='Creating activity folders...';
+    var actFolderIds={};
+    for(var i=0;i<acts.length;i++){
+      var a=acts[i];
+      var afName=a.id+'  ·  '+a.title;
+      var afId=await gFindOrCreate(afName,cfId);
+      await gFindOrCreate('Source Documents',afId);
+      actFolderIds[a.id]=afId;
+    }
+    steps.push('✓ '+acts.length+' activity folders created');
+    btn.textContent='Writing register rows...';
+    var due=cfDue(90);
+    for(var j=0;j<acts.length;j++){
+      var act=acts[j];var isGate=act.id.endsWith('-A01');
+      var row=[act.id,pl,cid,act.title.replace(/\n|\r/g,' '),isGate?'TRUE':'FALSE',isGate?'fabricated':'live',isGate?'awaiting_prop':'n/a','','','0','','','0','90',"'"+due,'pending',isGate?'queued':'pending',''];
+      await gSheetsAppend(sheetId,'GTA!A:R',row);
+    }
+    steps.push('✓ '+acts.length+' register rows written');
+    btn.textContent='Seeding queue...';
+    var q=await gReadQueue(queueId,'gta');
+    var eids=new Set((q.activities||[]).map(function(a){return a.id;}));
+    acts.forEach(function(a){if(!eids.has(a.id)){var entry={id:a.id,course_id:cid,title:a.title,type:a.type||'',duration:a.duration||'',status:'queued',tenant_id:'gta',seed_company:seed,is_gate:a.id.endsWith('-A01'),named_folder_id:actFolderIds[a.id]||''};if(a.id.endsWith('-A01'))entry.draft_folder_id=draftId;q.activities.push(entry);}});
+    q.updated_at=new Date().toISOString();
+    await gWriteJson(queueId,'gta_pipeline_queue.json',q);
+    steps.push('✓ Pipeline queue seeded');
+    btn.textContent='Writing gate file...';
+    var gateAct=acts.find(function(a){return a.id.endsWith('-A01');});
+    if(gateAct){
+      var gd={gate_id:'GATE_'+gateAct.id,activity_id:gateAct.id,course_id:cid,tenant_id:'gta',gate_type:'approval',status:'pending',created_at:new Date().toISOString(),drive_folder_id:actFolderIds[gateAct.id]||'',pm_file_id:'',fg_file_id:'',dn_file_id:'',released_by:'',released_at:'',amendment_note:'',amendment_target:''};
+      await gWriteJson(pendingId,'GATE_'+gateAct.id+'.json',gd);
+      steps.push('✓ Gate file: GATE_'+gateAct.id+'.json');
+    }
+    document.getElementById('cfPhaseConfirm').style.display='none';
+    document.getElementById('cfPhaseDone').style.display='';cfSetStep(4);
+    document.getElementById('cfDoneTitle').textContent=cid+' confirmed';
+    document.getElementById('cfDoneMsg').textContent=cname+' — '+acts.length+' activities registered';
+    document.getElementById('cfDoneSteps').innerHTML=steps.join('<br>');
+    if(errors.length){document.getElementById('cfDoneErrors').innerHTML='<strong>Warnings:</strong><br>'+errors.join('<br>');document.getElementById('cfDoneErrors').style.display='';}
+  }catch(e){
+    btn.disabled=false;btn.textContent='⊕ Confirm — create folders and seed pipeline';
+    document.getElementById('cfReviewErr').textContent='Error: '+e;
+    document.getElementById('cfReviewErr').style.display='';
+    cfBackToReview();
+  }
+}
+function cfDue(n){var d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+function cfReset(){
+  cfParsed={};
+  ['cfPhaseReview','cfPhaseConfirm','cfPhaseDone'].forEach(function(id){document.getElementById(id).style.display='none';});
+  document.getElementById('cfPhaseUpload').style.display='';
+  document.getElementById('cfReviewContent').style.display='none';
+  document.getElementById('cfDropLabel').textContent='Drop .txt curriculum file here or click to browse';
+  cfSetStep(1);
+}
+// Google API helpers
+function gApi(method,url,body){
+  return fetch(url,{method:method,headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined})
+    .then(function(r){
+      if(r.status===401||r.status===403){_handleAuthExpiry();return r.json().then(function(e){throw new Error('Session expired — please sign in again');});}
+      if(!r.ok)return r.json().then(function(e){throw new Error(e.error&&e.error.message||r.status);});
+      return r.json();
+    });
+}
+function gDriveListFolders(pid){
+  var q=encodeURIComponent("'"+pid+"' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false");
+  return gApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)&pageSize=100').then(function(r){return r.files||[];});
+}
+function gFindFolder(name,pid){
+  var sn=name.replace(/'/g,"\'");
+  var q=encodeURIComponent("name='"+sn+"' and '"+pid+"' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false");
+  return gApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)&pageSize=1').then(function(r){return r.files&&r.files.length?r.files[0].id:null;});
+}
+async function gFindOrCreate(name,pid){
+  var ex=await gFindFolder(name,pid);if(ex)return ex;
+  var r=await gApi('POST','https://www.googleapis.com/drive/v3/files?fields=id',{name:name,mimeType:'application/vnd.google-apps.folder',parents:[pid]});
+  return r.id;
+}
+async function gWriteJson(pid,filename,data){
+  // patch_gwritejson_delete_first_applied
+  // Delete ALL existing files with this name (any owner) then create fresh.
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var sn=filename.replace(/'/g,"\\'");
+  var q=encodeURIComponent("name='"+sn+"' and '"+pid+"' in parents and trashed=false");
+  var ex=await gApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id)&pageSize=10');
+  if(ex.files&&ex.files.length){
+    for(var i=0;i<ex.files.length;i++){
+      try{await gApi('DELETE','https://www.googleapis.com/drive/v3/files/'+ex.files[i].id);}catch(e){}
+    }
+  }
+  var meta=JSON.stringify({name:filename,parents:[pid]});
+  var form=new FormData();form.append('metadata',new Blob([meta],{type:'application/json'}));form.append('file',blob);
+  var r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Authorization':'Bearer '+authToken},body:form});
+  if(!r.ok){var e=await r.json();throw new Error(e.error&&e.error.message||r.status);}
+  return r.json();
+}
+async function gReadQueue(pid,tid){
+  var fn=tid+'_pipeline_queue.json';var sn=fn.replace(/'/g,"\\'");
+  var q=encodeURIComponent("name='"+sn+"' and '"+pid+"' in parents and trashed=false");
+  var r=await gApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,modifiedTime)&pageSize=10&orderBy=modifiedTime+desc');
+  if(!r.files||!r.files.length)return{activities:[],tenant_id:tid};
+  return fetch('https://www.googleapis.com/drive/v3/files/'+r.files[0].id+'?alt=media',{headers:{'Authorization':'Bearer '+authToken}}).then(function(r){return r.json();});
+}
+async function gSheetsAppend(sid,range,row){
+  return gApi('POST','https://sheets.googleapis.com/v4/spreadsheets/'+sid+'/values/'+encodeURIComponent(range)+':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',{values:[row]});
+}
+
+// ── Courses Tab ───────────────────────────────────────────────────────────
+var _coursesData = []; // patch_courses_applied patch_doc_editor_applied patch_filefix_applied patch_folderfix_applied   // raw register rows
+var _coursesPl   = 'ALL'; // active PL filter
+
+async function loadCoursesTab(force) {
+  if(!isAuthed) return;
+  var sheetId = settings.sheet_id || '1Zy76ERiYbOJ7zozlz2nf8AMVICvYCI5gvjBsb6kxxIQ';
+  if(!sheetId) {
+    coursesShowStatus('err','Sheet ID not set — add it in Settings.');
+    return;
+  }
+  if(_coursesData.length && !force) { renderCourses(); return; }
+  coursesShowStatus('wait','Loading activity register...');
+  try {
+    var url = 'https://sheets.googleapis.com/v4/spreadsheets/'
+      + encodeURIComponent(sheetId)
+      + '/values/GTA!A:R?majorDimension=ROWS';
+    var r = await gApi('GET', url);
+    var rows = r.values || [];
+    if(rows.length < 2) {
+      coursesShowStatus('ok','No activities in register yet.');
+      document.getElementById('coursesGrid').innerHTML = '';
+      return;
+    }
+    var header = rows[0];
+    var colIdx = {};
+    header.forEach(function(h,i){ colIdx[h] = i; });
+    var allRows = rows.slice(1).filter(function(r){ return r[0]; }).map(function(r){
+      return {
+        activityId:   r[colIdx['ActivityID']]   || '',
+        productLine:  r[colIdx['ProductLine']]  || '',
+        courseId:     r[colIdx['CourseID']]     || '',
+        title:        r[colIdx['Title']]         || '',
+        isGate:       (r[colIdx['IsGate']]||'').toUpperCase() === 'TRUE',
+        status:       r[colIdx['Status']]        || 'pending',
+        approvedBy:   r[colIdx['ApprovedBy']]   || '',
+        approvalDate: r[colIdx['ApprovalDate']] || '',
+        driveUrl:     r[colIdx['DriveURL']]     || '',
+        reviewDue:    r[colIdx['ReviewDueDate']]|| '',
+        model:        r[colIdx['GenerationModel']]|| '',
+      };
+    });
+    // Dedup: keep last row per ActivityID (pipeline appends on every status change)
+    var _deduped = {}; var _dedupOrder = [];
+    allRows.forEach(function(a){ if(!_deduped[a.activityId]) _dedupOrder.push(a.activityId); _deduped[a.activityId]=a; });
+    _coursesData = _dedupOrder.map(function(id){ return _deduped[id]; });
+    // Update sidebar badge with awaiting_approval count
+    var awaitingCount = _coursesData.filter(function(a){
+      return a.status === 'awaiting_approval';
+    }).length;
+    var badge = document.getElementById('navBadgeCourses');
+    if(awaitingCount > 0) {
+      badge.textContent = awaitingCount;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+    coursesHideStatus();
+    renderCourses();
+  } catch(e) {
+    coursesShowStatus('err', 'Failed to load register: ' + e.message);
+  }
+}
+
+function coursesShowStatus(type, msg) {
+  var el = document.getElementById('coursesStatus');
+  var tx = document.getElementById('coursesStatusMsg');
+  el.className = 'status-bar ' + type;
+  tx.textContent = msg;
+  el.style.display = 'flex';
+}
+function coursesHideStatus() {
+  document.getElementById('coursesStatus').style.display = 'none';
+}
+
+function buildPlFilter() {
+  var pls = ['ALL'];
+  _coursesData.forEach(function(a){
+    if(a.productLine && pls.indexOf(a.productLine) < 0) pls.push(a.productLine);
+  });
+  var el = document.getElementById('coursesPlFilter');
+  if(!el) return;
+  el.innerHTML = pls.map(function(pl){
+    var active = pl === _coursesPl ? ' active' : '';
+    return '<button class="btn btn-sm btn-ghost courses-pl-btn' + active + '" data-pl="' + pl + '">' + pl + '</button>';
+  }).join('');
+}
+
+function renderCourses() {
+  buildPlFilter();
+  var grid = document.getElementById('coursesGrid');
+  var courseMap = {}; var courseOrder = [];
+  _coursesData.forEach(function(a) {
+    if(!a.courseId) return;
+    if(_coursesPl !== 'ALL' && a.productLine !== _coursesPl) return;
+    if(!courseMap[a.courseId]) {
+      courseMap[a.courseId] = { courseId: a.courseId, productLine: a.productLine, activities: [] };
+      courseOrder.push(a.courseId);
+    }
+    courseMap[a.courseId].activities.push(a);
+  });
+  if(!courseOrder.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">◫</div>'
+      + '<div class="empty-title">No courses</div>'
+      + '<div class="empty-sub">No confirmed courses found'
+      + (_coursesPl !== 'ALL' ? ' for product line ' + _coursesPl : '')
+      + '.</div></div>';
+    return;
+  }
+  grid.innerHTML = courseOrder.map(function(cid) {
+    var c = courseMap[cid]; var acts = c.activities; var total = acts.length;
+    var approved = acts.filter(function(a){ return a.status==='approved'||a.status==='complete'; }).length;
+    var awaiting = acts.filter(function(a){ return a.status==='awaiting_approval'; }).length;
+    var generated = approved + awaiting;
+    var pctTotal = total ? Math.round((generated/total)*100) : 0;
+    var a01 = acts.filter(function(a){ return a.activityId.match(/-A01$/); })[0] || acts[0];
+    var courseName = a01 ? a01.title.replace(/\s*[—–].*/, '').trim() : cid;
+    var plClass = 'pl-' + c.productLine.toLowerCase();
+    var awaitingBadge = awaiting
+      ? '<span class="pill pill-awaiting" style="margin-left:6px;">' + awaiting + ' awaiting</span>'
+      : '';
+    var barHtml = '<div class="course-card-bar">'
+      + '<div class="course-card-fill" style="width:' + pctTotal + '%;">'
+      + '<div class="course-card-fill-approved" style="flex:' + (approved||0) + ';min-width:' + (approved?'2px':'0') + ';"></div>'
+      + (awaiting ? '<div class="course-card-fill-awaiting" style="flex:' + awaiting + ';min-width:2px;"></div>' : '')
+      + '</div></div>';
+    var metaLeft = generated + ' generated' + (approved ? ' (' + approved + ' approved)' : '');
+    return '<div class="course-card" data-cid="' + esc(cid) + '" data-action="open-drawer" data-tid="' + esc(cid) + '">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">'
+      + '<span class="pl-chip ' + plClass + '">' + c.productLine + '</span>' + awaitingBadge + '</div>'
+      + '<div class="course-card-id">' + esc(cid) + '</div>'
+      + '<div class="course-card-name">' + esc(courseName) + '</div>'
+      + barHtml
+      + '<div class="course-card-meta"><span>' + metaLeft + '</span><span>' + generated + ' / ' + total + '</span></div>'
+      + '</div>';
+  }).join('');
+}
+
+// ── Doc viewer state ──────────────────────────────────────────────────────
+var _docCache     = {};   // fileId -> text content
+var _docFileIds   = {};   // activityId -> {pm, fg, dn}  (fileId or null)
+var _docExpanded  = null; // currently expanded activityId
+var _docActiveTab = {};   // activityId -> 'pm'|'fg'|'dn'
+var _docEditing   = {};   // activityId+docType -> bool
+var _docDirty     = {};   // activityId+docType -> edited text
+
+function openDrawer(cid) {
+  var acts = _coursesData.filter(function(a){ return a.courseId === cid; });
+  if(!acts.length) return;
+  document.getElementById('drawerCourseId').textContent = cid;
+  var a01 = acts.filter(function(a){ return a.activityId.match(/-A01$/); })[0] || acts[0];
+  document.getElementById('drawerCourseName').textContent =
+    a01.title.replace(/\s*[\u2014\u2013].*/, '').trim();
+  _docExpanded = null;
+  _docEditing  = {};
+  _docDirty    = {};
+  renderDrawerList(acts);
+  document.getElementById('coursesDrawer').style.display = 'block';
+  document.getElementById('coursesDrawer').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function renderDrawerList(acts) {
+  var listEl = document.getElementById('drawerActList');
+  listEl.innerHTML = acts.map(function(a) {
+    var pill     = statusPill(a.status);
+    var gateIcon = a.isGate
+      ? '<span style="font-size:.65rem;color:var(--gold);font-weight:700;margin-right:4px;">GATE</span>' : '';
+    var isExpandable = a.driveUrl || true;
+    return '<div class="act-list-item act-row-expand" data-action="toggle-act" data-aid="' + esc(a.activityId) + '">'
+      + '<span class="act-expand-icon" id="expicon-' + esc(a.activityId) + '">&#9654;</span>'
+      + '<div class="act-list-id">' + esc(a.activityId) + '</div>'
+      + '<div class="act-list-title">' + gateIcon + esc(a.title) + '</div>'
+      + '<div class="act-list-status" style="display:flex;align-items:center;gap:6px;">' + pill + '</div>'
+      + '</div>'
+      + '<div class="act-doc-panel" id="docpanel-' + esc(a.activityId) + '"></div>';
+  }).join('');
+}
+
+function closeDrawer() {
+  document.getElementById('coursesDrawer').style.display = 'none';
+  _docExpanded = null;
+}
+
+async function toggleActDocs(aid) {
+  var panel   = document.getElementById('docpanel-' + aid);
+  var icon    = document.getElementById('expicon-' + aid);
+  if(!panel) return;
+  if(_docExpanded === aid) {
+    panel.classList.remove('open');
+    icon.innerHTML = '&#9654;';
+    _docExpanded = null;
+    return;
+  }
+  // Close previously open panel
+  if(_docExpanded) {
+    var old = document.getElementById('docpanel-' + _docExpanded);
+    var oldIcon = document.getElementById('expicon-' + _docExpanded);
+    if(old) old.classList.remove('open');
+    if(oldIcon) oldIcon.innerHTML = '&#9654;';
+  }
+  _docExpanded = aid;
+  icon.innerHTML = '&#9660;';
+  panel.classList.add('open');
+  // Render tab bar
+  var tab = _docActiveTab[aid] || 'pm';
+  _docActiveTab[aid] = tab;
+  panel.innerHTML = buildDocTabBar(aid, tab) + '<div class="doc-content" id="doccontent-' + esc(aid) + '"></div>';
+  await loadDocTab(aid, tab);
+}
+
+function buildDocTabBar(aid, activeTab) {
+  return '<div class="doc-tab-bar">'
+    + ['pm','fg','dn'].map(function(t){
+        var cls = 'doc-tab' + (t === 'dn' ? ' dn-tab' : '') + (t === activeTab ? ' active' : '');
+        return '<button class="' + cls + '" data-action="switch-doc-tab" data-aid="' + esc(aid) + '" data-tab="' + t + '">'
+          + t.toUpperCase() + '</button>';
+      }).join('')
+    + '</div>';
+}
+
+async function switchDocTab(aid, tab) {
+  _docActiveTab[aid] = tab;
+  // Update tab bar active state
+  var panel = document.getElementById('docpanel-' + aid);
+  if(!panel) return;
+  panel.querySelectorAll('.doc-tab').forEach(function(btn){
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+  });
+  await loadDocTab(aid, tab);
+}
+
+async function loadDocTab(aid, tab) {
+  var contentEl = document.getElementById('doccontent-' + aid);
+  if(!contentEl) return;
+  contentEl.innerHTML = '<div class="doc-loading">Loading ' + tab.toUpperCase() + '...</div>';
+
+  // Get or fetch file IDs for this activity
+  if(!_docFileIds[aid]) {
+    try {
+      _docFileIds[aid] = await fetchActivityFileIds(aid);
+    } catch(e) {
+      contentEl.innerHTML = '<div class="doc-error">Could not list Drive files: ' + esc(e.message) + '</div>';
+      return;
+    }
+  }
+
+  var fileId = _docFileIds[aid][tab];
+  if(!fileId) {
+    contentEl.innerHTML = '<div class="doc-no-file">' + tab.toUpperCase() + ' not yet generated.</div>';
+    return;
+  }
+
+  // Fetch content if not cached
+  if(!_docCache[fileId]) {
+    try {
+      var r = await fetch(
+        'https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media',
+        { headers: { 'Authorization': 'Bearer ' + authToken } }
+      );
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      _docCache[fileId] = await r.text();
+    } catch(e) {
+      contentEl.innerHTML = '<div class="doc-error">Could not load file: ' + esc(e.message) + '</div>';
+      return;
+    }
+  }
+
+  renderDocContent(aid, tab, fileId, contentEl);
+}
+
+function renderDocContent(aid, tab, fileId, contentEl) {
+  var key      = aid + ':' + tab;
+  var isEditing = !!_docEditing[key];
+  var text     = _docDirty[key] !== undefined ? _docDirty[key] : (_docCache[fileId] || '');
+  var canEdit  = (tab === 'pm' || tab === 'fg');
+  var isRaw    = !!_docEditing[key + ':raw'];
+
+  var toolbar = '<div class="doc-toolbar">';
+  if(canEdit && !isEditing) {
+    toolbar += '<button class="btn btn-sm btn-primary" data-action="doc-edit" data-aid="' + esc(aid) + '" data-tab="' + tab + '">Edit</button>';
+  }
+  if(canEdit && isEditing) {
+    toolbar += '<button class="btn btn-sm btn-gold" data-action="doc-save" data-aid="' + esc(aid) + '" data-tab="' + tab + '" data-fid="' + esc(fileId) + '">Save</button>';
+    toolbar += '<button class="btn btn-sm btn-ghost" data-action="doc-cancel" data-aid="' + esc(aid) + '" data-tab="' + tab + '">Cancel</button>';
+  }
+  toolbar += '<span class="doc-save-status" id="docsavestatus-' + esc(aid) + '-' + tab + '"></span>';
+  if(!isEditing) {
+    toolbar += '<div class="doc-toolbar-right">'
+      + '<button class="btn btn-sm btn-ghost" data-action="doc-toggle-raw" data-aid="' + esc(aid) + '" data-tab="' + tab + '">'
+      + (isRaw ? 'Rendered' : 'Raw') + '</button></div>';
+  }
+  toolbar += '</div>';
+
+  var body = '';
+  if(isEditing) {
+    body = '<textarea class="doc-edit-area" id="docedit-' + esc(aid) + '-' + tab + '">'
+      + esc(text) + '</textarea>';
+  } else if(isRaw) {
+    body = '<div class="doc-raw" style="display:block;">' + esc(text) + '</div>';
+  } else {
+    body = '<div class="doc-rendered">' + mdToHtml(text) + '</div>';
+  }
+
+  contentEl.innerHTML = toolbar + body;
+}
+
+// Known activity folder IDs — update when new courses confirmed
+var _activityFolderIds = {
+  'EX04-A01': '1KXBXmWlwsYAM3xo4fHI_4mJdpdvCAtZL',
+  'EX04-A02': '1mPHIE3PKXFX37n_p-GJZ84u30rPwocQO',
+  'EX04-A03': '11y4F9U6hNt_SQz1w7OFcn4OOfOIW8nB0',
+  'EX04-A04': '19CxyJ4WJJh_GwkHi47HpAN3Rgmu8ac1b',
+  'EX04-A05': '1iRbJJCKkdYs6ckOEH4BU_y706AxiZo29',
+};
+
+async function fetchActivityFileIds(aid) {
+  var aidUpper = aid.toUpperCase();
+  var folderId = _activityFolderIds[aid] || _activityFolderIds[aidUpper];
+  var files = [];
+  if(folderId) {
+    var q = encodeURIComponent(
+      '"' + folderId + '" in parents'
+      + ' and mimeType != "application/vnd.google-apps.folder" and trashed=false'
+    );
+    var r = await gApi('GET',
+      'https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id,name)&pageSize=20'
+    );
+    files = r.files || [];
+  } else {
+    var q2 = encodeURIComponent(
+      'name contains "' + aid + '" and mimeType != "application/vnd.google-apps.folder" and trashed=false'
+    );
+    var r2 = await gApi('GET',
+      'https://www.googleapis.com/drive/v3/files?q=' + q2
+      + '&fields=files(id,name)&pageSize=20'
+      + '&corpora=allDrives&includeItemsFromAllDrives=true&supportsAllDrives=true'
+    );
+    files = r2.files || [];
+  }
+  var ids = { pm: null, fg: null, dn: null };
+  files.forEach(function(f) {
+    var n = f.name.toUpperCase();
+    if(n.startsWith(aidUpper + '-PM-'))      ids.pm = f.id;
+    else if(n.startsWith(aidUpper + '-FG-')) ids.fg = f.id;
+    else if(n.startsWith(aidUpper + '-DN-')) ids.dn = f.id;
+  });
+  return ids;
+}
+
+async function saveDoc(aid, tab, fileId) {
+  var key      = aid + ':' + tab;
+  var statusEl = document.getElementById('docsavestatus-' + aid + '-' + tab);
+  var textarea = document.getElementById('docedit-' + aid + '-' + tab);
+  if(!textarea) return;
+  var newText  = textarea.value;
+  if(statusEl) statusEl.textContent = 'Saving...';
+
+  try {
+    var blob = new Blob([newText], { type: 'text/plain' });
+    var form = new FormData();
+    form.append('metadata', new Blob(['{}'], { type: 'application/json' }));
+    form.append('file', blob);
+    var r = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files/' + fileId
+      + '?uploadType=multipart&fields=id',
+      { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + authToken }, body: form }
+    );
+    if(!r.ok) { var e = await r.json(); throw new Error(e.error && e.error.message || r.status); }
+    // Update cache and dirty state
+    _docCache[fileId] = newText;
+    delete _docDirty[key];
+    delete _docEditing[key];
+    if(statusEl) { statusEl.textContent = 'Saved ✓'; setTimeout(function(){ statusEl.textContent=''; }, 3000); }
+    // Re-render in read mode
+    var contentEl = document.getElementById('doccontent-' + aid);
+    if(contentEl) renderDocContent(aid, tab, fileId, contentEl);
+  } catch(e) {
+    if(statusEl) statusEl.textContent = 'Error: ' + e.message;
+  }
+}
+
+
+function statusPill(status) {
+  var map = {
+    'queued':            ['pill-queued',     'Queued'],
+    'pending':           ['pill-pending',    'Pending'],
+    'generating':        ['pill-generating', 'Generating'],
+    'in_progress':       ['pill-generating', 'In Progress'],
+    'awaiting_approval': ['pill-awaiting',   'Awaiting Review'],
+    'approved':          ['pill-approved',   'Approved'],
+    'qc_failed':         ['pill-qcfailed',   'QC Failed'],
+    'failed':            ['pill-failed',     'Failed'],
+    'complete':          ['pill-approved',   'Complete'],
+  };
+  var v = map[status] || ['pill-pending', status];
+  return '<span class="pill ' + v[0] + '">' + v[1] + '</span>';
+}
+
+// PL filter buttons
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-action]');
+  if(el) {
+    var act = el.getAttribute('data-action');
+    var aid = el.getAttribute('data-aid');
+    var tab = el.getAttribute('data-tab');
+    var fid = el.getAttribute('data-fid');
+    if(act === 'open-drawer')    { openDrawer(el.getAttribute('data-tid')); return; }
+    if(act === 'toggle-act')     { e.stopPropagation(); toggleActDocs(aid); return; }
+    if(act === 'switch-doc-tab') { e.stopPropagation(); switchDocTab(aid, tab); return; }
+    if(act === 'doc-edit') {
+      e.stopPropagation();
+      _docEditing[aid+':'+tab] = true;
+      var ce = document.getElementById('doccontent-'+aid);
+      if(ce) renderDocContent(aid, tab, _docFileIds[aid] && _docFileIds[aid][tab], ce);
+      return;
+    }
+    if(act === 'doc-cancel') {
+      e.stopPropagation();
+      delete _docEditing[aid+':'+tab];
+      delete _docDirty[aid+':'+tab];
+      var ce = document.getElementById('doccontent-'+aid);
+      if(ce) renderDocContent(aid, tab, _docFileIds[aid] && _docFileIds[aid][tab], ce);
+      return;
+    }
+    if(act === 'doc-save') { e.stopPropagation(); saveDoc(aid, tab, fid); return; }
+    if(act === 'doc-toggle-raw') {
+      e.stopPropagation();
+      var rk = aid+':'+tab+':raw';
+      _docEditing[rk] = !_docEditing[rk];
+      var ce = document.getElementById('doccontent-'+aid);
+      if(ce) renderDocContent(aid, tab, _docFileIds[aid] && _docFileIds[aid][tab], ce);
+      return;
+    }
+  }
+  var btn = e.target.closest('.courses-pl-btn');
+  if(!btn) return;
+  document.querySelectorAll('.courses-pl-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  _coursesPl = btn.dataset.pl;
+  closeDrawer();
+  renderCourses();
+});
+
+
+
+// ── Review & Manage Tab ───────────────────────────────────────────────────
+var _reviewGates    = [];   // array of gate objects
+var _reviewCurrent  = null; // currently open gate
+var _rpDocCache     = {};   // fileId → markdown content cache
+var _rpActiveDoc    = 'pm';
+
+async function loadReviewTab(force) {
+  if(!isAuthed) return;
+  if(_reviewGates.length && !force) { renderGateList(); return; }
+  reviewShowStatus('wait', 'Loading gates...');
+  try {
+    var root       = settings.drive_root || '1Lo65wGeI-kaImMxAwGvH4LCfGQ-f7lY7';
+    var gatesId    = await gFindFolder('Gates', root);
+    if(!gatesId) { reviewShowStatus('err', 'Gates folder not found in Drive root.'); return; }
+    var pendingId  = await gFindFolder('Pending', gatesId);
+    if(!pendingId) { reviewShowStatus('err', 'Gates/Pending/ folder not found.'); return; }
+
+    // List files in Pending/
+    var q = encodeURIComponent("'" + pendingId + "' in parents and trashed=false");
+    var r = await gApi('GET', 'https://www.googleapis.com/drive/v3/files?q=' + q
+      + '&fields=files(id,name,size,modifiedTime)&pageSize=50');
+    var files = r.files || [];
+    var gateFiles = files.filter(function(f){ return f.name.startsWith('GATE_') && f.name.endsWith('.json'); });
+
+    if(!gateFiles.length) {
+      reviewHideStatus();
+      document.getElementById('reviewGateList').innerHTML =
+        '<div class="empty-state"><div class="empty-icon">◎</div>'
+        + '<div class="empty-title">No pending gates</div>'
+        + '<div class="empty-sub">All activities are approved or no generation has run yet.</div></div>';
+      document.getElementById('reviewSubtitle').textContent = 'Gates awaiting approval';
+      return;
+    }
+
+    // Read each gate file content
+    _reviewGates = [];
+    for(var i = 0; i < gateFiles.length; i++) {
+      var gf = gateFiles[i];
+      reviewShowStatus('wait', 'Reading gate ' + (i+1) + ' of ' + gateFiles.length + '...');
+      try {
+        var content = await fetch(
+          'https://www.googleapis.com/drive/v3/files/' + gf.id + '?alt=media',
+          { headers: { 'Authorization': 'Bearer ' + authToken } }
+        ).then(function(r){ return r.json(); });
+        content._file_id = gf.id;
+        content._pending_folder_id = pendingId;
+        content._gates_folder_id = gatesId;
+        _reviewGates.push(content);
+      } catch(e) {
+        console.warn('Could not read gate file', gf.name, e);
+      }
+    }
+
+    // Sort: awaiting_approval first
+    _reviewGates.sort(function(a,b){
+      if(a.status === 'awaiting_approval' && b.status !== 'awaiting_approval') return -1;
+      if(b.status === 'awaiting_approval' && a.status !== 'awaiting_approval') return 1;
+      return 0;
+    });
+
+    reviewHideStatus();
+    document.getElementById('reviewSubtitle').textContent =
+      _reviewGates.length + ' gate' + (_reviewGates.length === 1 ? '' : 's') + ' pending';
+    renderGateList();
+
+    // Update sidebar badge
+    var awBadge = document.getElementById('navBadgeCourses');
+    if(_reviewGates.length) {
+      awBadge.textContent = _reviewGates.length;
+      awBadge.style.display = '';
+    }
+  } catch(e) {
+    reviewShowStatus('err', 'Failed to load gates: ' + e.message);
+  }
+}
+
+function reviewShowStatus(type, msg) {
+  var el = document.getElementById('reviewStatus');
+  el.className = 'status-bar ' + type;
+  document.getElementById('reviewStatusMsg').textContent = msg;
+  el.style.display = 'flex';
+}
+function reviewHideStatus() {
+  document.getElementById('reviewStatus').style.display = 'none';
+}
+
+function renderGateList() {
+  var el = document.getElementById('reviewGateList');
+  if(!_reviewGates.length) { el.innerHTML = ''; return; }
+  el.innerHTML = '';
+  _reviewGates.forEach(function(g) {
+    var isAwaiting = g.status === 'awaiting_approval';
+    var hasDocs = g.pm_file_id && g.fg_file_id && g.dn_file_id;
+    var div = document.createElement('div');
+    div.className = 'act-list-item';
+    div.style.cssText = 'cursor:pointer;padding:14px 16px;';
+    div.setAttribute('data-review-aid', g.activity_id);
+    var pillHtml = isAwaiting
+      ? '<span class="pill pill-awaiting">Awaiting Review</span>'
+      : '<span class="pill pill-pending">' + esc(g.status) + '</span>';
+    div.innerHTML = '<div style="flex:1;">'
+      + '<div style="font-family:monospace;font-size:.72rem;color:var(--blue);margin-bottom:2px;">' + esc(g.activity_id) + ' &middot; ' + esc(g.course_id) + '</div>'
+      + '<div style="font-size:.85rem;font-weight:500;color:var(--ink);">' + esc(g.gate_type === 'approval' ? 'Gate: A01 Approval' : g.gate_type) + '</div>'
+      + '<div style="font-size:.72rem;color:var(--ink3);margin-top:2px;">Created ' + esc((g.created_at||'').slice(0,10)) + (hasDocs ? ' &middot; PM + FG + DN ready' : ' &middot; Documents not yet attached') + '</div>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px;">'
+      + pillHtml
+      + (hasDocs ? '<span style="font-size:.75rem;color:var(--ink3);">&#x276F;</span>' : '')
+      + '</div>';
+    el.appendChild(div);
+  });
+}
+
+
+async function openReviewPanel(activityId) {
+  var gate = _reviewGates.find(function(g){ return g.activity_id === activityId; });
+  if(!gate) return;
+  _reviewCurrent = gate;
+  _rpDocCache = {};
+  _rpActiveDoc = 'pm';
+
+  document.getElementById('rpActivityId').textContent = gate.activity_id + '  ·  ' + gate.course_id;
+  document.getElementById('rpTitle').textContent = gate.gate_type === 'approval'
+    ? 'Gate Review — A01 Approval Required'
+    : 'Gate Review — ' + gate.gate_type;
+  document.getElementById('rpMeta').textContent = 'Status: ' + gate.status
+    + '  ·  Created: ' + (gate.created_at||'').slice(0,10);
+
+  // Reset tabs
+  document.querySelectorAll('.doc-reader-tab').forEach(function(t){
+    t.classList.toggle('active', t.dataset.doc === 'pm');
+  });
+  document.getElementById('rpAmendForm').style.display = 'none';
+  document.getElementById('rpAmendNote').value = '';
+  document.getElementById('rpActionStatus').textContent = '';
+  document.getElementById('rpApproveBtn').disabled = false;
+  document.getElementById('rpAmendBtn').disabled = false;
+
+  document.getElementById('reviewPanel').style.display = 'block';
+  document.getElementById('reviewPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  // Load PM immediately
+  await rpShowDoc('pm');
+}
+
+function closeReviewPanel() {
+  document.getElementById('reviewPanel').style.display = 'none';
+  _reviewCurrent = null;
+}
+
+async function rpShowDoc(docKey) {
+  _rpActiveDoc = docKey;
+  document.querySelectorAll('.doc-reader-tab').forEach(function(t){
+    t.classList.toggle('active', t.dataset.doc === docKey);
+  });
+
+  var body = document.getElementById('rpDocBody');
+  if(!_reviewCurrent) return;
+
+  var fileId = docKey === 'pm' ? _reviewCurrent.pm_file_id
+             : docKey === 'fg' ? _reviewCurrent.fg_file_id
+             : _reviewCurrent.dn_file_id;
+
+  if(!fileId) {
+    body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--ink3);">Document not attached to this gate yet.</div>';
+    return;
+  }
+
+  if(_rpDocCache[fileId]) {
+    body.innerHTML = mdToHtml(_rpDocCache[fileId]);
+    return;
+  }
+
+  body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--ink3);">Loading document...</div>';
+  try {
+    var content = await fetch(
+      'https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media',
+      { headers: { 'Authorization': 'Bearer ' + authToken } }
+    ).then(function(r){ return r.text(); });
+    _rpDocCache[fileId] = content;
+    body.innerHTML = mdToHtml(content);
+  } catch(e) {
+    body.innerHTML = '<div class="err-banner">Failed to load document: ' + esc(e.message) + '</div>';
+  }
+}
+
+function mdToHtml(md) {
+  // Minimal markdown renderer — headings, bold, italic, paragraphs, tables, hr
+  var lines = md.split('\n');
+  var out = [];
+  var inTable = false;
+  for(var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    // Headings
+    if(/^### /.test(line))      { out.push('<h3>' + inlineHtml(line.slice(4)) + '</h3>'); continue; }
+    if(/^## /.test(line))       { out.push('<h2>' + inlineHtml(line.slice(3)) + '</h2>'); continue; }
+    if(/^# /.test(line))        { out.push('<h1>' + inlineHtml(line.slice(2)) + '</h1>'); continue; }
+    // HR
+    if(/^---+$/.test(line.trim())) { out.push('<hr style="border:none;border-top:1px solid var(--paper3);margin:12px 0;">'); continue; }
+    // Table rows
+    if(/^\|/.test(line)) {
+      if(!inTable) { out.push('<table style="width:100%;border-collapse:collapse;font-size:.82rem;margin:10px 0;">'); inTable = true; }
+      var cells = line.split('|').slice(1,-1);
+      var isSep = cells.every(function(c){ return /^[-: ]+$/.test(c); });
+      if(!isSep) {
+        out.push('<tr>' + cells.map(function(c){
+          return '<td style="padding:6px 10px;border:1px solid var(--paper3);">' + inlineHtml(c.trim()) + '</td>';
+        }).join('') + '</tr>');
+      }
+      continue;
+    }
+    if(inTable) { out.push('</table>'); inTable = false; }
+    // Blank line
+    if(!line.trim()) { out.push('<br>'); continue; }
+    // Bullet
+    if(/^[-*] /.test(line)) { out.push('<div style="padding-left:16px;margin:2px 0;">&#x2022; ' + inlineHtml(line.slice(2)) + '</div>'); continue; }
+    // Normal paragraph
+    out.push('<p style="margin:4px 0;">' + inlineHtml(line) + '</p>');
+  }
+  if(inTable) out.push('</table>');
+  return out.join('\n');
+}
+
+function inlineHtml(s) {
+  s = s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\*(.+?)\*/g,     '<em>$1</em>');
+  s = s.replace(/_(.+?)_/g,       '<em>$1</em>');
+  s = s.replace(/`(.+?)`/g,       '<code style="background:var(--paper2);padding:1px 4px;border-radius:3px;font-size:.85em;">$1</code>');
+  return s;
+}
+
+function reviewToggleAmend() {
+  var f = document.getElementById('rpAmendForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+async function reviewApprove() {
+  if(!_reviewCurrent) return;
+  var gate = _reviewCurrent;
+  var btn = document.getElementById('rpApproveBtn');
+  var statusEl = document.getElementById('rpActionStatus');
+  btn.disabled = true;
+  statusEl.textContent = 'Approving...';
+
+  try {
+    var root        = settings.drive_root || '1Lo65wGeI-kaImMxAwGvH4LCfGQ-f7lY7';
+    var gatesId     = gate._gates_folder_id || await gFindFolder('Gates', root);
+    var releasedId  = await gFindOrCreate('Released', gatesId);
+    var pendingId   = gate._pending_folder_id;
+    var sheetId     = settings.sheet_id || '1Zy76ERiYbOJ7zozlz2nf8AMVICvYCI5gvjBsb6kxxIQ';
+    var userEmail   = '';
+    try {
+      var me = await gApi('GET', 'https://www.googleapis.com/oauth2/v1/userinfo?alt=json');
+      userEmail = me.email || '';
+    } catch(e){}
+
+    // 1. Update gate object
+    var updatedGate = Object.assign({}, gate);
+    updatedGate.status      = 'released';
+    updatedGate.released_by = userEmail;
+    updatedGate.released_at = new Date().toISOString();
+    delete updatedGate._file_id;
+    delete updatedGate._pending_folder_id;
+    delete updatedGate._gates_folder_id;
+
+    // 2. Move gate file from Pending to Released (Editor access sufficient)
+    await gApi('PATCH',
+      'https://www.googleapis.com/drive/v3/files/' + gate._file_id
+      + '?addParents=' + releasedId
+      + '&removeParents=' + pendingId
+      + '&supportsAllDrives=true&fields=id,parents',
+      {}
+    );
+
+    // 3. Update gate content with released status
+    await gWriteJson(releasedId, 'GATE_' + gate.activity_id + '.json', updatedGate);
+
+    // 4. Update Sheets register — find row and update Status col (Q) and ApprovedBy (K), ApprovalDate (L)
+    var now = new Date().toISOString().slice(0,10);
+    await gSheetsAppend(sheetId, 'GTA!A:R', [
+      gate.activity_id, '', gate.course_id, '', '', '', '', '', '', '', userEmail, now, '', '', '', '', 'approved', ''
+    ]);
+
+    // 5. Update local UI
+    _reviewGates = _reviewGates.filter(function(g){ return g.activity_id !== gate.activity_id; });
+    statusEl.textContent = 'Approved ✓';
+    setTimeout(function(){
+      closeReviewPanel();
+      renderGateList();
+      document.getElementById('reviewSubtitle').textContent =
+        _reviewGates.length + ' gate' + (_reviewGates.length === 1 ? '' : 's') + ' pending';
+      // Refresh courses badge
+      _coursesData = [];
+    }, 1200);
+
+  } catch(e) {
+    statusEl.textContent = 'Error: ' + e.message;
+    btn.disabled = false;
+  }
+}
+
+async function reviewSubmitAmend() {
+  if(!_reviewCurrent) return;
+  var gate    = _reviewCurrent;
+  var note    = document.getElementById('rpAmendNote').value.trim();
+  var target  = document.getElementById('rpAmendTarget').value;
+  if(!note) { alert('Please enter an amendment note.'); return; }
+
+  var statusEl = document.getElementById('rpActionStatus');
+  statusEl.textContent = 'Sending amendment...';
+  document.getElementById('rpApproveBtn').disabled = true;
+  document.getElementById('rpAmendBtn').disabled = true;
+
+  try {
+    var pendingId = gate._pending_folder_id;
+
+    // Update gate in place in Pending/
+    var updatedGate = Object.assign({}, gate);
+    updatedGate.status           = 'amendment';
+    updatedGate.amendment_note   = note;
+    updatedGate.amendment_target = target;
+    delete updatedGate._file_id;
+    delete updatedGate._pending_folder_id;
+    delete updatedGate._gates_folder_id;
+
+    await gWriteJson(pendingId, 'GATE_' + gate.activity_id + '.json', updatedGate);
+
+    // Update UI
+    gate.status           = 'amendment';
+    gate.amendment_note   = note;
+    gate.amendment_target = target;
+    statusEl.textContent = 'Amendment sent ✓';
+    document.getElementById('rpAmendForm').style.display = 'none';
+    renderGateList();
+
+  } catch(e) {
+    statusEl.textContent = 'Error: ' + e.message;
+    document.getElementById('rpApproveBtn').disabled = false;
+    document.getElementById('rpAmendBtn').disabled = false;
+  }
+}
+
+// Delegated click for review gate rows
+document.addEventListener('click', function(e) {
+  var row = e.target.closest('[data-review-aid]');
+  if(!row) return;
+  openReviewPanel(row.getAttribute('data-review-aid'));
+});
+
+// ── Pipeline Log ────────────────────────────────────────────────────────
+var _pipelineLogVisible = false;
+var _pipelineLogInterval = null;
+var _pipelineLogBase = "http://localhost:5050";
+
+// ── Run Pipeline ──────────────────────────────────────────────────────────
+async function runPipeline() {
+  var btn    = document.getElementById('runPipelineBtn');
+  var status = document.getElementById('runPipelineStatus');
+  if(!btn) return;
+  btn.disabled = true;
+  status.textContent = 'Starting...';
+  status.style.color = 'var(--amber)';
+  try {
+    var r = await fetch(_pipelineLogBase + '/api/run_pipeline', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'}
+    });
+    var data = await r.json();
+    if(data.status === 'started') {
+      status.textContent = 'Pipeline started ✓';
+      status.style.color = 'var(--green)';
+      // Start polling log
+      if(!_pipelineLogVisible) togglePipelineLog();
+    } else if(data.status === 'already_running') {
+      status.textContent = 'Already running';
+      status.style.color = 'var(--amber)';
+    } else {
+      status.textContent = 'Error: ' + (data.message || 'unknown');
+      status.style.color = 'var(--red)';
+    }
+  } catch(e) {
+    status.textContent = 'Dashboard offline';
+    status.style.color = 'var(--red)';
+  }
+  setTimeout(function(){ btn.disabled = false; }, 5000);
+  setTimeout(function(){ status.textContent = ''; }, 8000);
+}
+
+
+function togglePipelineLog() {
+  _pipelineLogVisible = !_pipelineLogVisible;
+  document.getElementById('pipelineLogPanel').style.display = _pipelineLogVisible ? 'block' : 'none';
+  document.getElementById('pipelineLogToggleLabel').innerHTML = _pipelineLogVisible ? '&#9650; Hide' : '&#9660; Show';
+  if(_pipelineLogVisible) {
+    fetchPipelineLog();
+    _pipelineLogInterval = setInterval(fetchPipelineLog, 3000);
+  } else {
+    clearInterval(_pipelineLogInterval);
+    _pipelineLogInterval = null;
+  }
+}
+
+async function fetchPipelineLog() {
+  var statusEl = document.getElementById('pipelineLogStatus');
+  var bodyEl   = document.getElementById('pipelineLogBody');
+  try {
+    var r = await fetch(_pipelineLogBase + '/api/pipeline_log?n=60', {cache: 'no-store'});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    var data = await r.json();
+    var lines = data.lines || [];
+    statusEl.textContent = data.log_date + '  (' + data.total + ' lines)';
+    bodyEl.innerHTML = lines.map(function(l) {
+      var col = '#c9d1d9';
+      if(l.includes(' [ERROR] ') || l.includes('failed') || l.includes('Failed')) col = '#ff7b72';
+      else if(l.includes(' [WARNING] ') || l.includes('QC failed') || l.includes('Skipping')) col = '#e3b341';
+      else if(l.includes('Generated in') || l.includes('awaiting_approval') || l.includes('Gate file updated')) col = '#7ee787';
+      else if(l.includes('Calling OpenRouter') || l.includes('Generating')) col = '#79c0ff';
+      return '<div style="color:' + col + '">' + esc(l) + '</div>';
+    }).join('') || '<span style="color:#6e7681;">No log entries yet.</span>';
+    bodyEl.scrollTop = bodyEl.scrollHeight;
+  } catch(e) {
+    statusEl.textContent = 'Dashboard offline';
+    bodyEl.innerHTML = '<span style="color:#6e7681;">Cannot reach dashboard at ' + _pipelineLogBase + '. Start dashboard.py to enable live log.</span>';
+  }
+}
+
+// Auto-load when navigating to Courses or Review
+var _origShowScreen = showScreen;
+showScreen = function(name) {
+  _origShowScreen(name);
+  if(name === 'courses' && isAuthed) loadCoursesTab(false);
+  if(name === 'review'  && isAuthed) loadReviewTab(false);
+};
+
+// ── Welcome screen ─────────────────────────────────────────────────
+function welcomeCheckState() {
+  var s = settings;
+  var checks = {
+    gclient: !!(s.gclient    && s.gclient.length    > 10),
+    drive:   !!(s.drive_root && s.drive_root.length > 10),
+    sheet:   !!(s.sheet_id   && s.sheet_id.length   > 10),
+    or:      !!(s.openrouter && s.openrouter.length  > 10),
+  };
+  function setRow(id, ok, okText, warnText) {
+    var icon = document.getElementById('wc-'+id+'-icon');
+    var sub  = document.getElementById('wc-'+id+'-sub');
+    if(!icon || !sub) return;
+    if(ok) { icon.className='welcome-check-icon wci-ok'; icon.innerHTML='&#10003;'; sub.textContent=okText; }
+    else   { icon.className='welcome-check-icon wci-warn'; icon.innerHTML='&#9679;'; sub.textContent=warnText; }
+  }
+  setRow('gclient', checks.gclient, 'Configured', 'Not set — add in Settings');
+  setRow('drive',   checks.drive,   'Configured', 'Not set — add in Settings');
+  setRow('sheet',   checks.sheet,   'Configured', 'Not set — add in Settings');
+  setRow('or',      checks.or,      'Configured', 'Not set — needed for AEX/AA');
+  var authIcon=document.getElementById('wc-auth-icon');
+  var authSub=document.getElementById('wc-auth-sub');
+  var signBtn=document.getElementById('welcomeSignBtn');
+  if(!authIcon) return;
+  if(isAuthed) {
+    authIcon.className='welcome-check-icon wci-ok'; authIcon.innerHTML='&#10003;';
+    authSub.textContent=document.getElementById('authStatus').textContent;
+    signBtn.disabled=true;
+    document.getElementById('welcomeSignBtnIcon').innerHTML='&#10003;';
+    document.getElementById('welcomeSignBtnLabel').textContent='Signed in';
+  } else {
+    authIcon.className='welcome-check-icon wci-warn'; authIcon.innerHTML='&#9679;';
+    authSub.textContent='Not signed in'; signBtn.disabled=false;
+    document.getElementById('welcomeSignBtnIcon').innerHTML='&#9675;';
+    document.getElementById('welcomeSignBtnLabel').textContent='Sign in with Google';
+  }
+  var coreReady=checks.gclient && checks.drive && checks.sheet && isAuthed;
+  var ctaBtn=document.getElementById('welcomeCtaBtn');
+  var ctaText=document.getElementById('welcomeCtaText');
+  if(!ctaBtn) return;
+  ctaBtn.disabled=!coreReady;
+  if(coreReady) ctaText.textContent='Everything looks good. You’re ready to go.';
+  else if(!isAuthed && !checks.gclient) ctaText.textContent='Add your OAuth Client ID in Settings, then sign in with Google.';
+  else if(!checks.gclient) ctaText.textContent='Add your OAuth Client ID in Settings to enable sign-in.';
+  else if(!isAuthed) ctaText.textContent='Sign in with Google to continue.';
+  else ctaText.textContent='Complete the checklist above to get started.';
+}
+function welcomeShouldShow() {
+  var s=settings;
+  return !(isAuthed && s.gclient && s.gclient.length>10 && s.drive_root && s.drive_root.length>10 && s.sheet_id && s.sheet_id.length>10);
+}
+document.addEventListener('click', function(e) {
+  var btn=e.target.closest('[data-action]');
+  if(!btn) return;
+  var action=btn.getAttribute('data-action');
+  if(action==='welcome-signin')    signIn();
+  if(action==='cp-edit'){var cid=btn.getAttribute('data-cid');cpShowEdit(cid);}
+  if(action==='cp-delete'){var cid=btn.getAttribute('data-cid');cpDelete(cid);}
+  if(action==='welcome-getstarted') showScreen('convert');
+  if(action==='run-pipeline')      runPipeline();
+});
+var _origSetAuthed=setAuthed;
+setAuthed=function(val,name){
+  _origSetAuthed(val,name);
+  welcomeCheckState();
+  if(val && !welcomeShouldShow()) showScreen('convert');
+};
+loadSettings();
+updateAuthGates();
+if(welcomeShouldShow()){
+  document.getElementById('screen-convert').classList.remove('active');
+  document.getElementById('nav-convert').classList.remove('active');
+  document.getElementById('screen-welcome').classList.add('active');
+  document.getElementById('topbarTitle').textContent=SCREENS['welcome'].title;
+  document.getElementById('topbarMeta').textContent=SCREENS['welcome'].meta;
+  welcomeCheckState();
+}
+</script>
+</body>
+</html>
 :root {
   --ink:#0F1923; --ink2:#2C3E50; --ink3:#64748B;
   --paper:#FAFAF8; --paper2:#F3F3EF; --paper3:#E8E8E2;
