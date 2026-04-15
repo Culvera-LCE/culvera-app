@@ -545,9 +545,12 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
               <div class="fr" id="cf_sector_row" style="display:none;"><span class="fl">Sector</span><input class="fi" id="cf_sector"></div>
               <div class="fr" id="cf_stream_row" style="display:none;"><span class="fl">Stream</span><input class="fi" id="cf_stream"></div>
               <div class="fr"><span class="fl">Seed Company</span>
-                <select class="fi" id="cf_seed">
+                <select class="fi" id="cf_seed" onchange="cfSeedChanged()">
                   <option value="">Loading companies...</option>
                 </select></div>
+              <div id="cf_seed_reminder" style="display:none;background:var(--amber-light);border:1px solid #F5DFA0;border-radius:var(--r);padding:8px 12px;font-size:.78rem;color:var(--amber);margin-bottom:8px;">
+                &#9888; No seed company selected &mdash; is this intentional? The pipeline will generate without company-specific context.
+              </div>
             </div>
             <div class="card">
               <div class="card-title">Product line folder on Drive</div>
@@ -1696,7 +1699,6 @@ function cfPopulateReview(identity,activities,filename){
   document.getElementById('cfActCount').textContent=activities.length;
   var list=document.getElementById('cfActList');list.innerHTML='';
   var multiCompany = _companyProfiles.length > 1;
-  var courseDefault = document.getElementById('cf_seed').value;
   activities.forEach(function(a){
     var row=document.createElement('div');row.className='act-list-item';
     row.style.cssText='flex-wrap:wrap;gap:6px;padding:8px 14px;';
@@ -1730,6 +1732,11 @@ function cfLoadPlFolders(pl){
     document.getElementById('cfPlFolderHint').textContent=folders.length+' folders found in tenant root';
   }).catch(function(e){document.getElementById('cfPlFolderLoading').textContent='Could not load folders: '+e;});
 }
+function cfSeedChanged(){
+  var sel=document.getElementById('cf_seed');
+  var rem=document.getElementById('cf_seed_reminder');
+  if(rem) rem.style.display=(!sel||!sel.value)?'block':'none';
+}
 function cfProceedToConfirm(){
   var cname=document.getElementById('cf_cname').value.trim();
   var plId=document.getElementById('cf_pl_folder').value;
@@ -1737,6 +1744,7 @@ function cfProceedToConfirm(){
   if(!cname){eb.textContent='Course Name is required.';eb.style.display='';return;}
   if(!plId){eb.textContent='Select a product line folder on Drive.';eb.style.display='';return;}
   eb.style.display='none';
+  cfSeedChanged();
   var cid=cfParsed.identity['Course ID'];
   var pl=document.getElementById('cf_pl').value;
   var seed=document.getElementById('cf_seed').value;
@@ -1747,7 +1755,7 @@ function cfProceedToConfirm(){
   var s='<strong>Course:</strong> '+esc(cid)+' · '+esc(cname)+'<br>';
   s+='<strong>Product Line:</strong> '+esc(pl)+'<br>';
   s+='<strong>Activities:</strong> '+acts.length+'<br>';
-  s+='<strong>Seed Company:</strong> '+(seed||'none')+(overrideCount?' ('+overrideCount+' activit'+(overrideCount===1?'y':'ies')+' overridden)':'')+'<br><br>';
+  s+='<strong>Seed Company:</strong> '+(seed||'none')+'<br><br>';
   s+='<strong>Will create on Drive:</strong><br>';
   s+='&nbsp;&nbsp;• '+esc(cid+'  ·  '+cname)+'/ (course folder)<br>';
   s+='&nbsp;&nbsp;• _Draft Initial Activity/, Prop Prompts/, Source Documents/<br>';
