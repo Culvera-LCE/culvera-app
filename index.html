@@ -298,7 +298,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.1.2</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.1.3</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -356,7 +356,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.1.2 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.1.3 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -2999,7 +2999,29 @@ function showToast(msg, type) {
   el._timer = setTimeout(function(){ el.classList.remove('show'); }, 3200);
 }
 
-// ── Studio Setup v1.1.2 ──────────────────────────────────────────────────────
+
+// ── Studio Drive helper aliases ───────────────────────────────────────────────
+// gDriveApi: alias for gApi (same function, Studio uses this name)
+function gDriveApi(method, url, body) { return gApi(method, url, body); }
+
+// gFindOrCreateFolder: find folder by name under parent, create if missing
+async function gFindOrCreateFolder(name, parentId) {
+  var id = await gFindFolder(name, parentId);
+  if(id) return id;
+  var r = await gDriveApi('POST','https://www.googleapis.com/drive/v3/files?fields=id',
+    {name:name, mimeType:'application/vnd.google-apps.folder', parents:[parentId]});
+  return r.id;
+}
+
+// gFindFile: find a file by name in a folder, returns id or null
+async function gFindFile(name, parentId) {
+  var sn = name.replace(/'/g, "\'");
+  var q = encodeURIComponent("name='"+sn+"' and '"+parentId+"' in parents and trashed=false");
+  var r = await gDriveApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)&pageSize=1');
+  return (r.files && r.files[0]) ? r.files[0].id : null;
+}
+
+// ── Studio Setup v1.1.3 ──────────────────────────────────────────────────────
 //
 // Two sections: Tenant (always visible) + Product Line (dropdown from Drive)
 // Drive is single source of truth — product line list read from Drive root.
@@ -3254,7 +3276,7 @@ async function studioTenantSave() {
       try{
         var folderId=f.type==='seed'?scId:studioId;
         var fname=f.type==='seed'?f.slug+'.json':'tenant.json';
-        var result=await gWriteJson(fname,folderId,JSON.stringify(_sTenant[f.key],null,2));
+        var result=await gWriteJson(folderId,fname,JSON.stringify(_sTenant[f.key],null,2));
         items[i].state='ok'; items[i].detail='ID: '+(result.id||'').substring(0,12)+'...'; saved++;
       } catch(ex){items[i].state='err';items[i].detail=ex.message;}
       progressEl.innerHTML=studioProgressHtml(items);
@@ -3417,7 +3439,7 @@ async function studioPlSave() {
         else if(f.key==='pedagogy') fname='pedagogy.json';
         else if(f.key==='activity_brief') fname='activity_brief.json';
         else fname=f.key+'.json';
-        var result=await gWriteJson(fname,folderId,JSON.stringify(_sPlSpec[f.key],null,2));
+        var result=await gWriteJson(folderId,fname,JSON.stringify(_sPlSpec[f.key],null,2));
         items[i].state='ok'; items[i].detail='ID: '+(result.id||'').substring(0,12)+'...'; saved++;
       } catch(ex){items[i].state='err';items[i].detail=ex.message;}
       progressEl.innerHTML=studioProgressHtml(items);
