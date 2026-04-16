@@ -298,7 +298,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.0.8</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.0.9</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -323,6 +323,9 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
     <div class="nav-section" style="margin-top:8px;">Reference Data</div>
     <div class="nav-item" onclick="showScreen('companies')" id="nav-companies">
       <span class="nav-icon">&#9632;</span> Company Profiles
+    </div>
+    <div class="nav-item" onclick="showScreen('studio')" id="nav-studio">
+      <span class="nav-icon">&#9670;</span> Studio Setup
     </div>
     <div class="nav-section" style="margin-top:8px;">System</div>
     <div class="nav-item" onclick="showScreen('settings')" id="nav-settings">
@@ -353,7 +356,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.0.8 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.0.9 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -857,6 +860,24 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           </div>
           <div class="settings-control">
             <input type="text" class="fi" id="set_sheet_id" placeholder="1Zy76ERiYbOJ7zozlz2nf8AMVICvYCI5gvjBsb6kxxIQ">
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <div class="settings-label-title">Gates / Pending Folder ID</div>
+            <div class="settings-label-sub">Drive ID of Gates/Pending/ — used by Review &amp; Manage to load gate files. Create this folder manually in Drive once and paste its ID here.</div>
+          </div>
+          <div class="settings-control">
+            <input type="text" class="fi" id="set_gates_pending_folder_id" placeholder="Paste Drive folder ID">
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <div class="settings-label-title">Gates / Released Folder ID</div>
+            <div class="settings-label-sub">Drive ID of Gates/Released/ — approved gate files are moved here. Create this folder manually in Drive once and paste its ID here.</div>
+          </div>
+          <div class="settings-control">
+            <input type="text" class="fi" id="set_gates_released_folder_id" placeholder="Paste Drive folder ID">
             <div style="margin-top:6px;">
               <button class="btn btn-sm btn-primary" onclick="saveSettings()">Save all settings</button>
             </div>
@@ -866,6 +887,10 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
       <div id="settingsSaved" class="status-bar ok" style="display:none;">
         <div class="status-dot"></div> Settings saved to browser storage.
       </div>
+    </div>
+
+    <div class="screen" id="screen-studio">
+      <div id="studioContent"></div>
     </div>
 
   </div><!-- /content -->
@@ -884,6 +909,7 @@ var SCREENS = {
   'courses':  {title:'Courses',       meta:'Pipeline status dashboard'},
   'review':   {title:'Review & Manage', meta:'Approve, amend, queue activities'},
   'settings': {title:'Settings',      meta:'API keys and tenant configuration'},
+  'studio':   {title:'Studio Setup',   meta:'Upload · Validate · Edit specification files'},
   'companies':{title:'Company Profiles', meta:'Reference data · seed companies'},
 };
 var isAuthed = false;
@@ -1081,18 +1107,22 @@ function showScreen(name) {
 // ── Settings ──────────────────────────────────────────────────────────────
 function loadSettings() {
   try { settings = JSON.parse(localStorage.getItem('culvera_settings') || '{}'); } catch(e){ settings={}; }
-  if(settings.openrouter) document.getElementById('set_openrouter').value = settings.openrouter;
-  if(settings.gclient)    document.getElementById('set_gclient').value    = settings.gclient;
-  if(settings.tenant)     document.getElementById('set_tenant').value     = settings.tenant;
-  if(settings.drive_root) document.getElementById('set_drive_root').value = settings.drive_root;
-  if(settings.sheet_id)   document.getElementById('set_sheet_id').value   = settings.sheet_id;
+  if(settings.openrouter)        document.getElementById('set_openrouter').value        = settings.openrouter;
+  if(settings.gclient)           document.getElementById('set_gclient').value           = settings.gclient;
+  if(settings.tenant)            document.getElementById('set_tenant').value            = settings.tenant;
+  if(settings.drive_root)        document.getElementById('set_drive_root').value        = settings.drive_root;
+  if(settings.sheet_id)          document.getElementById('set_sheet_id').value          = settings.sheet_id;
+  if(settings.gates_pending_folder_id)  document.getElementById('set_gates_pending_folder_id').value  = settings.gates_pending_folder_id;
+  if(settings.gates_released_folder_id) document.getElementById('set_gates_released_folder_id').value = settings.gates_released_folder_id;
 }
 function saveSettings() {
-  settings.openrouter = document.getElementById('set_openrouter').value.trim();
-  settings.gclient    = document.getElementById('set_gclient').value.trim();
-  settings.tenant     = document.getElementById('set_tenant').value.trim();
-  settings.drive_root = document.getElementById('set_drive_root').value.trim();
-  settings.sheet_id   = document.getElementById('set_sheet_id').value.trim();
+  settings.openrouter        = document.getElementById('set_openrouter').value.trim();
+  settings.gclient           = document.getElementById('set_gclient').value.trim();
+  settings.tenant            = document.getElementById('set_tenant').value.trim();
+  settings.drive_root        = document.getElementById('set_drive_root').value.trim();
+  settings.sheet_id          = document.getElementById('set_sheet_id').value.trim();
+  settings.gates_pending_folder_id  = document.getElementById('set_gates_pending_folder_id').value.trim();
+  settings.gates_released_folder_id = document.getElementById('set_gates_released_folder_id').value.trim();
   localStorage.setItem('culvera_settings', JSON.stringify(settings));
   var el = document.getElementById('settingsSaved');
   el.style.display = 'flex';
@@ -2383,11 +2413,8 @@ async function loadReviewTab(force) {
   if(_reviewGates.length && !force) { renderGateList(); return; }
   reviewShowStatus('wait', 'Loading gates...');
   try {
-    var root       = settings.drive_root || '1Lo65wGeI-kaImMxAwGvH4LCfGQ-f7lY7';
-    var gatesId    = await gFindFolder('Gates', root);
-    if(!gatesId) { reviewShowStatus('err', 'Gates folder not found in Drive root.'); return; }
-    var pendingId  = await gFindFolder('Pending', gatesId);
-    if(!pendingId) { reviewShowStatus('err', 'Gates/Pending/ folder not found.'); return; }
+    var pendingId  = settings.gates_pending_folder_id || '';
+    if(!pendingId) { reviewShowStatus('err', 'Gates/Pending folder ID not set — add it in Settings.'); return; }
 
     // List files in Pending/
     var q = encodeURIComponent("'" + pendingId + "' in parents and trashed=false");
@@ -2618,10 +2645,10 @@ async function reviewApprove() {
   statusEl.textContent = 'Approving...';
 
   try {
-    var root        = settings.drive_root || '1Lo65wGeI-kaImMxAwGvH4LCfGQ-f7lY7';
-    var gatesId     = gate._gates_folder_id || await gFindFolder('Gates', root);
-    var releasedId  = await gFindOrCreate('Released', gatesId);
-    var pendingId   = gate._pending_folder_id;
+    var pendingId   = gate._pending_folder_id || settings.gates_pending_folder_id || '';
+    var releasedId  = settings.gates_released_folder_id || '';
+    if(!releasedId) throw new Error('Gates/Released folder ID not set — add it in Settings.');
+    if(!pendingId)  throw new Error('Gates/Pending folder ID not set — add it in Settings.');
     var sheetId     = settings.sheet_id || '1Zy76ERiYbOJ7zozlz2nf8AMVICvYCI5gvjBsb6kxxIQ';
     var userEmail   = '';
     try {
@@ -2902,7 +2929,551 @@ setAuthed=function(val,name){
   welcomeCheckState();
   if(val && !welcomeShouldShow()) showScreen('courses');
 };
-loadSettings();
+
+// ── Studio Setup ──────────────────────────────────────────────────────────
+
+var STUDIO_PLS = [
+  { id:'aex', name:'AI Advantage Express', folder_name:'AI Advantage Express',
+    doc_types:['participant_manual','facilitator_guide','design_notes'] },
+  { id:'aa',  name:'AI Advantage',         folder_name:'AI Advantage',
+    doc_types:['participant_manual','facilitator_guide','design_notes'] },
+  { id:'ae',  name:'AI Enterprise',        folder_name:'AI Enterprise',
+    doc_types:['participant_manual','facilitator_guide','design_notes'] },
+  { id:'ee',  name:'Education Excellence', folder_name:'Education Excellence',
+    doc_types:['activity_brief','facilitator_guide','design_notes'] },
+];
+
+var _studioSpec = {};    // keyed by pl.id — holds loaded JSON objects
+var _studioDriveIds = {}; // keyed by pl.id — cached Studio folder IDs on Drive
+var _studioEditTarget = null; // {pl_id, file_key}
+
+var STUDIO_FILE_KEYS = ['product_line','pedagogy','pm','fg','dn','activity_brief'];
+var STUDIO_FILE_LABELS = {
+  product_line:   'product_line.json',
+  pedagogy:       'pedagogy.json',
+  pm:             'blueprints/pm.json',
+  fg:             'blueprints/fg.json',
+  dn:             'blueprints/dn.json',
+  activity_brief: 'blueprints/activity_brief.json',
+};
+
+function studioFileKeyFromJson(obj) {
+  if(!obj || typeof obj !== 'object') return null;
+  if(obj.document_type === 'participant_manual') return 'pm';
+  if(obj.document_type === 'facilitator_guide')  return 'fg';
+  if(obj.document_type === 'design_notes')        return 'dn';
+  if(obj.document_type === 'activity_brief')      return 'activity_brief';
+  if(obj.reflection && obj.pedagogy === undefined) return 'pedagogy';
+  if(obj.delivery_mode !== undefined || obj.activities_per_course !== undefined) return 'product_line';
+  return null;
+}
+
+function studioPlIdFromJson(obj) {
+  if(!obj) return null;
+  if(obj.product_line) return obj.product_line;
+  if(obj.id && ['aex','aa','ae','ee'].includes(obj.id)) return obj.id;
+  return null;
+}
+
+function studioValidateFile(key, obj) {
+  var errors = [];
+  if(key === 'product_line') {
+    if(!obj.id) errors.push('Missing: id');
+    if(!obj.name) errors.push('Missing: name');
+    if(!obj.pedagogy) errors.push('Missing: pedagogy');
+    if(!obj.document_types || !obj.document_types.length) errors.push('Missing: document_types');
+  } else if(key === 'pedagogy') {
+    if(!obj.id) errors.push('Missing: id');
+    if(!obj.reflection) errors.push('Missing: reflection');
+    if(!obj.format_rules) errors.push('Missing: format_rules');
+  } else if(['pm','fg','dn','activity_brief'].includes(key)) {
+    if(!obj.sections || !obj.sections.length) errors.push('Missing: sections');
+    if(!obj.product_line) errors.push('Missing: product_line');
+    if(!obj.document_type) errors.push('Missing: document_type');
+  }
+  return errors;
+}
+
+function studioRequiredKeys(pl_id) {
+  var pl = STUDIO_PLS.find(function(p){return p.id===pl_id;});
+  if(!pl) return [];
+  var keys = ['product_line','pedagogy'];
+  pl.doc_types.forEach(function(dt) {
+    if(dt==='participant_manual') keys.push('pm');
+    else if(dt==='facilitator_guide') keys.push('fg');
+    else if(dt==='design_notes') keys.push('dn');
+    else if(dt==='activity_brief') keys.push('activity_brief');
+  });
+  return keys;
+}
+
+function studioIsComplete(pl_id) {
+  var spec = _studioSpec[pl_id] || {};
+  return studioRequiredKeys(pl_id).every(function(k){ return !!spec[k]; });
+}
+
+function renderStudio() {
+  var el = document.getElementById('studioContent');
+  if(!el) return;
+
+  var html = '<div style="max-width:860px;">';
+
+  // Header
+  html += '<div style="margin-bottom:20px;">'
+    + '<p style="font-size:.85rem;color:var(--ink3);line-height:1.6;">Upload the Studio specification files for each product line. Once uploaded and validated, the LCE can generate documents. Files are saved to <code style="background:var(--paper2);padding:1px 5px;border-radius:3px;font-size:.8em;">{Product Line}/Studio/</code> in Drive.</p>'
+    + '</div>';
+
+  // Product line cards
+  STUDIO_PLS.forEach(function(pl) {
+    var spec = _studioSpec[pl.id] || {};
+    var required = studioRequiredKeys(pl.id);
+    var complete = studioIsComplete(pl.id);
+    var anyLoaded = required.some(function(k){return !!spec[k];});
+
+    var statusChip = complete
+      ? '<span style="background:var(--green-light);color:var(--green);padding:2px 10px;border-radius:10px;font-size:.7rem;font-weight:700;">&#10003; Ready</span>'
+      : anyLoaded
+        ? '<span style="background:var(--amber-light);color:var(--amber);padding:2px 10px;border-radius:10px;font-size:.7rem;font-weight:700;">&#9651; Incomplete</span>'
+        : '<span style="background:var(--paper2);color:var(--ink3);padding:2px 10px;border-radius:10px;font-size:.7rem;font-weight:700;">&#9675; Not configured</span>';
+
+    html += '<div class="card" style="margin-bottom:16px;">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
+      + '<div style="font-weight:700;font-size:.95rem;color:var(--ink);">'+pl.name+'</div>'
+      + statusChip
+      + '</div>';
+
+    // File rows
+    html += '<div style="border:1px solid var(--paper3);border-radius:8px;overflow:hidden;margin-bottom:12px;">';
+    required.forEach(function(key, i) {
+      var obj = spec[key];
+      var label = STUDIO_FILE_LABELS[key];
+      var hasFile = !!obj;
+      var errors = hasFile ? studioValidateFile(key, obj) : [];
+      var valid = hasFile && errors.length === 0;
+      var icon = !hasFile ? '&#9675;' : valid ? '<span style="color:var(--green);">&#10003;</span>' : '<span style="color:var(--red);">&#9651;</span>';
+      var border = i < required.length-1 ? 'border-bottom:1px solid var(--paper3);' : '';
+      html += '<div style="display:flex;align-items:center;gap:12px;padding:9px 14px;'+border+'">'
+        + '<span style="font-size:.9rem;width:18px;text-align:center;">'+icon+'</span>'
+        + '<span style="flex:1;font-family:\'Courier New\',monospace;font-size:.78rem;color:var(--ink2);">'+label+'</span>';
+      if(!hasFile) {
+        html += '<span style="font-size:.72rem;color:var(--ink3);">Not uploaded</span>';
+      } else if(errors.length) {
+        html += '<span style="font-size:.72rem;color:var(--red);">'+errors.join(', ')+'</span>';
+        html += '<button class="btn btn-sm btn-ghost" style="font-size:.72rem;" data-action="studio-edit" data-pl="'+pl.id+'" data-key="'+key+'">Edit</button>';
+      } else {
+        html += '<button class="btn btn-sm btn-ghost" style="font-size:.72rem;" data-action="studio-edit" data-pl="'+pl.id+'" data-key="'+key+'">Edit</button>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+
+    // Actions
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">'
+      + '<label class="btn btn-primary btn-sm" style="cursor:pointer;">'
+      + '&#8679; Upload files'
+      + '<input type="file" accept=".json" multiple style="display:none;" data-action="studio-upload" data-pl="'+pl.id+'">'
+      + '</label>';
+    if(complete && isAuthed) {
+      html += '<button class="btn btn-sm" style="background:var(--green);color:white;border-color:var(--green);" data-action="studio-save" data-pl="'+pl.id+'">&#9654; Save to Drive</button>';
+    }
+    if(anyLoaded) {
+      html += '<button class="btn btn-sm btn-ghost" data-action="studio-clear" data-pl="'+pl.id+'">Clear</button>';
+    }
+    if(!isAuthed && complete) {
+      html += '<span style="font-size:.75rem;color:var(--amber);">Sign in to save to Drive</span>';
+    }
+    html += '</div></div>';
+  });
+
+  html += '</div>';
+  el.innerHTML = html;
+
+  // Bind file inputs
+  el.querySelectorAll('input[data-action="studio-upload"]').forEach(function(inp) {
+    inp.addEventListener('change', function(e) {
+      studioHandleUpload(inp.getAttribute('data-pl'), e.target.files);
+      inp.value = '';
+    });
+  });
+}
+
+function studioHandleUpload(pl_id, files) {
+  if(!files || !files.length) return;
+  var pending = files.length;
+  var results = [];
+  Array.from(files).forEach(function(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var obj = JSON.parse(e.target.result);
+        var key = studioFileKeyFromJson(obj);
+        var detectedPl = studioPlIdFromJson(obj);
+        // Accept if matches pl_id or if key is detected
+        if(key && (detectedPl === pl_id || !detectedPl)) {
+          if(!_studioSpec[pl_id]) _studioSpec[pl_id] = {};
+          _studioSpec[pl_id][key] = obj;
+          var errors = studioValidateFile(key, obj);
+          results.push({ file: file.name, key: key, ok: errors.length===0, errors: errors });
+        } else if(key && detectedPl && detectedPl !== pl_id) {
+          // File belongs to a different product line — load it there
+          if(!_studioSpec[detectedPl]) _studioSpec[detectedPl] = {};
+          _studioSpec[detectedPl][key] = obj;
+          results.push({ file: file.name, key: key, ok: true, note: 'Placed in '+detectedPl });
+        } else {
+          results.push({ file: file.name, key: null, ok: false, errors: ['Could not identify file type'] });
+        }
+      } catch(err) {
+        results.push({ file: file.name, key: null, ok: false, errors: ['Invalid JSON: '+err.message] });
+      }
+      pending--;
+      if(pending === 0) {
+        studioShowUploadResults(results);
+        renderStudio();
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+function studioShowUploadResults(results) {
+  var msgs = results.map(function(r) {
+    if(r.ok) return (r.note ? '&#9670; ' : '&#10003; ') + r.file + (r.note ? ' ('+r.note+')' : '') + (r.key ? ' → '+STUDIO_FILE_LABELS[r.key] : '');
+    return '&#9651; ' + r.file + ': ' + (r.errors||[]).join(', ');
+  });
+  showToast(msgs.join('\n'), results.every(function(r){return r.ok;}) ? 'ok' : 'err');
+}
+
+async function studioSaveToDrive(pl_id) {
+  if(!isAuthed) { showToast('Sign in first','err'); return; }
+  var spec = _studioSpec[pl_id];
+  if(!spec) return;
+  var pl = STUDIO_PLS.find(function(p){return p.id===pl_id;});
+  var tenantRoot = settings.drive_root || '1Lo65wGeI-kaImMxAwGvH4LCfGQ-f7lY7';
+  showToast('Finding '+pl.folder_name+' folder...','wait');
+
+  try {
+    // 1. Find product line folder
+    var plFolderId = await gFindFolder(pl.folder_name, tenantRoot);
+    if(!plFolderId) { showToast(pl.folder_name+' folder not found in Drive. Create it manually first.','err'); return; }
+
+    // 2. Find or create Studio subfolder
+    var studioFolderId = await gFindOrCreateFolder('Studio', plFolderId);
+
+    // 3. Find or create blueprints subfolder
+    var bpFolderId = await gFindOrCreateFolder('blueprints', studioFolderId);
+
+    // 4. Upload each file
+    var fileMap = {
+      product_line: { folder: studioFolderId, name: 'product_line.json' },
+      pedagogy:     { folder: studioFolderId, name: 'pedagogy.json' },
+      pm:           { folder: bpFolderId,     name: 'pm.json' },
+      fg:           { folder: bpFolderId,     name: 'fg.json' },
+      dn:           { folder: bpFolderId,     name: 'dn.json' },
+      activity_brief:{ folder: bpFolderId,    name: 'activity_brief.json' },
+    };
+
+    var uploaded = 0;
+    for(var key of Object.keys(spec)) {
+      var fm = fileMap[key];
+      if(!fm) continue;
+      showToast('Uploading '+fm.name+'...','wait');
+      var json = JSON.stringify(spec[key], null, 2);
+      await gWriteJson(fm.name, fm.folder, json);
+      uploaded++;
+    }
+    showToast(pl.name+': '+uploaded+' files saved to Drive ✓','ok');
+    renderStudio();
+  } catch(e) {
+    showToast('Drive error: '+e.message,'err');
+  }
+}
+
+// Edit modal
+function studioOpenEdit(pl_id, key) {
+  _studioEditTarget = {pl_id:pl_id, key:key};
+  var spec = (_studioSpec[pl_id]||{})[key];
+  var label = STUDIO_FILE_LABELS[key];
+  var pl = STUDIO_PLS.find(function(p){return p.id===pl_id;});
+
+  var modal = document.getElementById('studioEditModal');
+  if(!modal) {
+    modal = document.createElement('div');
+    modal.id = 'studioEditModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;overflow-y:auto;padding:40px 20px;';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = '<div style="max-width:860px;margin:0 auto;background:white;border-radius:14px;padding:28px 32px;box-shadow:0 8px 32px rgba(0,0,0,.15);">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">'
+    + '<div>'
+    + '<div style="font-weight:700;font-size:1rem;color:var(--ink);">'+pl.name+' — '+label+'</div>'
+    + '<div style="font-size:.75rem;color:var(--ink3);margin-top:2px;">Edit and save back to Drive</div>'
+    + '</div>'
+    + '<button class="btn btn-sm btn-ghost" data-action="studio-edit-close">&#10005; Close</button>'
+    + '</div>'
+    + studioRenderEditForm(key, spec)
+    + '<div style="display:flex;gap:10px;margin-top:20px;">'
+    + '<button class="btn btn-primary btn-sm" data-action="studio-edit-save">Save changes</button>'
+    + (isAuthed ? '<button class="btn btn-sm" style="background:var(--green);color:white;border-color:var(--green);" data-action="studio-edit-drive">Save to Drive</button>' : '')
+    + '<button class="btn btn-sm btn-ghost" data-action="studio-edit-close">Cancel</button>'
+    + '</div>'
+    + '</div>';
+
+  modal.style.display = 'block';
+}
+
+function studioRenderEditForm(key, obj) {
+  if(!obj) return '<p style="color:var(--ink3);font-size:.84rem;">No file loaded yet. Upload a file first.</p>';
+  var html = '';
+
+  if(key === 'product_line') {
+    html += studioField('Name', 'name', obj.name||'');
+    html += studioTextarea('Participant Profile', 'participant_profile', obj.participant_profile||'');
+    html += studioField('Delivery Mode', 'delivery_mode', obj.delivery_mode||'');
+    html += studioField('Session Duration', 'session_duration', obj.session_duration||'');
+    html += studioField('Tools Policy', 'tools_policy', obj.tools_policy||'');
+    html += studioField('Pedagogy', 'pedagogy', obj.pedagogy||'');
+    html += studioField('SA Context', 'sa_context', obj.sa_context||'');
+    html += studioField('Seed Required', 'seed_required', obj.seed_required||'');
+    html += studioField('Activity ID Format', 'activity_id_format', obj.activity_id_format||'');
+    html += studioListEdit('Tool Pool', 'tool_pool', obj.tool_pool||[]);
+  } else if(key === 'pedagogy') {
+    html += studioField('Name', 'name', obj.name||'');
+    html += studioTextarea('Tone', 'tone', obj.tone||'');
+    html += studioTextarea('Assessment Framing', 'assessment_framing', obj.assessment_framing||'');
+    html += studioTextarea('Outcome Style', 'outcome_style', obj.outcome_style||'');
+    if(obj.reflection) {
+      html += '<div style="background:var(--paper2);border-radius:8px;padding:14px 16px;margin-bottom:12px;">'
+        + '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:10px;">Reflection Rules</div>'
+        + studioField('Format', 'reflection_format', obj.reflection.format||'')
+        + studioTextarea('Q1 Focus', 'reflection_q1', obj.reflection.q1||'')
+        + studioTextarea('Q2 Focus', 'reflection_q2', obj.reflection.q2||'')
+        + studioTextarea('Q3 Focus', 'reflection_q3', obj.reflection.q3||'')
+        + '</div>';
+    }
+    if(obj.key_takeaways) {
+      html += '<div style="background:var(--paper2);border-radius:8px;padding:14px 16px;margin-bottom:12px;">'
+        + '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:10px;">Key Takeaways</div>'
+        + studioField('Count Min', 'takeaways_min', obj.key_takeaways.count_min||4)
+        + studioField('Count Max', 'takeaways_max', obj.key_takeaways.count_max||5)
+        + studioTextarea('Format', 'takeaways_format', obj.key_takeaways.format||'')
+        + '</div>';
+    }
+    html += studioListEdit('Format Rules', 'format_rules', obj.format_rules||[]);
+    html += studioListEdit('Forbidden', 'forbidden', obj.forbidden||[]);
+  } else {
+    // Blueprint files — show sections list + format rules
+    html += studioField('Document Type', 'document_type', obj.document_type||'', true);
+    html += '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin:14px 0 8px;">Sections ('+((obj.sections||[]).length)+')</div>';
+    (obj.sections||[]).forEach(function(s,i) {
+      html += '<div style="border:1px solid var(--paper3);border-radius:8px;padding:12px 14px;margin-bottom:8px;">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
+        + '<span style="font-weight:600;font-size:.82rem;">'+esc(s.heading||('['+s.id+']'))+'</span>'
+        + '<span style="font-size:.7rem;color:var(--blue);font-family:monospace;">'+esc(s.id)+'</span>'
+        + '</div>'
+        + '<textarea class="fi" rows="2" data-section-idx="'+i+'" data-field="description" style="font-size:.78rem;min-height:48px;">'+esc(s.description||'')+'</textarea>'
+        + (s.length ? '<div style="font-size:.72rem;color:var(--ink3);margin-top:4px;">Length: '+(s.length.guidance||JSON.stringify(s.length))+'</div>' : '')
+        + '</div>';
+    });
+    html += studioListEdit('Format Rules', 'format_rules', obj.format_rules||[]);
+    html += studioListEdit('QC Showstoppers', 'qc_showstoppers', obj.qc_showstoppers||[]);
+  }
+  return html;
+}
+
+function studioField(label, field, value, readonly) {
+  return '<div style="display:grid;grid-template-columns:160px 1fr;gap:8px;align-items:start;margin-bottom:8px;">'
+    + '<span style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);padding-top:9px;">'+label+'</span>'
+    + '<input class="fi" data-field="'+field+'" value="'+esc(value)+'"'+(readonly?' readonly style="opacity:.5;"':'')+' style="font-size:.84rem;">'
+    + '</div>';
+}
+function studioTextarea(label, field, value) {
+  return '<div style="display:grid;grid-template-columns:160px 1fr;gap:8px;align-items:start;margin-bottom:8px;">'
+    + '<span style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);padding-top:9px;">'+label+'</span>'
+    + '<textarea class="fi" data-field="'+field+'" style="font-size:.84rem;min-height:64px;">'+esc(value)+'</textarea>'
+    + '</div>';
+}
+function studioListEdit(label, field, items) {
+  return '<div style="margin-bottom:12px;">'
+    + '<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-bottom:6px;">'+label+'</div>'
+    + '<div data-list="'+field+'" style="border:1px solid var(--paper3);border-radius:8px;overflow:hidden;">'
+    + items.map(function(item,i){
+        return '<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--paper3);">'
+          +'<input class="fi" style="flex:1;font-size:.8rem;border:none;padding:4px 6px;" data-list-item="'+i+'" data-list-field="'+field+'" value="'+esc(item)+'">'
+          +'<button class="btn btn-sm btn-ghost" style="color:var(--red);padding:3px 8px;font-size:.72rem;" data-action="studio-list-remove" data-list-field="'+field+'" data-idx="'+i+'">&#10005;</button>'
+          +'</div>';
+      }).join('')
+    + '<div style="padding:7px 12px;">'
+    + '<button class="btn btn-sm btn-ghost" style="font-size:.75rem;" data-action="studio-list-add" data-list-field="'+field+'">+ Add item</button>'
+    + '</div></div></div>';
+}
+
+function studioCollectEdits(key, obj) {
+  var modal = document.getElementById('studioEditModal');
+  if(!modal || !obj) return obj;
+  var updated = JSON.parse(JSON.stringify(obj));
+
+  // Simple fields
+  modal.querySelectorAll('[data-field]').forEach(function(el) {
+    var f = el.getAttribute('data-field');
+    if(f && el.value !== undefined) {
+      // Nested fields
+      if(f==='reflection_format') { if(!updated.reflection) updated.reflection={}; updated.reflection.format=el.value; }
+      else if(f==='reflection_q1') { if(!updated.reflection) updated.reflection={}; updated.reflection.q1=el.value; }
+      else if(f==='reflection_q2') { if(!updated.reflection) updated.reflection={}; updated.reflection.q2=el.value; }
+      else if(f==='reflection_q3') { if(!updated.reflection) updated.reflection={}; updated.reflection.q3=el.value; }
+      else if(f==='takeaways_min') { if(!updated.key_takeaways) updated.key_takeaways={}; updated.key_takeaways.count_min=parseInt(el.value)||4; }
+      else if(f==='takeaways_max') { if(!updated.key_takeaways) updated.key_takeaways={}; updated.key_takeaways.count_max=parseInt(el.value)||5; }
+      else if(f==='takeaways_format') { if(!updated.key_takeaways) updated.key_takeaways={}; updated.key_takeaways.format=el.value; }
+      else if(f !== 'document_type') updated[f] = el.value; // document_type is readonly
+    }
+  });
+
+  // Section descriptions
+  modal.querySelectorAll('[data-section-idx]').forEach(function(el) {
+    var idx = parseInt(el.getAttribute('data-section-idx'));
+    var field = el.getAttribute('data-field');
+    if(updated.sections && updated.sections[idx] && field) {
+      updated.sections[idx][field] = el.value;
+    }
+  });
+
+  // List fields
+  ['format_rules','forbidden','qc_showstoppers','tool_pool'].forEach(function(listField) {
+    var inputs = modal.querySelectorAll('[data-list-item][data-list-field="'+listField+'"]');
+    if(inputs.length) {
+      updated[listField] = Array.from(inputs).map(function(inp){return inp.value.trim();}).filter(Boolean);
+    }
+  });
+
+  return updated;
+}
+
+function studioSaveEdit() {
+  if(!_studioEditTarget) return;
+  var {pl_id, key} = _studioEditTarget;
+  var obj = (_studioSpec[pl_id]||{})[key];
+  var updated = studioCollectEdits(key, obj);
+  if(!_studioSpec[pl_id]) _studioSpec[pl_id] = {};
+  _studioSpec[pl_id][key] = updated;
+  studioCloseEdit();
+  renderStudio();
+  showToast('Changes saved — click Save to Drive to persist','ok');
+}
+
+async function studioSaveEditToDrive() {
+  studioSaveEdit();
+  if(_studioEditTarget) {
+    await studioSaveToDrive(_studioEditTarget.pl_id);
+  }
+}
+
+function studioCloseEdit() {
+  var modal = document.getElementById('studioEditModal');
+  if(modal) modal.style.display = 'none';
+  _studioEditTarget = null;
+}
+
+// Helper: find a folder by name under a parent
+async function gFindFolder(name, parentId) {
+  var q = encodeURIComponent("name='"+name+"' and '"+parentId+"' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false");
+  var r = await gDriveApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)&pageSize=1');
+  return (r.files && r.files[0]) ? r.files[0].id : null;
+}
+
+// Helper: find or create folder
+async function gFindOrCreateFolder(name, parentId) {
+  var id = await gFindFolder(name, parentId);
+  if(id) return id;
+  var r = await gDriveApi('POST','https://www.googleapis.com/drive/v3/files?fields=id',
+    {name:name, mimeType:'application/vnd.google-apps.folder', parents:[parentId]});
+  return r.id;
+}
+
+// Helper: write JSON file to Drive (delete-first pattern)
+async function gWriteJson(name, folderId, json) {
+  var account = settings.drive_account || 'gemis.curriculum@gmail.com';
+  // Delete existing
+  var q = encodeURIComponent("name='"+name+"' and '"+folderId+"' in parents and trashed=false");
+  var ls = await gDriveApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id)&pageSize=5');
+  if(ls.files) for(var f of ls.files) {
+    try { await gDriveApi('DELETE','https://www.googleapis.com/drive/v3/files/'+f.id); } catch(e){}
+  }
+  // Upload fresh
+  var blob = new Blob([json],{type:'application/json'});
+  var meta = JSON.stringify({name:name, parents:[folderId]});
+  var form = new FormData();
+  form.append('metadata', new Blob([meta],{type:'application/json'}));
+  form.append('file', blob);
+  var resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+    {method:'POST', headers:{'Authorization':'Bearer '+authToken}, body:form});
+  if(!resp.ok) throw new Error('Upload failed: '+resp.status);
+  return await resp.json();
+}
+
+// Helper: generic Drive API call
+async function gDriveApi(method, url, body) {
+  var opts = {method:method, headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'}};
+  if(body && method!=='GET' && method!=='DELETE') opts.body = JSON.stringify(body);
+  var r = await fetch(url, opts);
+  if(!r.ok && r.status!==204) { var e=await r.json().catch(function(){return {};}); throw new Error((e.error&&e.error.message)||r.status); }
+  if(r.status===204) return {};
+  return r.json();
+}
+
+function showToast(msg, type) {
+  var el = document.getElementById('toast');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.background = type==='err' ? '#8B1A1A' : type==='ok' ? '#1A6B3C' : '#0F1923';
+  el.style.display = 'block';
+  el.classList.add('show');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(function(){ el.classList.remove('show'); }, 3200);
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Event delegation for studio actions
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-action]');
+  if(!el) return;
+  var action = el.getAttribute('data-action');
+  var pl = el.getAttribute('data-pl');
+  var key = el.getAttribute('data-key');
+
+  if(action==='studio-edit') studioOpenEdit(pl, key);
+  if(action==='studio-save') studioSaveToDrive(pl);
+  if(action==='studio-clear') { if(confirm('Clear all loaded files for this product line?')){ delete _studioSpec[pl]; renderStudio(); }}
+  if(action==='studio-edit-close') studioCloseEdit();
+  if(action==='studio-edit-save') studioSaveEdit();
+  if(action==='studio-edit-drive') studioSaveEditToDrive();
+  if(action==='studio-list-add') {
+    var lf = el.getAttribute('data-list-field');
+    var container = el.closest('[data-list]');
+    if(container) {
+      var idx = container.querySelectorAll('[data-list-item]').length;
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--paper3);';
+      row.innerHTML = '<input class="fi" style="flex:1;font-size:.8rem;border:none;padding:4px 6px;" data-list-item="'+idx+'" data-list-field="'+lf+'" value="">'
+        +'<button class="btn btn-sm btn-ghost" style="color:var(--red);padding:3px 8px;font-size:.72rem;" data-action="studio-list-remove" data-list-field="'+lf+'" data-idx="'+idx+'">&#10005;</button>';
+      container.insertBefore(row, el.closest('div').previousElementSibling ? el.parentElement : el.closest('[data-list]').querySelector('div:last-child'));
+      row.querySelector('input').focus();
+    }
+  }
+  if(action==='studio-list-remove') {
+    var row = el.closest('div[style]');
+    if(row) row.remove();
+  }
+});
+
+// Hook into showScreen to render Studio
+var _studioOrigShowScreen = showScreen;
+showScreen = function(name) {
+  _studioOrigShowScreen(name);
+  if(name === 'studio') renderStudio();
+};
+
 updateAuthGates();
 if(welcomeShouldShow()){
   document.getElementById('screen-convert').classList.remove('active');
