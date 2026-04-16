@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Culvera Studio — Curriculum Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#0F1923; --ink2:#2C3E50; --ink3:#64748B;
+  --paper:#FAFAF8; --paper2:#F3F3EF; --paper3:#E8E8E2;
+  --gold:#B8860B; --gold-light:#FDF6DC; --gold-mid:#E8C84A;
+  --green:#1A6B3C; --green-light:#EAF4EE;
+  --red:#8B1A1A; --red-light:#FDF0F0;
+  --blue:#1A3A6B; --blue-light:#EEF3FB;
+  --amber:#7A4F00; --amber-light:#FEF7E6;
+  --purple:#4A1A6B; --purple-light:#F3EEF8;
+  --r:8px; --r2:14px;
+  --shadow:0 1px 3px rgba(15,25,35,.08), 0 4px 16px rgba(15,25,35,.06);
+  --shadow-lg:0 8px 32px rgba(15,25,35,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);font-size:15px;line-height:1.6;min-height:100vh;}
+
+/* Layout */
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:240px;background:var(--ink);color:white;display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:50;}
+.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.08);}
+.sidebar-logo-mark{font-family:'DM Serif Display',serif;font-size:1.4rem;color:white;letter-spacing:-.5px;}
+.sidebar-logo-sub{font-size:.62rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1.8px;margin-top:2px;}
+.sidebar-logo-version{font-size:.58rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:4px;}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto;}
+.nav-section{padding:8px 18px 4px;font-size:.6rem;text-transform:uppercase;letter-spacing:1.8px;color:rgba(255,255,255,.2);font-weight:600;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;font-size:.82rem;color:rgba(255,255,255,.55);transition:all .15s;border-left:2px solid transparent;}
+.nav-item:hover{color:white;background:rgba(255,255,255,.05);}
+.nav-item.active{color:white;background:rgba(255,255,255,.08);border-left-color:var(--gold-mid);}
+.nav-icon{font-size:.95rem;width:18px;text-align:center;flex-shrink:0;}
+.sidebar-footer{padding:16px 18px;border-top:1px solid rgba(255,255,255,.08);}
+.auth-btn{width:100%;padding:8px 12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:var(--r);color:rgba(255,255,255,.8);font-size:.78rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:8px;}
+.auth-btn:hover{background:rgba(255,255,255,.14);color:white;}
+.auth-status{font-size:.68rem;color:rgba(255,255,255,.3);margin-top:8px;line-height:1.4;}
+
+/* Main */
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{background:white;border-bottom:1px solid var(--paper3);padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;}
+.topbar-title{font-family:'DM Serif Display',serif;font-size:1.1rem;color:var(--ink);}
+.topbar-meta{font-size:.75rem;color:var(--ink3);}
+.content{padding:32px;flex:1;}
+.screen{display:none;}
+.screen.active{display:block;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:translateY(0);}}
+
+/* Cards */
+.card{background:white;border-radius:var(--r2);border:1px solid var(--paper3);padding:24px 26px;margin-bottom:20px;box-shadow:var(--shadow);}
+.card-title{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);margin-bottom:16px;}
+.card-title-lg{font-family:'DM Serif Display',serif;font-size:1.2rem;color:var(--ink);margin-bottom:8px;}
+.card-sub{font-size:.83rem;color:var(--ink3);margin-bottom:18px;line-height:1.6;}
+
+/* Buttons */
+.btn{padding:8px 18px;border-radius:var(--r);border:1px solid var(--paper3);font-size:.84rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+.btn:hover{opacity:.85;}
+.btn-primary{background:var(--ink);color:white;border-color:var(--ink);}
+.btn-gold{background:var(--gold-mid);color:var(--ink);border-color:var(--gold-mid);}
+.btn-green{background:var(--green);color:white;border-color:var(--green);}
+.btn-ghost{background:transparent;color:var(--ink3);}
+.btn-ghost:hover{background:var(--paper2);color:var(--ink);}
+.btn-purple{background:var(--purple);color:white;border-color:var(--purple);}
+.btn-sm{padding:5px 12px;font-size:.76rem;}
+.btn-danger{background:var(--red-light);color:var(--red);border-color:#F5C6C6;}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+.form-actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;align-items:center;}
+
+/* Fields */
+.fr{display:grid;grid-template-columns:180px 1fr;gap:8px;align-items:start;margin-bottom:10px;}
+.fl{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);padding-top:9px;}
+.fi{padding:8px 12px;border:1px solid var(--paper3);border-radius:var(--r);font-size:.875rem;font-family:'DM Sans',sans-serif;width:100%;background:white;color:var(--ink);transition:border-color .15s;}
+.fi:focus{outline:none;border-color:var(--gold);}
+textarea.fi{min-height:80px;resize:vertical;line-height:1.5;}
+select.fi{cursor:pointer;}
+
+/* Status */
+.status-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r);margin-bottom:16px;font-size:.82rem;border:1px solid var(--paper3);background:var(--paper2);}
+.status-bar.ok{background:var(--green-light);border-color:#C3E6D3;color:var(--green);}
+.status-bar.err{background:var(--red-light);border-color:#F5C6C6;color:var(--red);}
+.status-bar.wait{background:var(--amber-light);border-color:#F5DFA0;color:var(--amber);}
+.status-bar.info{background:var(--blue-light);border-color:#C5D8F5;color:var(--blue);}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:currentColor;}
+.status-bar.wait .status-dot{animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+
+/* Chips and badges */
+.chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:12px;font-size:.7rem;font-weight:600;gap:5px;}
+.chip-gold{background:var(--gold-light);color:var(--gold);}
+.chip-green{background:var(--green-light);color:var(--green);}
+.chip-blue{background:var(--blue-light);color:var(--blue);}
+.chip-purple{background:var(--purple-light);color:var(--purple);}
+.chip-red{background:var(--red-light);color:var(--red);}
+
+/* Grid layouts */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+
+/* Product line cards */
+.pl-card{background:white;border:1px solid var(--paper3);border-radius:var(--r2);padding:20px 22px;box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .2s;position:relative;overflow:hidden;}
+.pl-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.pl-card.aex::before{background:var(--gold-mid);}
+.pl-card.aa::before{background:var(--purple);}
+.pl-card.ae::before{background:var(--blue);}
+.pl-card.ee::before{background:var(--green);}
+.pl-card:hover{box-shadow:var(--shadow-lg);}
+.pl-card-id{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--ink3);margin-bottom:4px;}
+.pl-card-name{font-size:.92rem;font-weight:600;color:var(--ink);margin-bottom:8px;}
+.pl-card-desc{font-size:.78rem;color:var(--ink3);line-height:1.5;margin-bottom:12px;}
+.pl-card-meta{display:flex;gap:6px;flex-wrap:wrap;}
+
+/* Seed company cards */
+.seed-card{background:white;border:1px solid var(--paper3);border-radius:var(--r2);padding:18px 20px;box-shadow:var(--shadow);transition:box-shadow .2s;}
+.seed-card:hover{box-shadow:var(--shadow-lg);}
+.seed-card-name{font-size:.9rem;font-weight:600;color:var(--ink);margin-bottom:3px;}
+.seed-card-sector{font-size:.75rem;color:var(--ink3);margin-bottom:10px;}
+.seed-card-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.seed-card-actions{display:flex;gap:6px;}
+
+/* Output list */
+.output-list{border:1px solid var(--paper3);border-radius:var(--r);overflow:hidden;}
+.output-item{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--paper3);font-size:.83rem;}
+.output-item:last-child{border-bottom:none;}
+.output-icon{font-size:1rem;width:20px;text-align:center;}
+.output-name{flex:1;font-weight:500;}
+.output-desc{font-size:.75rem;color:var(--ink3);}
+.output-status{font-size:.72rem;}
+
+/* AI generation panel */
+.ai-panel{background:var(--ink);border-radius:var(--r2);padding:20px 22px;color:white;margin-bottom:20px;}
+.ai-panel-title{font-size:.7rem;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.4);margin-bottom:8px;}
+.ai-output{font-family:'DM Mono',monospace;font-size:.78rem;line-height:1.7;color:rgba(255,255,255,.85);max-height:320px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;}
+.ai-thinking{color:rgba(255,255,255,.4);font-style:italic;}
+
+/* Tabs */
+.tab-row{display:flex;gap:0;border-bottom:2px solid var(--paper3);margin-bottom:20px;}
+.tab-btn{padding:9px 16px;border:none;background:none;cursor:pointer;font-size:.8rem;font-family:'DM Sans',sans-serif;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .15s;}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{color:var(--ink);font-weight:600;border-bottom-color:var(--gold);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+/* Progress */
+.progress-track{display:flex;align-items:center;gap:0;margin-bottom:28px;}
+.progress-step{display:flex;align-items:center;gap:0;flex:1;}
+.progress-step:last-child{flex:none;}
+.p-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--paper3);background:white;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:var(--ink3);flex-shrink:0;position:relative;z-index:1;}
+.p-dot.active{border-color:var(--gold-mid);background:var(--gold-mid);color:var(--ink);}
+.p-dot.done{border-color:var(--green);background:var(--green);color:white;}
+.p-line{flex:1;height:2px;background:var(--paper3);}
+.p-line.done{background:var(--green);}
+.p-label{position:absolute;top:32px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:.65rem;color:var(--ink3);font-weight:500;}
+.p-dot.active .p-label{color:var(--ink);}
+.p-dot.done .p-label{color:var(--green);}
+
+/* Diff/compare */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.compare-box{border:1px solid var(--paper3);border-radius:var(--r);overflow:hidden;}
+.compare-header{padding:8px 14px;background:var(--paper2);font-size:.72rem;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--paper3);}
+.compare-body{padding:14px;font-size:.82rem;line-height:1.6;color:var(--ink2);}
+
+/* Empty states */
+.empty{text-align:center;padding:60px 20px;color:var(--ink3);}
+.empty-icon{font-size:2.8rem;margin-bottom:14px;opacity:.25;}
+.empty-title{font-size:1rem;font-weight:500;color:var(--ink);margin-bottom:6px;}
+.empty-sub{font-size:.82rem;line-height:1.6;max-width:420px;margin:0 auto 20px;}
+
+/* Toast */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:white;padding:10px 18px;border-radius:var(--r);font-size:.82rem;opacity:0;transform:translateY(8px);transition:all .25s;z-index:1000;max-width:320px;}
+#toast.show{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="layout">
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-mark">Culvera</div>
+    <div class="sidebar-logo-sub">Studio</div>
+    <div class="sidebar-logo-version">v1.0.0 &nbsp;·&nbsp; Curriculum Architecture</div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section">Architecture</div>
+    <div class="nav-item active" id="nav-home" onclick="showScreen('home')">
+      <span class="nav-icon">&#9632;</span> Overview
+    </div>
+    <div class="nav-item" id="nav-tenant" onclick="showScreen('tenant')">
+      <span class="nav-icon">&#9670;</span> Tenant
+    </div>
+    <div class="nav-section" style="margin-top:8px;">Product Lines</div>
+    <div class="nav-item" id="nav-productlines" onclick="showScreen('productlines')">
+      <span class="nav-icon">&#9645;</span> Product Lines
+    </div>
+    <div class="nav-item" id="nav-pedagogies" onclick="showScreen('pedagogies')">
+      <span class="nav-icon">&#9671;</span> Pedagogies
+    </div>
+    <div class="nav-item" id="nav-blueprints" onclick="showScreen('blueprints')">
+      <span class="nav-icon">&#9652;</span> Document Blueprints
+    </div>
+    <div class="nav-section" style="margin-top:8px;">Reference Data</div>
+    <div class="nav-item" id="nav-seedcompanies" onclick="showScreen('seedcompanies')">
+      <span class="nav-icon">&#9632;</span> Seed Companies
+    </div>
+    <div class="nav-item" id="nav-reflibrary" onclick="showScreen('reflibrary')">
+      <span class="nav-icon">&#9633;</span> Reference Library
+    </div>
+    <div class="nav-section" style="margin-top:8px;">Output</div>
+    <div class="nav-item" id="nav-generate" onclick="showScreen('generate')">
+      <span class="nav-icon">&#9654;</span> Generate &amp; Publish
+    </div>
+    <div class="nav-section" style="margin-top:8px;">System</div>
+    <div class="nav-item" id="nav-settings" onclick="showScreen('settings')">
+      <span class="nav-icon">&#9881;</span> Settings
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="auth-btn" id="authBtn" onclick="toggleAuth()">
+      <span id="authBtnIcon">&#9675;</span>
+      <span id="authBtnLabel">Sign in with Google</span>
+    </button>
+    <div class="auth-status" id="authStatus">Required for Drive publishing</div>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Overview</div>
+    <div class="topbar-meta" id="topbarMeta">GEMIS Technical Academy &nbsp;·&nbsp; Curriculum Architecture</div>
+  </div>
+  <div class="content">
+
+    <!-- ══ HOME ══ -->
+    <div class="screen active" id="screen-home">
+      <div style="max-width:900px;">
+        <div class="card" style="background:var(--ink);color:white;border:none;">
+          <div style="display:flex;align-items:flex-start;gap:32px;">
+            <div style="flex:1;">
+              <div style="font-family:'DM Serif Display',serif;font-size:2rem;color:white;margin-bottom:8px;">Culvera Studio</div>
+              <div style="font-size:.9rem;color:rgba(255,255,255,.55);line-height:1.7;max-width:500px;">
+                The authoring environment for Culvera's Living Curriculum Engine. Define product lines, pedagogies, document blueprints, and seed companies. Studio outputs drive LCE generation — no hardcoded knowledge in the engine.
+              </div>
+            </div>
+            <div style="width:220px;flex-shrink:0;background:rgba(255,255,255,.06);border-radius:var(--r2);padding:16px 18px;">
+              <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.3);margin-bottom:12px;">GTA Specification Status</div>
+              <div id="specStatusList">
+                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:.78rem;">
+                  <span style="color:rgba(255,255,255,.6);">Tenant</span>
+                  <span id="st-tenant" style="color:rgba(255,255,255,.3);">&#9675; Not set</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:.78rem;">
+                  <span style="color:rgba(255,255,255,.6);">Product Lines</span>
+                  <span id="st-pl" style="color:rgba(255,255,255,.3);">&#9675; 0 defined</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:.78rem;">
+                  <span style="color:rgba(255,255,255,.6);">Pedagogies</span>
+                  <span id="st-ped" style="color:rgba(255,255,255,.3);">&#9675; 0 defined</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:.78rem;">
+                  <span style="color:rgba(255,255,255,.6);">Blueprints</span>
+                  <span id="st-bp" style="color:rgba(255,255,255,.3);">&#9675; 0 defined</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:.78rem;">
+                  <span style="color:rgba(255,255,255,.6);">Seed Companies</span>
+                  <span id="st-sc" style="color:rgba(255,255,255,.3);">&#9675; 0 defined</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="three-col" style="margin-bottom:20px;">
+          <div class="card" style="cursor:pointer;" onclick="showScreen('tenant')">
+            <div style="font-size:1.6rem;margin-bottom:8px;">&#9670;</div>
+            <div style="font-weight:600;font-size:.9rem;margin-bottom:4px;">1. Tenant</div>
+            <div style="font-size:.78rem;color:var(--ink3);line-height:1.5;">Define the organisation identity, country, currency, and language. One per installation.</div>
+          </div>
+          <div class="card" style="cursor:pointer;" onclick="showScreen('productlines')">
+            <div style="font-size:1.6rem;margin-bottom:8px;">&#9645;</div>
+            <div style="font-weight:600;font-size:.9rem;margin-bottom:4px;">2. Product Lines</div>
+            <div style="font-size:.78rem;color:var(--ink3);line-height:1.5;">Define each offering — participant profile, delivery format, tools policy, and activity structure.</div>
+          </div>
+          <div class="card" style="cursor:pointer;" onclick="showScreen('pedagogies')">
+            <div style="font-size:1.6rem;margin-bottom:8px;">&#9671;</div>
+            <div style="font-weight:600;font-size:.9rem;margin-bottom:4px;">3. Pedagogies</div>
+            <div style="font-size:.78rem;color:var(--ink3);line-height:1.5;">Define learning models — tone, reflection approach, outcome style, takeaway format. Reusable across product lines.</div>
+          </div>
+        </div>
+        <div class="three-col" style="margin-bottom:20px;">
+          <div class="card" style="cursor:pointer;" onclick="showScreen('blueprints')">
+            <div style="font-size:1.6rem;margin-bottom:8px;">&#9652;</div>
+            <div style="font-weight:600;font-size:.9rem;margin-bottom:4px;">4. Blueprints</div>
+            <div style="font-size:.78rem;color:var(--ink3);line-height:1.5;">Define document structure — every section, its length, format rules, and QC checks for PM, FG, and DN.</div>
+          </div>
+          <div class="card" style="cursor:pointer;" onclick="showScreen('seedcompanies')">
+            <div style="font-size:1.6rem;margin-bottom:8px;">&#9632;</div>
+            <div style="font-weight:600;font-size:.9rem;margin-bottom:4px;">5. Seed Companies</div>
+            <div style="font-size:.78rem;color:var(--ink3);line-height:1.5;">Generate fictional organisations — with personas — that provide realistic context for every activity.</div>
+          </div>
+          <div class="card" style="cursor:pointer;" onclick="showScreen('generate')">
+            <div style="font-size:1.6rem;margin-bottom:8px;">&#9654;</div>
+            <div style="font-weight:600;font-size:.9rem;margin-bottom:4px;">6. Generate &amp; Publish</div>
+            <div style="font-size:.78rem;color:var(--ink3);line-height:1.5;">Review all outputs and publish to Google Drive. LCE reads Studio outputs at runtime.</div>
+          </div>
+        </div>
+
+        <div class="card" style="border-color:var(--gold-mid);background:var(--gold-light);">
+          <div class="card-title" style="color:var(--gold);">GTA Specification Available</div>
+          <p style="font-size:.83rem;color:var(--ink2);line-height:1.7;margin-bottom:14px;">
+            All four GTA product lines (AEX, AA, AE, EE) plus six seed companies are available for import. Click <strong>Import GTA Specification</strong> to pre-populate Studio with the complete GEMIS Technical Academy configuration — ready for review, amendment, and publishing to Drive.
+          </p>
+          <button class="btn btn-gold" onclick="importGTA()">&#8659; Import GTA Specification</button>
+          <span style="font-size:.75rem;color:var(--amber);margin-left:12px;" id="importStatus"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TENANT ══ -->
+    <div class="screen" id="screen-tenant">
+      <div style="max-width:760px;">
+        <div class="card">
+          <div class="card-title">Tenant Identity</div>
+          <p class="card-sub">The tenant manifest defines the organisation. One per Culvera installation.</p>
+          <div class="fr"><span class="fl">Tenant ID</span><input class="fi" id="t_id" placeholder="e.g. gta"></div>
+          <div class="fr"><span class="fl">Organisation Name</span><input class="fi" id="t_name" placeholder="e.g. GEMIS Technical Academy"></div>
+          <div class="fr"><span class="fl">Website</span><input class="fi" id="t_website" placeholder="e.g. gemis.tech"></div>
+          <div class="fr"><span class="fl">Country</span>
+            <select class="fi" id="t_country">
+              <option value="ZA">South Africa</option>
+              <option value="KE">Kenya</option>
+              <option value="NG">Nigeria</option>
+              <option value="GB">United Kingdom</option>
+              <option value="AU">Australia</option>
+              <option value="US">United States</option>
+            </select></div>
+          <div class="fr"><span class="fl">Currency</span><input class="fi" id="t_currency" placeholder="e.g. ZAR"></div>
+          <div class="fr"><span class="fl">Language</span><input class="fi" id="t_language" placeholder="e.g. en-ZA"></div>
+          <div class="fr"><span class="fl">Review Period (days)</span><input class="fi" id="t_review_days" type="number" value="90"></div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="saveTenant()">Save Tenant</button>
+            <span id="tenantSaved" style="font-size:.78rem;color:var(--green);display:none;">&#10003; Saved</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PRODUCT LINES ══ -->
+    <div class="screen" id="screen-productlines">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--ink);">Product Lines</div>
+          <div style="font-size:.78rem;color:var(--ink3);margin-top:2px;">Each product line defines an offering — participants, delivery, tools, and structure.</div>
+        </div>
+        <button class="btn btn-primary" onclick="showPlForm()">+ Add Product Line</button>
+      </div>
+      <div id="plGrid" class="pl-grid"></div>
+      <div id="plEmpty" class="empty" style="display:none;">
+        <div class="empty-icon">&#9645;</div>
+        <div class="empty-title">No product lines defined</div>
+        <div class="empty-sub">Import the GTA specification from the Overview, or add a product line manually.</div>
+        <button class="btn btn-primary" onclick="showPlForm()">+ Add Product Line</button>
+      </div>
+
+      <!-- PL form modal -->
+      <div id="plModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;overflow-y:auto;padding:40px 20px;">
+        <div style="max-width:720px;margin:0 auto;background:white;border-radius:var(--r2);padding:28px 32px;box-shadow:var(--shadow-lg);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;" id="plModalTitle">Add Product Line</div>
+            <button class="btn btn-ghost btn-sm" onclick="closePlModal()">&#10005; Close</button>
+          </div>
+          <div class="fr"><span class="fl">Product Line ID</span><input class="fi" id="pl_id" placeholder="e.g. aex"></div>
+          <div class="fr"><span class="fl">Full Name</span><input class="fi" id="pl_name" placeholder="e.g. AI Advantage Express"></div>
+          <div class="fr"><span class="fl">Participant Profile</span><textarea class="fi" id="pl_profile" placeholder="Who attends? Experience level, sector, seniority."></textarea></div>
+          <div class="fr"><span class="fl">Delivery Mode</span><input class="fi" id="pl_delivery" placeholder="e.g. Live Zoom, Onsite, Blended"></div>
+          <div class="fr"><span class="fl">Session Duration</span><input class="fi" id="pl_duration" placeholder="e.g. 4 hours, 2 days"></div>
+          <div class="fr"><span class="fl">Activities per Course</span><input class="fi" id="pl_activities" type="number" placeholder="e.g. 5"></div>
+          <div class="fr"><span class="fl">Tools Policy</span>
+            <select class="fi" id="pl_tools_policy">
+              <option value="free-tier-only">Free tier only — no enterprise licence required</option>
+              <option value="enterprise-permitted">Enterprise tools permitted (e.g. Microsoft Copilot)</option>
+              <option value="mixed">Mixed — free tier default, specific enterprise tools for specific activities</option>
+              <option value="participant-provided">Participant provides their own tools (live environment)</option>
+            </select></div>
+          <div class="fr"><span class="fl">Tool Pool</span><textarea class="fi" id="pl_tool_pool" placeholder="Comma-separated: Claude, Perplexity, NotebookLM, Gemini, Gamma..." style="min-height:54px;"></textarea></div>
+          <div class="fr"><span class="fl">Pedagogy</span>
+            <select class="fi" id="pl_pedagogy">
+              <option value="">Select pedagogy...</option>
+              <option value="action_learning">Action Learning</option>
+              <option value="practice_based">Practice-Based</option>
+              <option value="constructive_alignment">Constructive Alignment</option>
+              <option value="direct_instruction">Direct Instruction + Scaffolded Practice</option>
+              <option value="project_based">Project-Based Learning</option>
+            </select></div>
+          <div class="fr"><span class="fl">SA Context</span>
+            <select class="fi" id="pl_sa_context">
+              <option value="required">Required throughout</option>
+              <option value="embedded">Embedded where relevant</option>
+              <option value="optional">Optional</option>
+            </select></div>
+          <div class="fr"><span class="fl">Seed Company Required</span>
+            <select class="fi" id="pl_seed_required">
+              <option value="yes">Yes — seed company context injected</option>
+              <option value="participant">Participant provides own context (seed as backup)</option>
+              <option value="fictional-persona">Fictional school/institution context (EE)</option>
+              <option value="no">No</option>
+            </select></div>
+          <div class="fr"><span class="fl">Activity ID Format</span><input class="fi" id="pl_id_format" placeholder="e.g. EX{course:02d}-A{activity:02d}"></div>
+          <div class="fr"><span class="fl">Generation Model</span><input class="fi" id="pl_model" value="deepseek/deepseek-chat-v3-0324"></div>
+          <div class="fr"><span class="fl">Output Path</span><input class="fi" id="pl_output" placeholder="e.g. ~/.lce/outputs/aex"></div>
+          <div id="plModalErr" style="display:none;color:var(--red);font-size:.82rem;margin-top:8px;"></div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="savePl()">Save Product Line</button>
+            <button class="btn btn-ghost" onclick="closePlModal()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PEDAGOGIES ══ -->
+    <div class="screen" id="screen-pedagogies">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--ink);">Pedagogies</div>
+          <div style="font-size:.78rem;color:var(--ink3);margin-top:2px;">Learning models — tone, reflection, outcomes. Reusable across product lines.</div>
+        </div>
+        <button class="btn btn-primary" onclick="showPedForm()">+ Add Pedagogy</button>
+      </div>
+      <div id="pedList"></div>
+      <div id="pedEmpty" class="empty" style="display:none;">
+        <div class="empty-icon">&#9671;</div>
+        <div class="empty-title">No pedagogies defined</div>
+        <div class="empty-sub">Import the GTA specification from Overview, or add a pedagogy manually.</div>
+      </div>
+
+      <div id="pedModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;overflow-y:auto;padding:40px 20px;">
+        <div style="max-width:720px;margin:0 auto;background:white;border-radius:var(--r2);padding:28px 32px;box-shadow:var(--shadow-lg);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;" id="pedModalTitle">Add Pedagogy</div>
+            <button class="btn btn-ghost btn-sm" onclick="closePedModal()">&#10005; Close</button>
+          </div>
+          <div class="fr"><span class="fl">Pedagogy ID</span><input class="fi" id="ped_id" placeholder="e.g. action_learning"></div>
+          <div class="fr"><span class="fl">Name</span><input class="fi" id="ped_name" placeholder="e.g. Action Learning"></div>
+          <div class="fr"><span class="fl">Description</span><textarea class="fi" id="ped_desc" placeholder="One paragraph describing the learning philosophy."></textarea></div>
+          <div class="fr"><span class="fl">Tone</span><input class="fi" id="ped_tone" placeholder="e.g. direct, practical, collegial"></div>
+          <div class="fr"><span class="fl">Assessment Framing</span><input class="fi" id="ped_assessment" placeholder="e.g. output-based — participant produces a usable work artefact"></div>
+          <div class="fr"><span class="fl">Outcome Style</span><input class="fi" id="ped_outcomes" placeholder="e.g. observable behaviour change within the working week"></div>
+          <div class="fr"><span class="fl">Reflection Count</span><input class="fi" id="ped_refl_count" type="number" value="3"></div>
+          <div class="fr"><span class="fl">Reflection Format</span><input class="fi" id="ped_refl_format" placeholder="e.g. dash-prefixed, no numbering, exactly 3"></div>
+          <div class="fr"><span class="fl">Q1 Focus</span><input class="fi" id="ped_q1" placeholder="e.g. quality comparison to normal approach"></div>
+          <div class="fr"><span class="fl">Q2 Focus</span><input class="fi" id="ped_q2" placeholder="e.g. specific application this week — when will you"></div>
+          <div class="fr"><span class="fl">Q3 Focus</span><input class="fi" id="ped_q3" placeholder="e.g. one limitation or concern — non-negotiable"></div>
+          <div class="fr"><span class="fl">Takeaway Count Min</span><input class="fi" id="ped_take_min" type="number" value="4"></div>
+          <div class="fr"><span class="fl">Takeaway Count Max</span><input class="fi" id="ped_take_max" type="number" value="5"></div>
+          <div class="fr"><span class="fl">Takeaway Format</span><input class="fi" id="ped_take_fmt" placeholder="e.g. bold action verb opener followed by insight, no numbering"></div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="savePed()">Save Pedagogy</button>
+            <button class="btn btn-ghost" onclick="closePedModal()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ BLUEPRINTS ══ -->
+    <div class="screen" id="screen-blueprints">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--ink);">Document Blueprints</div>
+          <div style="font-size:.78rem;color:var(--ink3);margin-top:2px;">Section-by-section definitions for PM, FG, and DN. Drive QC checks and generation prompts.</div>
+        </div>
+        <button class="btn btn-primary" onclick="showBpForm()">+ Add Blueprint</button>
+      </div>
+      <div id="bpList"></div>
+      <div id="bpEmpty" class="empty" style="display:none;">
+        <div class="empty-icon">&#9652;</div>
+        <div class="empty-title">No blueprints defined</div>
+        <div class="empty-sub">Import the GTA specification from Overview, or add a blueprint manually.</div>
+      </div>
+
+      <!-- Blueprint viewer -->
+      <div id="bpViewer" style="display:none;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+          <button class="btn btn-ghost btn-sm" onclick="closeBpViewer()">&#8592; All Blueprints</button>
+          <span style="font-family:'DM Mono',monospace;font-size:.8rem;color:var(--blue);" id="bpViewerTitle"></span>
+        </div>
+        <div class="tab-row" id="bpViewerTabs"></div>
+        <div id="bpViewerContent"></div>
+      </div>
+    </div>
+
+    <!-- ══ SEED COMPANIES ══ -->
+    <div class="screen" id="screen-seedcompanies">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--ink);">Seed Companies</div>
+          <div style="font-size:.78rem;color:var(--ink3);margin-top:2px;">Fictional organisations with personas — provide realistic context for every activity. AI-generated.</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-purple" onclick="showSeedGenForm()">&#10024; Generate with AI</button>
+          <button class="btn btn-primary" onclick="showSeedImportForm()">&#8659; Import JSON</button>
+        </div>
+      </div>
+      <div id="seedGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;"></div>
+      <div id="seedEmpty" class="empty" style="display:none;">
+        <div class="empty-icon">&#9632;</div>
+        <div class="empty-title">No seed companies defined</div>
+        <div class="empty-sub">Generate a new fictional organisation with AI, or import an existing JSON profile.</div>
+      </div>
+
+      <!-- Seed gen form -->
+      <div id="seedGenModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;overflow-y:auto;padding:40px 20px;">
+        <div style="max-width:720px;margin:0 auto;background:white;border-radius:var(--r2);padding:28px 32px;box-shadow:var(--shadow-lg);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;">Generate Seed Company</div>
+            <button class="btn btn-ghost btn-sm" onclick="closeSeedGenModal()">&#10005; Close</button>
+          </div>
+          <div class="status-bar info" style="margin-bottom:16px;">
+            <div class="status-dot"></div>
+            <span>AI will generate a complete fictional company profile including personas, datasets, and voice guidelines.</span>
+          </div>
+          <div class="fr"><span class="fl">Company Name</span><input class="fi" id="sg_name" placeholder="e.g. Meridian Strategy Partners"></div>
+          <div class="fr"><span class="fl">Sector</span><input class="fi" id="sg_sector" placeholder="e.g. Professional Services, Retail, Healthcare"></div>
+          <div class="fr"><span class="fl">Sub-sector</span><input class="fi" id="sg_subsector" placeholder="e.g. Management Consulting, FMCG, Long-term Insurance"></div>
+          <div class="fr"><span class="fl">HQ City</span><input class="fi" id="sg_hq" placeholder="e.g. Johannesburg, Cape Town, Durban"></div>
+          <div class="fr"><span class="fl">Company Size</span>
+            <select class="fi" id="sg_size">
+              <option value="small">Small (under 50 staff)</option>
+              <option value="mid-market" selected>Mid-market (50–500 staff)</option>
+              <option value="large">Large (500–5000 staff)</option>
+              <option value="enterprise">Enterprise (5000+ staff)</option>
+            </select></div>
+          <div class="fr"><span class="fl">Product Line(s) it serves</span>
+            <select class="fi" id="sg_pl" multiple style="min-height:90px;">
+              <option value="aex">AEX — AI Advantage Express</option>
+              <option value="aa">AA — AI Advantage</option>
+              <option value="ae">AE — AI Enterprise</option>
+              <option value="ee">EE — Education Excellence</option>
+            </select></div>
+          <div class="fr"><span class="fl">Primary persona name</span><input class="fi" id="sg_persona_name" placeholder="e.g. David Khumalo"></div>
+          <div class="fr"><span class="fl">Persona title</span><input class="fi" id="sg_persona_title" placeholder="e.g. Managing Partner"></div>
+          <div class="fr"><span class="fl">Special context</span><textarea class="fi" id="sg_context" placeholder="Any additional context — SA regulatory environment, specific challenges, narrative arc..."></textarea></div>
+          <div id="sgGenerating" style="display:none;" class="ai-panel">
+            <div class="ai-panel-title">Generating seed company profile...</div>
+            <div class="ai-output ai-thinking" id="sgOutput">Calling OpenRouter...</div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-purple" id="sgGenBtn" onclick="generateSeedCompany()">&#10024; Generate Profile</button>
+            <button class="btn btn-ghost" onclick="closeSeedGenModal()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seed import form -->
+      <div id="seedImportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;overflow-y:auto;padding:40px 20px;">
+        <div style="max-width:720px;margin:0 auto;background:white;border-radius:var(--r2);padding:28px 32px;box-shadow:var(--shadow-lg);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;">Import Seed Company JSON</div>
+            <button class="btn btn-ghost btn-sm" onclick="closeSeedImportModal()">&#10005; Close</button>
+          </div>
+          <div class="fr"><span class="fl">JSON</span><textarea class="fi" id="si_json" style="min-height:200px;font-family:'DM Mono',monospace;font-size:.75rem;" placeholder="Paste seed company JSON here..."></textarea></div>
+          <div id="siErr" style="display:none;color:var(--red);font-size:.82rem;margin-top:8px;"></div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="importSeedJson()">Import</button>
+            <button class="btn btn-ghost" onclick="closeSeedImportModal()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ REFERENCE LIBRARY ══ -->
+    <div class="screen" id="screen-reflibrary">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--ink);">Reference Library</div>
+          <div style="font-size:.78rem;color:var(--ink3);margin-top:2px;">Public documents uploaded once and referenced by activities — CAPS documents, POPIA Act, CHE frameworks, sector reports.</div>
+        </div>
+        <button class="btn btn-primary" onclick="showRefAdd()">+ Add Document</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Library Documents</div>
+        <div id="refLibList">
+          <div class="empty" style="padding:30px 0;">
+            <div class="empty-icon" style="font-size:1.8rem;">&#9633;</div>
+            <div class="empty-title" style="font-size:.9rem;">No documents in library</div>
+            <div class="empty-sub">Add public documents that multiple activities reference — regulatory frameworks, curriculum standards, sector reports.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="refAddModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;overflow-y:auto;padding:40px 20px;">
+        <div style="max-width:620px;margin:0 auto;background:white;border-radius:var(--r2);padding:28px 32px;box-shadow:var(--shadow-lg);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div style="font-family:'DM Serif Display',serif;font-size:1.2rem;">Add Reference Document</div>
+            <button class="btn btn-ghost btn-sm" onclick="closeRefAdd()">&#10005; Close</button>
+          </div>
+          <div class="fr"><span class="fl">Document ID</span><input class="fi" id="ref_id" placeholder="e.g. caps_mathematics_gr10"></div>
+          <div class="fr"><span class="fl">Name</span><input class="fi" id="ref_name" placeholder="e.g. CAPS Mathematics Grade 10"></div>
+          <div class="fr"><span class="fl">Type</span>
+            <select class="fi" id="ref_type">
+              <option value="curriculum">Curriculum Framework</option>
+              <option value="legislation">Legislation / Regulation</option>
+              <option value="policy">Policy / Guidance</option>
+              <option value="sector_report">Sector Report</option>
+              <option value="standard">Standard / Framework</option>
+              <option value="other">Other</option>
+            </select></div>
+          <div class="fr"><span class="fl">Source</span><input class="fi" id="ref_source" placeholder="e.g. DBE, SAQA, CHE, justice.gov.za"></div>
+          <div class="fr"><span class="fl">Drive File ID</span><input class="fi" id="ref_drive_id" placeholder="Google Drive file ID (uploaded manually)"></div>
+          <div class="fr"><span class="fl">Description</span><textarea class="fi" id="ref_desc" placeholder="What is this document? When and how is it used?" style="min-height:60px;"></textarea></div>
+          <div class="fr"><span class="fl">Used by product lines</span>
+            <select class="fi" id="ref_pls" multiple style="min-height:90px;">
+              <option value="aex">AEX</option>
+              <option value="aa">AA</option>
+              <option value="ae">AE</option>
+              <option value="ee">EE</option>
+            </select></div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="saveRefDoc()">Save Document</button>
+            <button class="btn btn-ghost" onclick="closeRefAdd()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ GENERATE ══ -->
+    <div class="screen" id="screen-generate">
+      <div style="max-width:800px;">
+        <div class="card-title-lg">Generate &amp; Publish</div>
+        <p class="card-sub">Review the complete specification and publish all outputs to Google Drive. LCE reads these files at runtime.</p>
+
+        <div class="card">
+          <div class="card-title">Specification Readiness</div>
+          <div id="readinessCheck"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Output Files</div>
+          <p style="font-size:.82rem;color:var(--ink3);margin-bottom:14px;line-height:1.6;">Studio publishes the following files to the <code style="background:var(--paper2);padding:1px 5px;border-radius:3px;font-size:.8em;">Studio/</code> folder in your Drive tenant root.</p>
+          <div class="output-list" id="outputFileList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Publish to Drive</div>
+          <div id="publishAuthGate" style="display:none;">
+            <div class="status-bar err"><div class="status-dot"></div>Sign in with Google to publish to Drive.</div>
+          </div>
+          <div id="publishContent">
+            <p style="font-size:.83rem;color:var(--ink2);line-height:1.6;margin-bottom:16px;">
+              Publishing creates or updates the Studio output files in Drive. LCE will read the updated specification on its next run. Existing LCE outputs are not affected.
+            </p>
+            <div id="publishStatus" style="display:none;" class="status-bar wait"><div class="status-dot"></div><span id="publishMsg">Publishing...</span></div>
+            <div class="form-actions">
+              <button class="btn btn-gold" id="publishBtn" onclick="publishToDrive()">&#9654; Publish to Drive</button>
+              <button class="btn btn-ghost" onclick="downloadSpec()">&#8659; Download JSON</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SETTINGS ══ -->
+    <div class="screen" id="screen-settings">
+      <div style="max-width:700px;">
+        <div class="card">
+          <div class="card-title">API Keys</div>
+          <div class="fr">
+            <span class="fl">OpenRouter API Key</span>
+            <div>
+              <input type="password" class="fi" id="set_openrouter" placeholder="sk-or-v1-...">
+              <div style="font-size:.72rem;color:var(--ink3);margin-top:4px;">Used for AI seed company generation and pedagogy assistance.</div>
+            </div>
+          </div>
+          <div class="fr">
+            <span class="fl">Google OAuth Client ID</span>
+            <input type="text" class="fi" id="set_gclient" placeholder="123456789-abc.apps.googleusercontent.com">
+          </div>
+          <div style="margin-top:14px;">
+            <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save Settings</button>
+            <span id="settingsSavedMsg" style="display:none;font-size:.75rem;color:var(--green);margin-left:10px;">&#10003; Saved</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Drive Configuration</div>
+          <div class="fr">
+            <span class="fl">Drive Root Folder ID</span>
+            <input type="text" class="fi" id="set_drive_root" placeholder="Tenant root folder ID">
+          </div>
+          <div class="fr">
+            <span class="fl">Studio Output Folder</span>
+            <input type="text" class="fi" id="set_studio_folder" placeholder="Studio/ subfolder ID (auto-created if blank)">
+          </div>
+          <div style="margin-top:14px;">
+            <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save Settings</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<div id="toast"></div>
+
+<script>
+// ── App state ─────────────────────────────────────────────────────────────
+var settings = {};
+var isAuthed = false;
+var authToken = '';
+var _tokenExpiry = 0;
+
+// Studio specification state
+var spec = {
+  tenant: {},
+  product_lines: [],
+  pedagogies: [],
+  blueprints: [],
+  seed_companies: [],
+  ref_library: []
+};
+
+var SCREENS = {
+  'home':         {title:'Overview',          meta:'Culvera Studio · Curriculum Architecture'},
+  'tenant':       {title:'Tenant',            meta:'Organisation identity and configuration'},
+  'productlines': {title:'Product Lines',     meta:'Offering definitions'},
+  'pedagogies':   {title:'Pedagogies',        meta:'Learning models and approaches'},
+  'blueprints':   {title:'Document Blueprints', meta:'Section definitions · QC rules · Generation prompts'},
+  'seedcompanies':{title:'Seed Companies',    meta:'Fictional organisations with personas'},
+  'reflibrary':   {title:'Reference Library', meta:'Public documents referenced by activities'},
+  'generate':     {title:'Generate & Publish', meta:'Review and publish to Drive'},
+  'settings':     {title:'Settings',          meta:'API keys and Drive configuration'},
+};
+
+// ── Navigation ────────────────────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  var se = document.getElementById('screen-'+name);
+  if(se) se.classList.add('active');
+  var ne = document.getElementById('nav-'+name);
+  if(ne) ne.classList.add('active');
+  var sc = SCREENS[name];
+  if(sc){
+    document.getElementById('topbarTitle').textContent = sc.title;
+    document.getElementById('topbarMeta').textContent = sc.meta;
+  }
+  if(name === 'generate') renderGeneratePage();
+  if(name === 'productlines') renderPlGrid();
+  if(name === 'pedagogies') renderPedList();
+  if(name === 'blueprints') renderBpList();
+  if(name === 'seedcompanies') renderSeedGrid();
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────
+function loadSettings() {
+  try { settings = JSON.parse(localStorage.getItem('culvera_studio_settings') || '{}'); } catch(e){ settings={}; }
+  if(settings.openrouter) document.getElementById('set_openrouter').value = settings.openrouter;
+  if(settings.gclient)    document.getElementById('set_gclient').value    = settings.gclient;
+  if(settings.drive_root) document.getElementById('set_drive_root').value = settings.drive_root;
+  if(settings.studio_folder) document.getElementById('set_studio_folder').value = settings.studio_folder;
+}
+function saveSettings() {
+  settings.openrouter     = document.getElementById('set_openrouter').value.trim();
+  settings.gclient        = document.getElementById('set_gclient').value.trim();
+  settings.drive_root     = document.getElementById('set_drive_root').value.trim();
+  settings.studio_folder  = document.getElementById('set_studio_folder').value.trim();
+  localStorage.setItem('culvera_studio_settings', JSON.stringify(settings));
+  var m = document.getElementById('settingsSavedMsg');
+  m.style.display='inline';
+  setTimeout(function(){m.style.display='none';},2500);
+  toast('Settings saved');
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+function toggleAuth() { isAuthed ? signOut() : signIn(); }
+function signIn() {
+  var clientId = settings.gclient;
+  if(!clientId) { alert('Enter your Google OAuth Client ID in Settings first.'); showScreen('settings'); return; }
+  var params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: window.location.href.split('#')[0].split('?')[0],
+    response_type: 'token',
+    scope: 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+    prompt: 'consent',
+  });
+  var popup = window.open('https://accounts.google.com/o/oauth2/v2/auth?' + params.toString(), 'googleAuth', 'width=520,height=620,left=200,top=80');
+  window._authInterval = setInterval(function() {
+    try {
+      if(!popup || popup.closed) { clearInterval(window._authInterval); return; }
+      var hash = new URLSearchParams(popup.location.hash.slice(1));
+      var token = hash.get('access_token');
+      if(token) {
+        authToken = token;
+        clearInterval(window._authInterval);
+        popup.close();
+        _tokenExpiry = Date.now() + 3600*1000;
+        setAuthed(true);
+      }
+    } catch(e) {}
+  }, 500);
+}
+function signOut() {
+  isAuthed = false; authToken = '';
+  setAuthed(false);
+}
+function setAuthed(val) {
+  isAuthed = val;
+  document.getElementById('authBtnIcon').textContent = val ? '●' : '◯';
+  document.getElementById('authBtnLabel').textContent = val ? 'Signed in' : 'Sign in with Google';
+  document.getElementById('authBtn').style.background = val ? 'rgba(26,107,60,.3)' : '';
+  document.getElementById('authStatus').textContent = val ? 'Drive publishing enabled' : 'Required for Drive publishing';
+}
+window.addEventListener('message', function(e) {
+  if(e.origin !== window.location.origin) return;
+  if(e.data && e.data.type === 'oauth_token') {
+    authToken = e.data.token;
+    _tokenExpiry = Date.now() + (e.data.expires_in||3600)*1000;
+    if(window._authInterval) { clearInterval(window._authInterval); }
+    setAuthed(true);
+  }
+});
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function(){ el.classList.remove('show'); }, 2800);
+}
+
+// ── GTA Import ────────────────────────────────────────────────────────────
+function importGTA() {
+  document.getElementById('importStatus').textContent = 'Importing...';
+
+  // Tenant
+  spec.tenant = {
+    tenant_id: 'gta',
+    name: 'GEMIS Technical Academy',
+    website: 'gemis.tech',
+    country: 'ZA',
+    currency: 'ZAR',
+    language: 'en-ZA',
+    review_period_days: 90
+  };
+
+  // Product lines
+  spec.product_lines = [
+    {
+      id: 'aex',
+      name: 'AI Advantage Express',
+      participant_profile: 'South African mid-market professionals, mixed AI experience, time-poor. Attend as individuals, return to their own workplace immediately.',
+      delivery_mode: 'Live Zoom',
+      session_duration: '4 hours',
+      activities_per_course: 5,
+      activity_duration_range: '45-50 minutes',
+      tools_policy: 'free-tier-only',
+      tool_pool: ['Claude', 'Perplexity', 'NotebookLM', 'GenSpark', 'Gamma', 'ChatGPT', 'Napkin', 'Grok'],
+      pedagogy: 'action_learning',
+      sa_context: 'required',
+      seed_required: 'yes',
+      activity_id_format: 'EX{course:02d}-A{activity:02d}',
+      course_id_format: 'EX{course:02d}',
+      generation: { model_standard: 'deepseek/deepseek-chat-v3-0324', temperature: 0.7 },
+      output_path: '~/.lce/outputs/aex',
+      document_types: ['participant_manual', 'facilitator_guide', 'design_notes']
+    },
+    {
+      id: 'aa',
+      name: 'AI Advantage',
+      participant_profile: 'South African professionals attending a 2-day sector-specific retreat. Five domain variants: A01 Business Leaders & Executives, A02 Education Professionals, A03 Independent Professionals, A04 Creative & Marketing, A05 Entrepreneurs & Business Owners.',
+      delivery_mode: 'Live Zoom — 2 days',
+      session_duration: '2 days (Day 1: Personal Productivity, Day 2: Professional Applications)',
+      activities_per_course: 12,
+      activity_duration_range: '30-50 minutes',
+      tools_policy: 'free-tier-only',
+      tool_pool: ['Claude', 'Perplexity', 'NotebookLM', 'Gamma', 'GenSpark', 'ChatGPT', 'Grok'],
+      pedagogy: 'action_learning',
+      sa_context: 'required',
+      seed_required: 'participant',
+      domain_variants: ['A01 Business Leaders', 'A02 Education Professionals', 'A03 Independent Professionals', 'A04 Creative & Marketing', 'A05 Entrepreneurs'],
+      activity_id_format: 'A{variant:02d}-D{day:02d}-A{activity:02d}',
+      generation: { model_standard: 'deepseek/deepseek-chat-v3-0324', temperature: 0.7 },
+      output_path: '~/.lce/outputs/aa',
+      document_types: ['participant_manual', 'facilitator_guide', 'design_notes']
+    },
+    {
+      id: 'ae',
+      name: 'AI Enterprise',
+      participant_profile: 'South African enterprise and sector professionals. Modular catalogue — clients select activities from a domain course. 10 domain courses: E01 Copilot, E02 Startups, E03 Education Leaders, E04 Healthcare, E05 Legal/Compliance/HR, E06 NGOs, E07 Operations/PM, E08 Customer Service/Sales, E09 Facilitators/Trainers, E10 Insurance.',
+      delivery_mode: 'Onsite (default) or Live Zoom',
+      session_duration: 'Half-day (6 activities) or Full-day (10 activities)',
+      activities_per_course: 20,
+      activity_duration_range: '45-50 minutes',
+      tools_policy: 'mixed',
+      tool_pool: ['Claude', 'Perplexity', 'NotebookLM', 'Gemini', 'Gamma', 'ChatGPT'],
+      copilot_exception: 'E01 only — requires active M365 Copilot licence',
+      pedagogy: 'practice_based',
+      sa_context: 'embedded',
+      seed_required: 'participant',
+      modular: true,
+      selection_model: 'client selects 6 (half-day) or 10 (full-day) from one domain course',
+      activity_id_format: 'E{course:02d}-T{topic:02d}-A{activity:02d}',
+      generation: { model_standard: 'deepseek/deepseek-chat-v3-0324', temperature: 0.7 },
+      output_path: '~/.lce/outputs/ae',
+      document_types: ['participant_manual', 'facilitator_guide', 'design_notes', 'source_document']
+    },
+    {
+      id: 'ee',
+      name: 'Education Excellence',
+      participant_profile: 'South African school SMT (principals, deputy principals, HODs) and classroom educators. Four domain streams: AIN Assessment Intelligence, ADM School Administration, COM Communication, EPD Educator Productivity.',
+      delivery_mode: 'Onsite at school or cluster venue',
+      session_duration: 'Per course (30-55 minutes per activity)',
+      activities_per_course: '6-7 per course, 10 courses per stream',
+      tools_policy: 'free-tier-only',
+      tool_pool: ['Claude', 'Gemini', 'NotebookLM', 'Canva', 'Gamma', 'Bricks'],
+      pedagogy: 'direct_instruction',
+      sa_context: 'required',
+      seed_required: 'fictional-persona',
+      fictional_institution: 'Eastview Primary School / Eastview Secondary School',
+      streams: ['AIN', 'ADM', 'COM', 'EPD'],
+      offering_tiers: {
+        alignment: 'C01-C03 (Leadership + 2 educator sessions)',
+        deep_dive: 'C04-C07 (4 educator deep dive sessions)',
+        institutional: 'C08-C10 (Integration, certification, showcase)'
+      },
+      regulatory_threads: {
+        AIN: 'POPIA Section 26 — learner records as special personal information',
+        ADM: 'SASA Sections 8 and 20 — document authority and governing body functions',
+        COM: 'POPIA Section 18 and 26 — institutional voice and learner data',
+        EPD: 'POPIA — fictional names in all marking and reporting practice'
+      },
+      activity_id_format: 'EE-{stream}-C{course:02d}-A{activity:02d}',
+      generation: { model_standard: 'deepseek/deepseek-chat-v3-0324', temperature: 0.7 },
+      output_path: '~/.lce/outputs/ee',
+      document_types: ['activity_brief', 'facilitator_guide', 'design_notes', 'source_document']
+    }
+  ];
+
+  // Pedagogies
+  spec.pedagogies = [
+    {
+      id: 'action_learning',
+      name: 'Action Learning',
+      description: 'Participants learn by doing — immediate application to real work context using free-tier AI tools. Every activity produces a usable professional artefact the participant takes back to their working week.',
+      tone: 'direct, practical, collegial — never academic, never condescending',
+      assessment_framing: 'output-based — participant produces a usable work artefact',
+      outcome_style: 'observable behaviour change within the working week — not "will be able to" but "will do on Monday"',
+      reflection: {
+        count: 3,
+        format: 'dash-prefixed, no numbering — never 1. 2. 3.',
+        q1: 'quality comparison to normal approach — how did the AI output compare to what you would normally produce in the same time?',
+        q2: 'specific application this week — when will you use this workflow before the end of the week? Not "how might you" — "when will you"',
+        q3: 'one limitation or concern — non-negotiable, never replaced by a third positive question'
+      },
+      key_takeaways: {
+        count_min: 4,
+        count_max: 5,
+        format: 'bold action verb opener followed by insight — no numbering',
+        example: '**Formulate** research questions as you would ask a knowledgeable colleague.'
+      },
+      sound_familiar: '3-4 paragraphs — overrides Design System default of 2-3 sentences',
+      prompt_blocks: 'blockquote/indented format — never code fences',
+      tools_table: 'markdown table only — never bullet points — columns: Tool | Purpose | Access',
+      forbidden: ['AnyDesk', 'code fence wrappers', 'numbered reflection questions', 'numbered takeaways']
+    },
+    {
+      id: 'practice_based',
+      name: 'Practice-Based Learning',
+      description: 'Participants use their own live professional material as the primary input. The activity demonstrates what AI can do with real work — no fictional scenarios required unless participant has no material. Seed company backup always available.',
+      tone: 'professional, direct, sector-appropriate — adapts to participant domain',
+      assessment_framing: 'immediate deployment — participant produces something they use in their next working day',
+      outcome_style: 'tangible professional artefact the participant can use or adapt immediately',
+      reflection: {
+        count: 3,
+        format: 'conversational, brief',
+        q1: 'what did the AI produce that surprised you?',
+        q2: 'what will you use or adapt from today?',
+        q3: 'what would you not trust AI to do without review?'
+      },
+      key_takeaways: {
+        count_min: 3,
+        count_max: 5,
+        format: 'plain sentences or bold action verbs — no numbering'
+      },
+      participant_material: 'preferred — participant brings real work; seed company backup always generated',
+      showstopper_model: 'high-impact activities flagged with ★ — strong for catalogue marketing and client selection'
+    },
+    {
+      id: 'direct_instruction',
+      name: 'Direct Instruction with Scaffolded Practice',
+      description: 'Educators and school leaders learn through structured demonstration followed by guided practice. AI tools are demonstrated on fictional Eastview school data, then educators practice with their own subject context.',
+      tone: 'warm, professional, collegial — encourages experimentation, normalises uncertainty',
+      assessment_framing: 'institutional contribution — outputs submitted to shared library at quality threshold',
+      outcome_style: 'time saving measurable in minutes — outputs usable without significant rework',
+      popia_thread: 'POPIA compliance is non-negotiable throughout — fictional data in all hands-on practice, conversation history cleared after each session',
+      reflection: {
+        stream_specific: true,
+        ain: 'one privacy decision made during independent practice',
+        adm: 'would the principal be confident signing this?',
+        com: 'would a parent feel this came from a real teacher who knows their child?',
+        epd: 'how much time did I save today? (logged in Time Saving Log)'
+      },
+      quality_threshold: 'usable without significant rework — no more than 10 minutes of review and minor adjustment',
+      institutional_library: 'every activity contributes to the school\'s growing document/resource library',
+      carry_forward: 'SMT session (C01) outputs feed educator sessions (C02+); educator outputs build into institutional framework'
+    }
+  ];
+
+  // Blueprints - AEX PM
+  spec.blueprints = [
+    {
+      id: 'aex_pm',
+      product_line: 'aex',
+      document_type: 'participant_manual',
+      name: 'AEX Participant Manual',
+      min_length_chars: 2000,
+      sections: [
+        {id:'opening_quote', heading:null, description:'Italicised quote or em-dash statement setting the frame', format:'italic markdown, no heading, first element', length:{guidance:'1-2 lines'}, qc_detect:['*','_','—'], qc_check_length:false},
+        {id:'sound_familiar', heading:'Sound Familiar?', description:'3-4 paragraphs connecting activity to the participant\'s real working week', format:'prose paragraphs, no bullets', length:{min_chars:400, max_chars:700, guidance:'3-4 paragraphs'}, qc_detect:['sound familiar','your inbox','your week'], qc_check_length:true},
+        {id:'walk_away', heading:"What You'll Walk Away With", description:'3-5 bullet outcomes', format:'bullet list', length:{guidance:'3-5 items'}, qc_detect:['walk away with',"you'll walk away"], qc_check_length:false},
+        {id:'your_ai_tool', heading:'Your AI Tool', description:'Single tool introduction — what it is, why it matters, free tier note', format:'prose 1-2 paragraphs', length:{guidance:'1-2 paragraphs'}, qc_detect:['your ai tool','free to use'], qc_check_length:false},
+        {id:'tools_table', heading:'Tools for This Activity', description:'Markdown table: Tool | Purpose | Access', format:'markdown table ONLY — never bullets', length:{guidance:'3-5 rows'}, qc_detect:['| Tool |','|---|'], qc_check_length:false},
+        {id:'working_example', heading:'Your Working Example', description:'Seed company scenario — everything needed before step 1', format:'prose with blockquote prompts', length:{min_chars:200, max_chars:500, guidance:'substantive setup'}, qc_detect:['your working example','working example',"we've provided everything"], qc_check_length:true},
+        {id:'step_by_step', heading:'Step by Step', description:'Numbered steps with exact tool prompts, actions, and what to notice', format:'numbered steps, blockquote prompts — never code fences', length:{min_chars:500, max_chars:1200, guidance:'typically 4-6 steps'}, qc_detect:['step by step','step-by-step'], qc_check_length:true},
+        {id:'what_good_looks_like', heading:'What Good Looks Like', description:'Description of strong output — what quality means', format:'prose or annotated example', length:{min_chars:120, max_chars:350, guidance:'specific and illustrative'}, qc_detect:['what good looks like','good looks like'], qc_check_length:true},
+        {id:'make_it_yours', heading:'Make It Yours', description:'Adaptation prompts — how to apply to own work', format:'prose or bullets', length:{guidance:'2-4 suggestions'}, qc_detect:['make it yours'], qc_check_length:false},
+        {id:'output_chain', heading:'The Output Chain', description:'How this activity\'s output feeds the next — connects the course arc', format:'prose 1 paragraph', length:{min_chars:60, max_chars:200, guidance:'brief arc connector'}, qc_detect:['the output chain','output chain'], qc_check_length:true},
+        {id:'upload_output', heading:'Upload Your Output', description:'Instruction to save and share the artefact', format:'brief instruction', length:{guidance:'2-3 sentences'}, qc_detect:['upload your output','upload it to your course'], qc_check_length:false},
+        {id:'quick_reflection', heading:'Quick Reflection', description:'3 reflection questions — Q1 quality, Q2 application this week, Q3 limitation', format:'dash-prefixed, no numbering, exactly 3', length:{guidance:'3 questions only'}, qc_detect:['quick reflection','reflection'], qc_check_length:false}
+      ],
+      format_rules: [
+        'Never wrap output in a markdown code fence',
+        'Never number reflection questions — always dash-prefix',
+        'Tools section must be a markdown table — never bullets',
+        'Prompt blocks use blockquote format — never code fences',
+        'No AnyDesk references anywhere in document',
+        'All monetary values in ZAR',
+        'SA-specific regulatory references only',
+        'Sound Familiar is 3-4 paragraphs — not 2-3 sentences'
+      ]
+    },
+    {
+      id: 'aex_fg',
+      product_line: 'aex',
+      document_type: 'facilitator_guide',
+      name: 'AEX Facilitator Guide',
+      min_length_chars: 2000,
+      sections: [
+        {id:'about', heading:'About This Guide', description:'Confidential facilitator-only document notice', qc_detect:['about this guide','confidential']},
+        {id:'session_overview', heading:'Session Overview', description:'Course code, activity ID, duration, tool, seed company', qc_detect:['session overview','course code','activity id']},
+        {id:'your_participants', heading:'Your Participants', description:'Who is in the room — experience level, sector context', qc_detect:['your participants','participants']},
+        {id:'tech_setup', heading:'Technology Setup', description:'Pre-session checklist — tools, accounts, Zoom setup', qc_detect:['technology setup','tech setup','zoom link']},
+        {id:'materials', heading:'Materials Checklist', description:'What must be prepared — nothing should be missing', qc_detect:['materials checklist','checklist','nothing in this checklist']},
+        {id:'opening', heading:'Opening This Activity', description:'First words, how to set the tone and energy', qc_detect:['opening this activity','opening the session','welcome']},
+        {id:'facilitation', heading:'Facilitation Guide', description:'Step-by-step facilitation notes — demonstration prompt, what to watch for', qc_detect:['facilitation guide','demonstration prompt','what to watch']},
+        {id:'showstoppers', heading:'Showstopper Protocols', description:'9 failure protocols: connectivity, technical, disengagement, hostile, camera-off, dropout, zoom technical, escalation', qc_detect:['showstopper','connectivity failure','technical failure','group disengagement','hostile','camera-off','participant dropout','zoom technical','escalation contact']},
+        {id:'closing', heading:'Closing This Session', description:'How to close, what to upload', qc_detect:['closing the session','closing this session','upload']},
+        {id:'after', heading:'After the Session', description:'Post-session obligations — what to submit, what to log', qc_detect:['after the session','after this activity','post-session']},
+        {id:'reflection', heading:'Facilitator Reflection', description:'Facilitator\'s own learning from this session', qc_detect:['facilitator reflection','your observations make']}
+      ],
+      format_rules: [
+        'Confidential — not for participant distribution',
+        'No AnyDesk references',
+        'Showstopper section must contain all 9 protocol types'
+      ]
+    },
+    {
+      id: 'aex_dn',
+      product_line: 'aex',
+      document_type: 'design_notes',
+      name: 'AEX Design Notes',
+      min_length_chars: 800,
+      sections: [
+        {id:'activity_summary', heading:'Activity Summary', description:'Activity ID, product line, tool, pedagogy', qc_detect:['activity summary','activity id','product line']},
+        {id:'tools_referenced', heading:'Tools Referenced', description:'Tool volatility note, free tier status', qc_detect:['tools referenced','tool volatility','free tier']},
+        {id:'refresh_triggers', heading:'Refresh Triggers', description:'What would trigger a 90-day review of this activity', qc_detect:['refresh trigger','trigger condition']},
+        {id:'review_date', heading:'Scheduled Review Date', description:'90-day review date from approval', qc_detect:['scheduled review','review date']},
+        {id:'sa_regulatory', heading:'SA Regulatory References', description:'Any SA regulatory references in the PM — POPIA, SETA, CCMA, NQF or none', qc_detect:['sa regulatory','regulatory reference','popia','seta','no specific sa']},
+        {id:'generation_metadata', heading:'Generation Metadata', description:'Model used, pipeline version, generation date', qc_detect:['generation metadata','model used','pipeline version']},
+        {id:'reviewer_notes', heading:'Reviewer Notes', description:'Leon Small review and Warren Hendricks review fields', qc_detect:['reviewer notes','leon small review','warren hendricks']},
+        {id:'rationale', heading:'Generation Rationale', description:'Prompt decisions and design rationale', qc_detect:['generation rationale','design rationale','prompt decision']}
+      ],
+      format_rules: [
+        'DN is internal — technical record of generation decisions',
+        'Reviewer Notes must include named fields for both Leon Small and Warren Hendricks',
+        '90-day review is non-negotiable'
+      ]
+    }
+  ];
+
+  // Seed companies from uploaded profiles
+  spec.seed_companies = [
+    {
+      id: 'crestline_advisory_group',
+      name: 'Crestline Advisory Group',
+      sector: 'Professional Services',
+      sub_sector: 'Management Consulting & Advisory',
+      size: 'mid-market',
+      hq: 'Sandton, South Africa',
+      tagline: 'Mid-sized management consulting and advisory firm serving listed corporates, SOEs, and high-growth private businesses across sub-Saharan Africa.',
+      serves_product_lines: ['aex', 'aa', 'ae'],
+      primary_persona: {name:'Dominic Ferreira', title:'Managing Director', department:'Executive', personality:'commercially sharp, strategic, board-level communicator', ai_profile:'early adopter, productivity-focused'},
+      aa_variant_persona: {name:'David Khumalo', title:'Managing Partner — Financial Advisory', department:'Finance Advisory', personality:'direct, time-poor, evidence-driven', ai_profile:'sceptical but open'},
+      voice: {reporting_style:'formal-board', prompt_context:'Crestline Advisory Group is a mid-market management consulting firm headquartered in Sandton with 340 staff and operations across sub-Saharan Africa. Revenue R280m–R420m annual, reported to February year-end. Billable utilisation is the primary operational metric.'}
+    },
+    {
+      id: 'hartland_consumer_goods',
+      name: 'Hartland Consumer Goods',
+      sector: 'Consumer Goods',
+      sub_sector: 'Fast-Moving Consumer Goods (FMCG)',
+      size: 'large',
+      hq: 'Johannesburg, South Africa',
+      tagline: 'Large South African FMCG manufacturer and distributor with household, personal care, and food brands across southern Africa.',
+      serves_product_lines: ['aa', 'ae'],
+      primary_persona: {name:'André Hartland', title:'Managing Director and Founder', department:'Executive', personality:'commercially pragmatic, sceptical of technology, results-driven', ai_profile:'cautious pragmatist — wants ROI proof before adoption'},
+      voice: {reporting_style:'management', prompt_context:'Hartland Consumer Goods is a large South African FMCG company with R1.4–1.9bn revenue and 2,100 staff. Diversified portfolio across household, personal care, and food. Six SA regions plus East Africa export. Semi-annual reporting to December year-end.'}
+    },
+    {
+      id: 'stonegate_retail_group',
+      name: 'Stonegate Retail Group',
+      sector: 'Retail',
+      sub_sector: 'Specialty & Convenience Retail',
+      size: 'large',
+      hq: 'Cape Town, South Africa',
+      tagline: 'JSE-listed South African specialty retailer operating Home & Living, Tech & Accessories, and Convenience stores plus e-commerce.',
+      serves_product_lines: ['aex', 'aa', 'ae'],
+      primary_persona: {name:'Kefilwe Mokoena', title:'Senior Content Manager', department:'Marketing', personality:'creative, brand-conscious, production-pressured', ai_profile:'enthusiastic early adopter — frustrated by production volume'},
+      voice: {reporting_style:'management', prompt_context:'Stonegate Retail Group is a JSE-listed South African specialty retailer with R2.1–2.8bn revenue and 3,800 staff. Home & Living, Tech & Accessories, and Convenience formats across SA and Namibia. Semi-annual reporting to January year-end.'}
+    },
+    {
+      id: 'ubuntu_skills_foundation',
+      name: 'Ubuntu Skills Foundation',
+      sector: 'Non-Profit & Social Impact',
+      sub_sector: 'Skills Development & Workforce Readiness',
+      size: 'mid-market',
+      hq: 'Pretoria, South Africa',
+      tagline: 'SETA-accredited NPO delivering digital literacy, vocational, and work readiness programmes to 3,000–4,000 learners per year across five provinces.',
+      serves_product_lines: ['aa', 'ae'],
+      primary_persona: {name:'Dr Puleng Sithole', title:'Executive Director', department:'Executive', personality:'mission-driven, funder-accountable, time-pressed', ai_profile:'pragmatic — values tools that improve grant writing and reporting'},
+      voice: {reporting_style:'ngo-impact', prompt_context:'Ubuntu Skills Foundation is a South African NPO and SETA-accredited training provider with R85–140m annual income and 185 staff. Delivers digital literacy, vocational, and work readiness programmes. Reporting is annual to March year-end with funder-specific reporting cycles.'}
+    },
+    {
+      id: 'safeguard_mutual_insurance',
+      name: 'Safeguard Mutual Insurance',
+      sector: 'Insurance',
+      sub_sector: 'Short-term Insurance',
+      size: 'mid-market',
+      hq: 'Johannesburg, South Africa',
+      tagline: 'South African short-term insurer providing commercial and personal lines products through broker intermediaries.',
+      serves_product_lines: ['ae'],
+      ae_course: 'E10',
+      ae_themes: ['T01 — Underwriting and Risk Assessment', 'T02 — Claims Processing'],
+      primary_persona: {name:'Priya Naidoo', title:'Head of Underwriting', department:'Underwriting', personality:'technically precise, risk-conscious, regulatory-aware', ai_profile:'cautious adopter — concerned about liability in AI-generated documents'},
+      voice: {reporting_style:'formal-board', prompt_context:'Safeguard Mutual Insurance is a mid-market South African short-term insurer with approximately 420 staff and GWP of R680m–R950m. Underwrites commercial property, motor fleet, and combined policies through broker intermediaries. Subject to FAIS, TCF, and Insurance Act 18 of 2017.'}
+    },
+    {
+      id: 'summit_life_assurance',
+      name: 'Summit Life Assurance',
+      sector: 'Insurance',
+      sub_sector: 'Long-term Insurance',
+      size: 'mid-market',
+      hq: 'Cape Town, South Africa',
+      tagline: 'South African long-term insurer providing life, disability, and income protection products through IFA distribution and direct channels.',
+      serves_product_lines: ['ae'],
+      ae_course: 'E10',
+      ae_themes: ['T02 — Claims Processing (long-term claims override)'],
+      activity_override: 'Used for long-term insurance activities in E10 T02 — overrides Safeguard Mutual at activity level',
+      primary_persona: {name:'Nomsa Dlamini', title:'Head of Individual Claims', department:'Claims', personality:'empathetic with policyholders, technically rigorous, FAIS-aware', ai_profile:'open to AI for documentation efficiency — deeply careful about client communication'},
+      voice: {reporting_style:'formal-board', prompt_context:'Summit Life Assurance is a mid-market South African long-term insurer with approximately 310 staff and premium income of R420m–R680m. Distributes life, disability, and income protection through IFAs and direct channel. Regulated under Insurance Act 18 of 2017, FAIS, and Ombudsman for Long-Term Insurance jurisdiction.'}
+    }
+  ];
+
+  // Update status display
+  updateStatusDisplay();
+  renderPlGrid();
+  renderPedList();
+  renderBpList();
+  renderSeedGrid();
+
+  // Populate tenant form
+  var t = spec.tenant;
+  document.getElementById('t_id').value = t.tenant_id || '';
+  document.getElementById('t_name').value = t.name || '';
+  document.getElementById('t_website').value = t.website || '';
+  document.getElementById('t_currency').value = t.currency || '';
+  document.getElementById('t_language').value = t.language || '';
+  document.getElementById('t_review_days').value = t.review_period_days || 90;
+
+  document.getElementById('importStatus').textContent = '';
+  toast('GTA specification imported — ' + spec.product_lines.length + ' product lines, ' + spec.seed_companies.length + ' seed companies');
+}
+
+// ── Status display ────────────────────────────────────────────────────────
+function updateStatusDisplay() {
+  var ok = '&#10003;';
+  function s(id, val, text) {
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = val ? '<span style="color:#7ee787;">' + ok + ' ' + text + '</span>' : '<span style="color:rgba(255,255,255,.3);">&#9675; ' + text + '</span>';
+  }
+  s('st-tenant',   spec.tenant && spec.tenant.tenant_id, spec.tenant && spec.tenant.name ? spec.tenant.name : 'Not set');
+  s('st-pl',       spec.product_lines.length > 0, spec.product_lines.length + ' defined');
+  s('st-ped',      spec.pedagogies.length > 0, spec.pedagogies.length + ' defined');
+  s('st-bp',       spec.blueprints.length > 0, spec.blueprints.length + ' defined');
+  s('st-sc',       spec.seed_companies.length > 0, spec.seed_companies.length + ' defined');
+}
+
+// ── Tenant ────────────────────────────────────────────────────────────────
+function saveTenant() {
+  spec.tenant = {
+    tenant_id: document.getElementById('t_id').value.trim(),
+    name: document.getElementById('t_name').value.trim(),
+    website: document.getElementById('t_website').value.trim(),
+    country: document.getElementById('t_country').value,
+    currency: document.getElementById('t_currency').value.trim(),
+    language: document.getElementById('t_language').value.trim(),
+    review_period_days: parseInt(document.getElementById('t_review_days').value) || 90
+  };
+  updateStatusDisplay();
+  var el = document.getElementById('tenantSaved');
+  el.style.display = 'inline';
+  setTimeout(function(){el.style.display='none';}, 2500);
+  toast('Tenant saved');
+}
+
+// ── Product Lines ─────────────────────────────────────────────────────────
+var _plEditing = null;
+function renderPlGrid() {
+  var grid = document.getElementById('plGrid');
+  var empty = document.getElementById('plEmpty');
+  if(!spec.product_lines.length){ grid.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+  grid.innerHTML = spec.product_lines.map(function(pl){
+    var colorClass = pl.id;
+    return '<div class="pl-card '+colorClass+'" onclick="editPl(\''+esc(pl.id)+'\')">'+
+      '<div class="pl-card-id">'+esc(pl.id.toUpperCase())+'</div>'+
+      '<div class="pl-card-name">'+esc(pl.name)+'</div>'+
+      '<div class="pl-card-desc">'+esc((pl.participant_profile||'').slice(0,100))+(pl.participant_profile&&pl.participant_profile.length>100?'...':'')+'</div>'+
+      '<div class="pl-card-meta">'+
+        '<span class="chip chip-blue">'+esc(pl.delivery_mode||'')+'</span>'+
+        '<span class="chip chip-gold">'+esc(pl.pedagogy||'')+'</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  updateStatusDisplay();
+}
+function showPlForm() { _plEditing=null; document.getElementById('plModalTitle').textContent='Add Product Line'; clearPlForm(); document.getElementById('plModal').style.display=''; }
+function editPl(id) {
+  var pl = spec.product_lines.find(function(p){return p.id===id;});
+  if(!pl) return;
+  _plEditing = pl;
+  document.getElementById('plModalTitle').textContent = 'Edit — ' + pl.name;
+  document.getElementById('pl_id').value = pl.id||'';
+  document.getElementById('pl_name').value = pl.name||'';
+  document.getElementById('pl_profile').value = pl.participant_profile||'';
+  document.getElementById('pl_delivery').value = pl.delivery_mode||'';
+  document.getElementById('pl_duration').value = pl.session_duration||'';
+  document.getElementById('pl_activities').value = pl.activities_per_course||'';
+  document.getElementById('pl_tools_policy').value = pl.tools_policy||'free-tier-only';
+  document.getElementById('pl_tool_pool').value = (pl.tool_pool||[]).join(', ');
+  document.getElementById('pl_pedagogy').value = pl.pedagogy||'';
+  document.getElementById('pl_sa_context').value = pl.sa_context||'required';
+  document.getElementById('pl_seed_required').value = pl.seed_required||'yes';
+  document.getElementById('pl_id_format').value = pl.activity_id_format||'';
+  document.getElementById('pl_model').value = (pl.generation&&pl.generation.model_standard)||'deepseek/deepseek-chat-v3-0324';
+  document.getElementById('pl_output').value = pl.output_path||'';
+  document.getElementById('plModal').style.display = '';
+}
+function clearPlForm() {
+  ['pl_id','pl_name','pl_profile','pl_delivery','pl_duration','pl_id_format','pl_output'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('pl_activities').value='';
+  document.getElementById('pl_tool_pool').value='';
+  document.getElementById('pl_tools_policy').value='free-tier-only';
+  document.getElementById('pl_pedagogy').value='';
+  document.getElementById('pl_sa_context').value='required';
+  document.getElementById('pl_seed_required').value='yes';
+  document.getElementById('pl_model').value='deepseek/deepseek-chat-v3-0324';
+}
+function closePlModal() { document.getElementById('plModal').style.display='none'; _plEditing=null; }
+function savePl() {
+  var id = document.getElementById('pl_id').value.trim();
+  var name = document.getElementById('pl_name').value.trim();
+  if(!id||!name){ document.getElementById('plModalErr').textContent='ID and Name are required.'; document.getElementById('plModalErr').style.display=''; return; }
+  var obj = {
+    id:id, name:name,
+    participant_profile: document.getElementById('pl_profile').value.trim(),
+    delivery_mode: document.getElementById('pl_delivery').value.trim(),
+    session_duration: document.getElementById('pl_duration').value.trim(),
+    activities_per_course: parseInt(document.getElementById('pl_activities').value)||5,
+    tools_policy: document.getElementById('pl_tools_policy').value,
+    tool_pool: document.getElementById('pl_tool_pool').value.split(',').map(function(s){return s.trim();}).filter(Boolean),
+    pedagogy: document.getElementById('pl_pedagogy').value,
+    sa_context: document.getElementById('pl_sa_context').value,
+    seed_required: document.getElementById('pl_seed_required').value,
+    activity_id_format: document.getElementById('pl_id_format').value.trim(),
+    generation: {model_standard: document.getElementById('pl_model').value.trim(), temperature:0.7},
+    output_path: document.getElementById('pl_output').value.trim()
+  };
+  if(_plEditing) {
+    var idx = spec.product_lines.findIndex(function(p){return p.id===_plEditing.id;});
+    if(idx>=0) spec.product_lines[idx] = obj;
+  } else {
+    spec.product_lines.push(obj);
+  }
+  closePlModal();
+  renderPlGrid();
+  toast('Product line saved: ' + name);
+}
+
+// ── Pedagogies ────────────────────────────────────────────────────────────
+var _pedEditing = null;
+function renderPedList() {
+  var list = document.getElementById('pedList');
+  var empty = document.getElementById('pedEmpty');
+  if(!spec.pedagogies.length){ list.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+  list.innerHTML = spec.pedagogies.map(function(p){
+    return '<div class="card" style="cursor:pointer;" onclick="editPed(\''+esc(p.id)+'\')">'+
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;">'+
+        '<div>'+
+          '<div style="font-weight:600;font-size:.9rem;margin-bottom:3px;">'+esc(p.name)+'</div>'+
+          '<div style="font-family:\'DM Mono\',monospace;font-size:.7rem;color:var(--blue);margin-bottom:8px;">'+esc(p.id)+'</div>'+
+          '<div style="font-size:.8rem;color:var(--ink3);line-height:1.5;max-width:600px;">'+esc((p.description||'').slice(0,180))+'</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:6px;flex-shrink:0;margin-left:16px;">'+
+          '<span class="chip chip-gold">'+esc(p.tone||'')+'</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  updateStatusDisplay();
+}
+function showPedForm() { _pedEditing=null; document.getElementById('pedModalTitle').textContent='Add Pedagogy'; clearPedForm(); document.getElementById('pedModal').style.display=''; }
+function editPed(id) {
+  var p = spec.pedagogies.find(function(x){return x.id===id;});
+  if(!p) return;
+  _pedEditing = p;
+  document.getElementById('pedModalTitle').textContent = 'Edit — ' + p.name;
+  document.getElementById('ped_id').value = p.id||'';
+  document.getElementById('ped_name').value = p.name||'';
+  document.getElementById('ped_desc').value = p.description||'';
+  document.getElementById('ped_tone').value = p.tone||'';
+  document.getElementById('ped_assessment').value = p.assessment_framing||'';
+  document.getElementById('ped_outcomes').value = p.outcome_style||'';
+  document.getElementById('ped_refl_count').value = (p.reflection&&p.reflection.count)||3;
+  document.getElementById('ped_refl_format').value = (p.reflection&&p.reflection.format)||'';
+  document.getElementById('ped_q1').value = (p.reflection&&p.reflection.q1)||'';
+  document.getElementById('ped_q2').value = (p.reflection&&p.reflection.q2)||'';
+  document.getElementById('ped_q3').value = (p.reflection&&p.reflection.q3)||'';
+  document.getElementById('ped_take_min').value = (p.key_takeaways&&p.key_takeaways.count_min)||4;
+  document.getElementById('ped_take_max').value = (p.key_takeaways&&p.key_takeaways.count_max)||5;
+  document.getElementById('ped_take_fmt').value = (p.key_takeaways&&p.key_takeaways.format)||'';
+  document.getElementById('pedModal').style.display = '';
+}
+function clearPedForm() {
+  ['ped_id','ped_name','ped_desc','ped_tone','ped_assessment','ped_outcomes','ped_refl_format','ped_q1','ped_q2','ped_q3','ped_take_fmt'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('ped_refl_count').value=3;
+  document.getElementById('ped_take_min').value=4;
+  document.getElementById('ped_take_max').value=5;
+}
+function closePedModal() { document.getElementById('pedModal').style.display='none'; _pedEditing=null; }
+function savePed() {
+  var id = document.getElementById('ped_id').value.trim();
+  var name = document.getElementById('ped_name').value.trim();
+  if(!id||!name) return;
+  var obj = {
+    id:id, name:name,
+    description: document.getElementById('ped_desc').value.trim(),
+    tone: document.getElementById('ped_tone').value.trim(),
+    assessment_framing: document.getElementById('ped_assessment').value.trim(),
+    outcome_style: document.getElementById('ped_outcomes').value.trim(),
+    reflection: {
+      count: parseInt(document.getElementById('ped_refl_count').value)||3,
+      format: document.getElementById('ped_refl_format').value.trim(),
+      q1: document.getElementById('ped_q1').value.trim(),
+      q2: document.getElementById('ped_q2').value.trim(),
+      q3: document.getElementById('ped_q3').value.trim()
+    },
+    key_takeaways: {
+      count_min: parseInt(document.getElementById('ped_take_min').value)||4,
+      count_max: parseInt(document.getElementById('ped_take_max').value)||5,
+      format: document.getElementById('ped_take_fmt').value.trim()
+    }
+  };
+  if(_pedEditing) {
+    var idx = spec.pedagogies.findIndex(function(p){return p.id===_pedEditing.id;});
+    if(idx>=0) spec.pedagogies[idx]=obj;
+  } else {
+    spec.pedagogies.push(obj);
+  }
+  closePedModal();
+  renderPedList();
+  toast('Pedagogy saved: ' + name);
+}
+
+// ── Blueprints ────────────────────────────────────────────────────────────
+function renderBpList() {
+  var list = document.getElementById('bpList');
+  var empty = document.getElementById('bpEmpty');
+  var viewer = document.getElementById('bpViewer');
+  if(!spec.blueprints.length){ list.innerHTML=''; empty.style.display=''; viewer.style.display='none'; return; }
+  empty.style.display='none';
+  viewer.style.display='none';
+  list.innerHTML = '';
+  // Group by product line
+  var byPl = {};
+  spec.blueprints.forEach(function(bp){
+    if(!byPl[bp.product_line]) byPl[bp.product_line]={};
+    byPl[bp.product_line][bp.document_type] = bp;
+  });
+  Object.keys(byPl).forEach(function(pl){
+    var bps = byPl[pl];
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<div class="card-title">'+pl.toUpperCase()+' — Document Blueprints</div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+      Object.keys(bps).map(function(dt){
+        var bp = bps[dt];
+        return '<button class="btn btn-sm" style="background:var(--paper2);" onclick="viewBlueprint(\''+esc(bp.id)+'\')">'+
+          esc(dt.replace(/_/g,' ').toUpperCase()) + ' <span style="color:var(--ink3);">' + (bp.sections||[]).length + ' sections</span></button>';
+      }).join('')+
+      '</div>';
+    list.appendChild(card);
+  });
+  updateStatusDisplay();
+}
+function showBpForm() { toast('Blueprint editing via import or AI generation — manual editing coming in v1.1'); }
+function viewBlueprint(id) {
+  var bp = spec.blueprints.find(function(b){return b.id===id;});
+  if(!bp) return;
+  document.getElementById('bpList').style.display='none';
+  document.getElementById('bpEmpty').style.display='none';
+  var viewer = document.getElementById('bpViewer');
+  viewer.style.display='block';
+  document.getElementById('bpViewerTitle').textContent = bp.name || id;
+  var tabs = document.getElementById('bpViewerTabs');
+  tabs.innerHTML = '<button class="tab-btn active" onclick="bpTab(\'sections\',this)">Sections</button>'+
+    '<button class="tab-btn" onclick="bpTab(\'rules\',this)">Format Rules</button>'+
+    '<button class="tab-btn" onclick="bpTab(\'json\',this)">JSON</button>';
+  bpShowTab('sections', bp);
+}
+function bpTab(name, btn) {
+  document.querySelectorAll('#bpViewerTabs .tab-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  var id = document.getElementById('bpViewerTitle').textContent;
+  var bp = spec.blueprints.find(function(b){return (b.name||b.id)===id;});
+  if(bp) bpShowTab(name, bp);
+}
+function bpShowTab(name, bp) {
+  var c = document.getElementById('bpViewerContent');
+  if(name==='sections') {
+    c.innerHTML = '<div class="output-list">' + (bp.sections||[]).map(function(s,i){
+      return '<div class="output-item">'+
+        '<span class="output-icon" style="color:var(--ink3);">'+('0'+(i+1)).slice(-2)+'</span>'+
+        '<div>'+
+          '<div class="output-name">'+(s.heading||'[No heading — '+s.id+']')+'</div>'+
+          '<div class="output-desc">'+esc(s.description||'')+'</div>'+
+          (s.length ? '<div style="font-size:.7rem;color:var(--blue);margin-top:2px;">'+esc(s.length.guidance||JSON.stringify(s.length))+'</div>' : '')+
+        '</div>'+
+        (s.qc_check_length ? '<span class="chip chip-green" style="flex-shrink:0;">QC length</span>' : '')+
+      '</div>';
+    }).join('')+'</div>';
+  } else if(name==='rules') {
+    c.innerHTML = '<div class="card"><ul style="padding-left:20px;">'+(bp.format_rules||[]).map(function(r){return '<li style="font-size:.83rem;color:var(--ink2);margin-bottom:8px;">'+esc(r)+'</li>';}).join('')+'</ul></div>';
+  } else {
+    c.innerHTML = '<pre style="background:var(--ink);color:rgba(255,255,255,.85);padding:20px;border-radius:var(--r);font-family:\'DM Mono\',monospace;font-size:.72rem;line-height:1.6;overflow:auto;max-height:500px;">'+esc(JSON.stringify(bp,null,2))+'</pre>';
+  }
+}
+function closeBpViewer() {
+  document.getElementById('bpViewer').style.display='none';
+  document.getElementById('bpList').style.display='';
+  renderBpList();
+}
+
+// ── Seed Companies ────────────────────────────────────────────────────────
+function renderSeedGrid() {
+  var grid = document.getElementById('seedGrid');
+  var empty = document.getElementById('seedEmpty');
+  if(!spec.seed_companies.length){ grid.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display='none';
+  grid.innerHTML = spec.seed_companies.map(function(sc){
+    var pls = (sc.serves_product_lines||[]).map(function(p){return '<span class="chip chip-blue">'+p.toUpperCase()+'</span>';}).join('');
+    return '<div class="seed-card">'+
+      '<div class="seed-card-name">'+esc(sc.name)+'</div>'+
+      '<div class="seed-card-sector">'+esc(sc.sector||'')+(sc.sub_sector?' — '+esc(sc.sub_sector):'')+'  ·  '+esc(sc.hq||'')+'</div>'+
+      (sc.primary_persona ? '<div style="font-size:.75rem;color:var(--ink3);margin-bottom:8px;">Primary persona: '+esc(sc.primary_persona.name)+' — '+esc(sc.primary_persona.title)+'</div>' : '')+
+      '<div class="seed-card-tags">'+pls+(sc.activity_override?'<span class="chip chip-purple">Activity override</span>':'')+'</div>'+
+      '<div class="seed-card-actions">'+
+        '<button class="btn btn-sm btn-ghost" onclick="viewSeed(\''+esc(sc.id)+'\')">View JSON</button>'+
+        '<button class="btn btn-sm btn-ghost" style="color:var(--red);" onclick="deleteSeed(\''+esc(sc.id)+'\')">Delete</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  updateStatusDisplay();
+}
+function showSeedGenForm() { document.getElementById('seedGenModal').style.display=''; }
+function closeSeedGenModal() { document.getElementById('seedGenModal').style.display='none'; document.getElementById('sgGenerating').style.display='none'; }
+function showSeedImportForm() { document.getElementById('seedImportModal').style.display=''; document.getElementById('si_json').value=''; document.getElementById('siErr').style.display='none'; }
+function closeSeedImportModal() { document.getElementById('seedImportModal').style.display='none'; }
+function viewSeed(id) {
+  var sc = spec.seed_companies.find(function(s){return s.id===id;});
+  if(!sc) return;
+  var json = JSON.stringify(sc, null, 2);
+  var win = window.open('', '_blank', 'width=700,height=600');
+  win.document.write('<pre style="font-family:monospace;font-size:12px;padding:20px;white-space:pre-wrap;">'+json.replace(/</g,'&lt;')+'</pre>');
+}
+function deleteSeed(id) {
+  if(!confirm('Delete seed company?')) return;
+  spec.seed_companies = spec.seed_companies.filter(function(s){return s.id!==id;});
+  renderSeedGrid();
+  toast('Seed company deleted');
+}
+function importSeedJson() {
+  var errEl = document.getElementById('siErr');
+  try {
+    var json = document.getElementById('si_json').value.trim();
+    var obj = JSON.parse(json);
+    if(!obj.id||!obj.name){ errEl.textContent='JSON must have id and name fields.'; errEl.style.display=''; return; }
+    var existing = spec.seed_companies.findIndex(function(s){return s.id===obj.id;});
+    if(existing>=0) spec.seed_companies[existing]=obj;
+    else spec.seed_companies.push(obj);
+    closeSeedImportModal();
+    renderSeedGrid();
+    toast('Seed company imported: ' + obj.name);
+  } catch(e) {
+    errEl.textContent = 'Invalid JSON: ' + e.message;
+    errEl.style.display = '';
+  }
+}
+
+async function generateSeedCompany() {
+  var name = document.getElementById('sg_name').value.trim();
+  var sector = document.getElementById('sg_sector').value.trim();
+  var subsector = document.getElementById('sg_subsector').value.trim();
+  var hq = document.getElementById('sg_hq').value.trim();
+  var size = document.getElementById('sg_size').value;
+  var personaName = document.getElementById('sg_persona_name').value.trim();
+  var personaTitle = document.getElementById('sg_persona_title').value.trim();
+  var context = document.getElementById('sg_context').value.trim();
+  var plSel = document.getElementById('sg_pl');
+  var pls = Array.from(plSel.selectedOptions).map(function(o){return o.value;});
+
+  if(!name||!sector){ toast('Company name and sector are required.'); return; }
+
+  var orKey = settings.openrouter;
+  if(!orKey){ toast('Add your OpenRouter API key in Settings first.'); return; }
+
+  var panel = document.getElementById('sgGenerating');
+  var output = document.getElementById('sgOutput');
+  var btn = document.getElementById('sgGenBtn');
+  panel.style.display='';
+  btn.disabled=true;
+  output.textContent='Generating seed company profile...';
+
+  var prompt = 'Generate a complete Culvera seed company JSON profile for a fictional South African organisation.\n\n' +
+    'Schema version: 1.0, tenant_id: "gta"\n\n' +
+    'Company details:\n' +
+    '- Name: ' + name + '\n' +
+    '- Sector: ' + sector + '\n' +
+    (subsector ? '- Sub-sector: ' + subsector + '\n' : '') +
+    '- HQ: ' + hq + ', South Africa\n' +
+    '- Size: ' + size + '\n' +
+    (pls.length ? '- Serves product lines: ' + pls.join(', ') + '\n' : '') +
+    (personaName ? '- Primary persona: ' + personaName + (personaTitle ? ', ' + personaTitle : '') + '\n' : '') +
+    (context ? '- Additional context: ' + context + '\n' : '') +
+    '\nGenerate a rich, realistic profile following this exact structure:\n' +
+    '{\n  "schema_version": "1.0",\n  "tenant_id": "gta",\n  "id": "[snake_case_id]",\n  "name": "[Company Name]",\n  "sector": "...",\n  "sub_sector": "...",\n  "size": "...",\n  "founded": [year],\n  "hq": "[City], South Africa",\n  "tagline": "...",\n  "operations": { "staff_count": 0, "staff_range": "...", "locations": [], "product_lines": [], "regulatory_context": "..." },\n  "financials": { "revenue_range_ZAR": "...", "revenue_descriptor": "..." },\n  "people": { "leadership": [{ "role": "...", "name": "..." }] },\n  "personas": [{ "name": "...", "title": "...", "department": "...", "personality": "...", "ai_profile": "...", "typical_use_cases": [] }],\n  "datasets": { "available": [], "note": "Descriptors only — no hardcoded values." },\n  "voice": { "prompt_context": "...", "reporting_style": "management|formal-board|ngo-impact|operational", "terminology": [], "avoid": [] }\n}\n\n' +
+    'All names, figures, and details must be completely fictional. SA business context throughout. All monetary values in ZAR.\n' +
+    'Respond with ONLY the JSON object — no preamble, no markdown fences.';
+
+  try {
+    var resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {'Authorization':'Bearer '+orKey,'Content-Type':'application/json','HTTP-Referer':'https://culvera.gemis.tech'},
+      body: JSON.stringify({model:'deepseek/deepseek-chat-v3-0324', max_tokens:2000, messages:[{role:'user',content:prompt}]})
+    });
+    var data = await resp.json();
+    if(data.error) throw new Error(data.error.message||'API error');
+    var raw = data.choices[0].message.content.trim().replace(/```json|```/g,'').trim();
+    output.textContent = raw;
+    try {
+      var obj = JSON.parse(raw);
+      obj.serves_product_lines = pls;
+      spec.seed_companies.push(obj);
+      closeSeedGenModal();
+      renderSeedGrid();
+      toast('Seed company generated: ' + (obj.name||name));
+    } catch(pe) {
+      output.textContent = 'Generated but JSON parse failed. Copy and import manually:\n\n' + raw;
+    }
+  } catch(e) {
+    output.textContent = 'Error: ' + e.message;
+  }
+  btn.disabled = false;
+}
+
+// ── Reference Library ─────────────────────────────────────────────────────
+function showRefAdd() { document.getElementById('refAddModal').style.display=''; }
+function closeRefAdd() { document.getElementById('refAddModal').style.display='none'; }
+function saveRefDoc() {
+  var id = document.getElementById('ref_id').value.trim();
+  var name = document.getElementById('ref_name').value.trim();
+  if(!id||!name){ toast('ID and Name required'); return; }
+  var plSel = document.getElementById('ref_pls');
+  var pls = Array.from(plSel.selectedOptions).map(function(o){return o.value;});
+  var doc = {
+    id:id, name:name,
+    type: document.getElementById('ref_type').value,
+    source: document.getElementById('ref_source').value.trim(),
+    drive_file_id: document.getElementById('ref_drive_id').value.trim(),
+    description: document.getElementById('ref_desc').value.trim(),
+    product_lines: pls
+  };
+  spec.ref_library.push(doc);
+  closeRefAdd();
+  renderRefList();
+  toast('Reference document added: ' + name);
+}
+function renderRefList() {
+  var el = document.getElementById('refLibList');
+  if(!spec.ref_library.length) { el.innerHTML='<div class="empty" style="padding:30px 0;"><div class="empty-icon" style="font-size:1.8rem;">&#9633;</div><div class="empty-title" style="font-size:.9rem;">No documents in library</div></div>'; return; }
+  el.innerHTML = '<div class="output-list">' + spec.ref_library.map(function(d){
+    return '<div class="output-item"><span class="output-icon">&#9633;</span><div><div class="output-name">'+esc(d.name)+'</div><div class="output-desc">'+esc(d.type)+' · '+esc(d.source||'')+'</div></div><span class="chip chip-blue">'+esc((d.product_lines||[]).join(', '))+'</span></div>';
+  }).join('') + '</div>';
+}
+
+// ── Generate page ─────────────────────────────────────────────────────────
+function renderGeneratePage() {
+  // Readiness
+  var checks = [
+    {label:'Tenant defined', ok: !!(spec.tenant && spec.tenant.tenant_id)},
+    {label:'Product lines', ok: spec.product_lines.length > 0, detail: spec.product_lines.length + ' defined'},
+    {label:'Pedagogies', ok: spec.pedagogies.length > 0, detail: spec.pedagogies.length + ' defined'},
+    {label:'Blueprints', ok: spec.blueprints.length > 0, detail: spec.blueprints.length + ' defined'},
+    {label:'Seed companies', ok: spec.seed_companies.length > 0, detail: spec.seed_companies.length + ' defined'},
+  ];
+  document.getElementById('readinessCheck').innerHTML = checks.map(function(c){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--paper3);font-size:.83rem;">'+
+      '<span style="color:'+(c.ok?'var(--green)':'var(--red)')+'; ">'+(c.ok?'&#10003;':'&#9675;')+'</span>'+
+      '<span style="flex:1;font-weight:'+(c.ok?'400':'500')+';">'+esc(c.label)+'</span>'+
+      (c.detail?'<span style="font-size:.75rem;color:var(--ink3);">'+esc(c.detail)+'</span>':'')+
+    '</div>';
+  }).join('');
+
+  // Output files
+  var files = [
+    {icon:'&#9670;', name:'tenant.json', desc:'Organisation identity, country, currency, language'},
+    {icon:'&#9645;', name:'product_lines/aex.json', desc:'AI Advantage Express specification'},
+    {icon:'&#9645;', name:'product_lines/aa.json', desc:'AI Advantage specification'},
+    {icon:'&#9645;', name:'product_lines/ae.json', desc:'AI Enterprise specification'},
+    {icon:'&#9645;', name:'product_lines/ee.json', desc:'Education Excellence specification'},
+    {icon:'&#9671;', name:'pedagogies/action_learning.json', desc:'Action learning pedagogy definition'},
+    {icon:'&#9671;', name:'pedagogies/practice_based.json', desc:'Practice-based learning definition'},
+    {icon:'&#9671;', name:'pedagogies/direct_instruction.json', desc:'Direct instruction pedagogy definition'},
+    {icon:'&#9652;', name:'blueprints/aex_pm.json', desc:'AEX Participant Manual blueprint'},
+    {icon:'&#9652;', name:'blueprints/aex_fg.json', desc:'AEX Facilitator Guide blueprint'},
+    {icon:'&#9652;', name:'blueprints/aex_dn.json', desc:'AEX Design Notes blueprint'},
+    {icon:'&#9632;', name:'seed_companies/crestline_advisory_group.json', desc:''},
+    {icon:'&#9632;', name:'seed_companies/hartland_consumer_goods.json', desc:''},
+    {icon:'&#9632;', name:'seed_companies/stonegate_retail_group.json', desc:''},
+    {icon:'&#9632;', name:'seed_companies/ubuntu_skills_foundation.json', desc:''},
+    {icon:'&#9632;', name:'seed_companies/safeguard_mutual_insurance.json', desc:''},
+    {icon:'&#9632;', name:'seed_companies/summit_life_assurance.json', desc:''},
+  ];
+  document.getElementById('outputFileList').innerHTML = files.map(function(f){
+    return '<div class="output-item"><span class="output-icon">'+f.icon+'</span>'+
+      '<div><div class="output-name" style="font-family:\'DM Mono\',monospace;font-size:.75rem;">Studio/'+esc(f.name)+'</div>'+
+      (f.desc?'<div class="output-desc">'+esc(f.desc)+'</div>':'')+
+      '</div></div>';
+  }).join('');
+}
+
+function downloadSpec() {
+  var full = {
+    tenant: spec.tenant,
+    product_lines: spec.product_lines,
+    pedagogies: spec.pedagogies,
+    blueprints: spec.blueprints,
+    seed_companies: spec.seed_companies,
+    ref_library: spec.ref_library,
+    generated_at: new Date().toISOString(),
+    studio_version: '1.0.0'
+  };
+  var blob = new Blob([JSON.stringify(full, null, 2)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'culvera_studio_spec_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  toast('Specification downloaded');
+}
+
+async function publishToDrive() {
+  if(!isAuthed){ toast('Sign in with Google first'); return; }
+  if(!spec.tenant.tenant_id){ toast('Define tenant before publishing'); return; }
+
+  var btn = document.getElementById('publishBtn');
+  var statusEl = document.getElementById('publishStatus');
+  var msgEl = document.getElementById('publishMsg');
+  btn.disabled = true;
+  statusEl.style.display = 'flex';
+
+  var driveRoot = settings.drive_root;
+  if(!driveRoot){ toast('Set Drive Root Folder ID in Settings'); btn.disabled=false; statusEl.style.display='none'; return; }
+
+  // Find or create Studio/ folder
+  msgEl.textContent = 'Finding Studio folder...';
+  var studioFolderId = settings.studio_folder;
+  if(!studioFolderId) {
+    try {
+      var q = encodeURIComponent("name='Studio' and '"+driveRoot+"' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false");
+      var r = await gApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)&pageSize=1');
+      if(r.files && r.files.length) studioFolderId = r.files[0].id;
+      else {
+        var cr = await gApi('POST','https://www.googleapis.com/drive/v3/files?fields=id',{name:'Studio',mimeType:'application/vnd.google-apps.folder',parents:[driveRoot]});
+        studioFolderId = cr.id;
+      }
+    } catch(e) { toast('Drive error: ' + e.message); btn.disabled=false; statusEl.style.display='none'; return; }
+  }
+
+  // Files to publish
+  var files = [
+    {path:'tenant.json', data: spec.tenant},
+  ];
+  spec.product_lines.forEach(function(pl){
+    files.push({path:'product_lines/'+pl.id+'.json', data:pl});
+  });
+  spec.pedagogies.forEach(function(p){
+    files.push({path:'pedagogies/'+p.id+'.json', data:p});
+  });
+  spec.blueprints.forEach(function(b){
+    files.push({path:'blueprints/'+b.id+'.json', data:b});
+  });
+  spec.seed_companies.forEach(function(sc){
+    files.push({path:'seed_companies/'+sc.id+'.json', data:sc});
+  });
+
+  var published = 0;
+  for(var i=0; i<files.length; i++){
+    var f = files[i];
+    msgEl.textContent = 'Publishing ' + (i+1) + ' / ' + files.length + ': ' + f.path;
+    try {
+      // Find or create subfolder if path has /
+      var targetFolder = studioFolderId;
+      var parts = f.path.split('/');
+      var filename = parts.pop();
+      for(var j=0; j<parts.length; j++){
+        var subQ = encodeURIComponent("name='"+parts[j]+"' and '"+targetFolder+"' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false");
+        var subR = await gApi('GET','https://www.googleapis.com/drive/v3/files?q='+subQ+'&fields=files(id)&pageSize=1');
+        if(subR.files && subR.files.length) targetFolder = subR.files[0].id;
+        else {
+          var subC = await gApi('POST','https://www.googleapis.com/drive/v3/files?fields=id',{name:parts[j],mimeType:'application/vnd.google-apps.folder',parents:[targetFolder]});
+          targetFolder = subC.id;
+        }
+      }
+      // Delete existing
+      var fq = encodeURIComponent("name='"+filename+"' and '"+targetFolder+"' in parents and trashed=false");
+      var exR = await gApi('GET','https://www.googleapis.com/drive/v3/files?q='+fq+'&fields=files(id)&pageSize=5');
+      if(exR.files) for(var k=0; k<exR.files.length; k++){
+        try{await gApi('DELETE','https://www.googleapis.com/drive/v3/files/'+exR.files[k].id);}catch(e){}
+      }
+      // Upload
+      var blob = new Blob([JSON.stringify(f.data, null, 2)], {type:'application/json'});
+      var meta = JSON.stringify({name:filename, parents:[targetFolder]});
+      var form = new FormData();
+      form.append('metadata', new Blob([meta],{type:'application/json'}));
+      form.append('file', blob);
+      var up = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Authorization':'Bearer '+authToken},body:form});
+      if(!up.ok) throw new Error('Upload failed');
+      published++;
+    } catch(e) {
+      console.warn('Failed to publish', f.path, e);
+    }
+  }
+
+  btn.disabled=false;
+  statusEl.className='status-bar ok';
+  msgEl.textContent = 'Published ' + published + ' / ' + files.length + ' files to Drive/Studio/';
+  toast('Published ' + published + ' files to Drive');
+}
+
+function gApi(method, url, body) {
+  return fetch(url,{method:method,headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined})
+    .then(function(r){
+      if(!r.ok && r.status!==204) return r.json().then(function(e){throw new Error(e.error&&e.error.message||r.status);});
+      if(r.status===204) return {};
+      return r.json();
+    });
+}
+
+// ── Utility ───────────────────────────────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+loadSettings();
+updateStatusDisplay();
+
+// Handle OAuth redirect
+(function(){
+  var hash = new URLSearchParams(window.location.hash.slice(1));
+  var token = hash.get('access_token');
+  if(token) {
+    if(window.opener) {
+      window.opener.postMessage({type:'oauth_token', token:token, expires_in:parseInt(hash.get('expires_in')||'3600')}, window.location.origin);
+      window.close();
+    } else {
+      authToken = token;
+      _tokenExpiry = Date.now() + parseInt(hash.get('expires_in')||'3600')*1000;
+      window.location.hash = '';
+      setAuthed(true);
+    }
+  }
+})();
+</script>
+</body>
+</html>
