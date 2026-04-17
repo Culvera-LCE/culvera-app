@@ -298,7 +298,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.1.4</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.1.5</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -356,7 +356,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.1.4 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.1.5 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -555,6 +555,10 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
               <div id="cf_seed_reminder" style="display:none;background:var(--amber-light);border:1px solid #F5DFA0;border-radius:var(--r);padding:8px 12px;font-size:.78rem;color:var(--amber);margin-bottom:8px;">
                 &#9888; No seed company selected &mdash; is this intentional? The pipeline will generate without company-specific context.
               </div>
+              <!-- v1.1.5: E10 Insurance dual-seed helper note -->
+              <div id="cf_e10_hint" style="display:none;background:var(--blue-light);border:1px solid #C8DDF5;border-radius:var(--r);padding:8px 12px;font-size:.78rem;color:var(--blue);margin-bottom:8px;">
+                &#9432; <strong>E10 convention:</strong> set the course default to <em>Safeguard Mutual Insurance</em> (short-term). For any <em>long-term</em> insurance activities, use the per-activity override below to switch to <em>Summit Life Assurance</em>.
+              </div>
             </div>
             <div class="card">
               <div class="card-title">Product line folder on Drive</div>
@@ -631,12 +635,11 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap;">
           <div style="display:flex;gap:6px;flex-wrap:wrap;" id="coursesPlFilter"></div>
           <button class="btn btn-sm btn-ghost" onclick="loadCoursesTab(true)">↺ Refresh</button>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <button class="btn btn-sm btn-primary" id="runPipelineBtn" data-action="run-pipeline" disabled title="Checking dashboard...">▶ Run Pipeline</button>
-            <span id="dashboardStatusDot" style="width:8px;height:8px;border-radius:50%;background:var(--ink3);flex-shrink:0;display:inline-block;"></span>
-            <span id="dashboardStatusLabel" style="font-size:.72rem;color:var(--ink3);">Checking...</span>
+          <!-- v1.1.5: dashboard.py HTTP server retired; pipeline runs via cron every 5 min on Linux Mint -->
+          <div style="display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--ink3);">
+            <span id="pipelineLastActivityDot" style="width:8px;height:8px;border-radius:50%;background:var(--ink3);flex-shrink:0;display:inline-block;"></span>
+            <span id="pipelineLastActivityLabel">Last pipeline activity: —</span>
           </div>
-          <span id="runPipelineStatus" style="font-size:.75rem;color:var(--ink3);margin-left:4px;"></span>
         </div>
         <!-- status bar -->
         <div id="coursesStatus" style="display:none;" class="status-bar wait">
@@ -644,23 +647,9 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
         </div>
         <!-- course grid -->
         <div class="courses-grid" id="coursesGrid"></div>
-        <!-- pipeline log panel -->
-        <div style="margin-top:24px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <div style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);">Pipeline Log</div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:.72rem;color:var(--ink3);" id="pipelineLogStatus"></span>
-              <button class="btn btn-sm btn-ghost" onclick="togglePipelineLog()">
-                <span id="pipelineLogToggleLabel">&#9660; Show</span>
-              </button>
-            </div>
-          </div>
-          <div id="pipelineLogPanel" style="display:none;">
-            <div style="background:#0d1117;border-radius:var(--r);padding:14px 16px;font-family:monospace;font-size:.72rem;line-height:1.6;color:#c9d1d9;max-height:320px;overflow-y:auto;" id="pipelineLogBody">
-              <span style="color:#6e7681;">Waiting for log...</span>
-            </div>
-          </div>
-        </div>
+        <!-- v1.1.5: Pipeline Log panel removed — dashboard.py HTTP server retired.
+             Pipeline runs via cron every 5 minutes on Linux Mint.
+             Status is inferred from the Activity Register's LastUpdated column. -->
 
         <!-- activity detail drawer -->
         <div id="coursesDrawer" style="display:none;margin-top:20px;">
@@ -1029,7 +1018,8 @@ async function populateSeedDropdown() {
   sel.innerHTML='<option value="">None / not applicable</option>';
   profiles.forEach(function(p){
     var opt=document.createElement('option');
-    opt.value=p.name;opt.textContent=p.name;
+    // v1.1.5 H4: value is the slug (p.id) the pipeline expects; label stays as display name
+    opt.value=p.id;opt.textContent=p.name;
     sel.appendChild(opt);
   });
   if(!profiles.length) sel.innerHTML='<option value="">No companies in Reference Data</option>';
@@ -1794,6 +1784,11 @@ function cfPopulateReview(identity,activities,filename){
   var pl=identity['Product Line']||'';
   document.getElementById('cf_sector_row').style.display=pl==='AE'?'grid':'none';
   document.getElementById('cf_stream_row').style.display=pl==='EE'?'grid':'none';
+  // v1.1.5: show E10 helper note when the course is E10 Insurance
+  var cid=identity['Course ID']||'';
+  var isE10=/^E10\b/.test(cid);
+  var e10Hint=document.getElementById('cf_e10_hint');
+  if(e10Hint) e10Hint.style.display=isE10?'block':'none';
   // Seed company: user selects manually from dropdown
   document.getElementById('cfActCount').textContent=activities.length;
   var list=document.getElementById('cfActList');list.innerHTML='';
@@ -1804,7 +1799,8 @@ function cfPopulateReview(identity,activities,filename){
     var overrideHtml='';
     if(multiCompany){
       var opts='<option value="">— same as course —</option>';
-      _companyProfiles.forEach(function(p){opts+='<option value="'+esc(p.name)+'">'+esc(p.name)+'</option>';});
+      // v1.1.5 H4: value is slug (p.id); label stays as display name
+      _companyProfiles.forEach(function(p){opts+='<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>';});
       overrideHtml='<select class="fi" id="cfActSeed_'+esc(a.id)+'" style="font-size:.72rem;padding:3px 6px;height:auto;min-width:180px;flex-shrink:0;" title="Override seed company for this activity">'+opts+'</select>';
     }
     row.innerHTML='<span class="act-list-id">'+esc(a.id)+'</span>'
@@ -1918,10 +1914,34 @@ async function cfRunConfirm(){
     steps.push('✓ '+acts.length+' activity folders created');
     btn.textContent='Writing register rows...';
     var due=cfDue(90);
+    // v1.1.5 H1: 20 cols (A:T) with LastUpdated + GenerationId.
+    // Numeric fields stay numeric; ISO date without apostrophe (pipeline uses --input USER_ENTERED).
+    var nowIso = new Date().toISOString();
     for(var j=0;j<acts.length;j++){
       var act=acts[j];var isGate=act.id.endsWith('-A01');
-      var row=[act.id,pl,cid,act.title.replace(/\n|\r/g,' '),isGate?'TRUE':'FALSE',isGate?'fabricated':'live',isGate?'awaiting_prop':'n/a','','','0','','','0','90',"'"+due,'pending',isGate?'queued':'pending',''];
-      await gSheetsAppend(sheetId,'GTA!A:R',row);
+      var row=[
+        act.id,                                          // A ActivityID
+        pl,                                              // B ProductLine
+        cid,                                             // C CourseID
+        act.title.replace(/\n|\r/g,' '),                 // D Title
+        isGate?'TRUE':'FALSE',                           // E IsGate
+        isGate?'fabricated':'live',                      // F PropMode
+        isGate?'awaiting_prop':'n/a',                    // G PropStatus
+        '',                                              // H GenerationModel
+        '',                                              // I GenerationDate
+        0,                                               // J GenerationCost (numeric)
+        '',                                              // K ApprovedBy
+        '',                                              // L ApprovalDate
+        0,                                               // M RevisionCount (numeric)
+        90,                                              // N ReviewPeriodDays (numeric)
+        due,                                             // O ReviewDueDate (ISO)
+        'pending',                                       // P ReviewStatus
+        isGate?'queued':'pending',                       // Q Status
+        '',                                              // R DriveURL
+        nowIso,                                          // S LastUpdated
+        ''                                               // T GenerationId
+      ];
+      await gSheetsAppend(sheetId,'GTA!A:T',row);
     }
     steps.push('✓ '+acts.length+' register rows written');
     btn.textContent='Seeding queue...';
@@ -2024,12 +2044,12 @@ async function loadCoursesTab(force) {
     coursesShowStatus('err','Sheet ID not set — add it in Settings.');
     return;
   }
-  if(_coursesData.length && !force) { renderCourses(); return; }
+  if(_coursesData.length && !force) { renderCourses(); updateLastPipelineActivity(); return; }
   coursesShowStatus('wait','Loading activity register...');
   try {
     var url = 'https://sheets.googleapis.com/v4/spreadsheets/'
       + encodeURIComponent(sheetId)
-      + '/values/GTA!A:R?majorDimension=ROWS';
+      + '/values/GTA!A:T?majorDimension=ROWS';
     var r = await gApi('GET', url);
     var rows = r.values || [];
     if(rows.length < 2) {
@@ -2053,6 +2073,8 @@ async function loadCoursesTab(force) {
         driveUrl:     r[colIdx['DriveURL']]     || '',
         reviewDue:    r[colIdx['ReviewDueDate']]|| '',
         model:        r[colIdx['GenerationModel']]|| '',
+        // v1.1.5: LastUpdated (col S) powers the "Last pipeline activity" display
+        lastUpdated:  r[colIdx['LastUpdated']] || '',
       };
     });
     // Dedup: keep last row per ActivityID (pipeline appends on every status change)
@@ -2072,6 +2094,7 @@ async function loadCoursesTab(force) {
     }
     coursesHideStatus();
     renderCourses();
+    updateLastPipelineActivity();  // v1.1.5: refresh last-activity indicator
   } catch(e) {
     coursesShowStatus('err', 'Failed to load register: ' + e.message);
   }
@@ -2501,7 +2524,7 @@ async function loadReviewTab(force) {
         ).then(function(r){ return r.json(); });
         content._file_id = gf.id;
         content._pending_folder_id = pendingId;
-        content._gates_folder_id = gatesId;
+        // v1.1.5 C1: removed `content._gates_folder_id = gatesId;` — gatesId was never defined in this scope
         _reviewGates.push(content);
       } catch(e) {
         console.warn('Could not read gate file', gf.name, e);
@@ -2719,7 +2742,7 @@ async function reviewApprove() {
     updatedGate.released_at = new Date().toISOString();
     delete updatedGate._file_id;
     delete updatedGate._pending_folder_id;
-    delete updatedGate._gates_folder_id;
+    // v1.1.5 C1: _gates_folder_id cleanup removed (property never set)
 
     // 2+3. Write updated gate to Released/ then delete from Pending/
     // (avoids PATCH addParents/removeParents which requires elevated scope)
@@ -2731,10 +2754,21 @@ async function reviewApprove() {
       console.warn('Could not delete gate from Pending/ — may already be removed:', e.message);
     }
 
-    // 4. Update Sheets register — find row and update Status col (Q) and ApprovedBy (K), ApprovalDate (L)
+    // 4. Update Sheets register — append approval row
+    // v1.1.5 H1: 20 cols (A:T). This is an append, not an upsert; the pipeline's
+    // next clear+rewrite will normalise the register from its local JSON source of truth.
     var now = new Date().toISOString().slice(0,10);
-    await gSheetsAppend(sheetId, 'GTA!A:R', [
-      gate.activity_id, '', gate.course_id, '', '', '', '', '', '', '', userEmail, now, '', '', '', '', 'approved', ''
+    var nowIsoApprove = new Date().toISOString();
+    await gSheetsAppend(sheetId, 'GTA!A:T', [
+      gate.activity_id, '', gate.course_id, '', '', '', '', '', '',
+      0,                                // J GenerationCost (numeric)
+      userEmail, now,                   // K ApprovedBy, L ApprovalDate
+      0, 90,                            // M RevisionCount, N ReviewPeriodDays
+      '', '',                           // O ReviewDueDate, P ReviewStatus
+      'approved',                       // Q Status
+      '',                               // R DriveURL
+      nowIsoApprove,                    // S LastUpdated
+      ''                                // T GenerationId
     ]);
 
     // 5. Update local UI
@@ -2777,7 +2811,7 @@ async function reviewSubmitAmend() {
     updatedGate.amendment_target = target;
     delete updatedGate._file_id;
     delete updatedGate._pending_folder_id;
-    delete updatedGate._gates_folder_id;
+    // v1.1.5 C1: _gates_folder_id cleanup removed (property never set)
 
     await gWriteJson(pendingId, 'GATE_' + gate.activity_id + '.json', updatedGate);
 
@@ -2803,118 +2837,56 @@ document.addEventListener('click', function(e) {
   openReviewPanel(row.getAttribute('data-review-aid'));
 });
 
-// ── Pipeline Log ────────────────────────────────────────────────────────
-var _pipelineLogVisible = false;
-var _pipelineLogInterval = null;
-var _pipelineLogBase = "http://localhost:5050";
-var _dashboardOnline = false;
-var _dashboardPollInterval = null;
+// ── Pipeline activity status ────────────────────────────────────────────
+// v1.1.5: dashboard.py HTTP server retired. Pipeline runs via cron every 5 min
+// on Linux Mint. We show "Last pipeline activity: N ago" by reading the latest
+// LastUpdated value from the Activity Register's column S.
+//
+// Heuristic: the pipeline writes to LastUpdated on every status change, so the
+// most recent value approximates "last time the pipeline did something".
 
-async function checkDashboard() {
-  var dot   = document.getElementById('dashboardStatusDot');
-  var label = document.getElementById('dashboardStatusLabel');
-  var btn   = document.getElementById('runPipelineBtn');
-  try {
-    var r = await fetch(_pipelineLogBase + '/api/pipeline_log?n=1', {cache:'no-store'});
-    _dashboardOnline = r.ok;
-  } catch(e) { _dashboardOnline = false; }
-  if(dot) { dot.style.background = _dashboardOnline ? 'var(--green)' : 'var(--red)'; }
-  if(label) { label.textContent = _dashboardOnline ? 'Dashboard online' : 'Dashboard offline — start dashboard.py'; label.style.color = _dashboardOnline ? 'var(--green)' : 'var(--red)'; }
-  if(btn) { btn.disabled = !_dashboardOnline; btn.title = _dashboardOnline ? '' : 'Dashboard is offline — run: python3 ~/.lce/dashboard.py'; }
-}
-function startDashboardPoll() {
-  checkDashboard();
-  if(_dashboardPollInterval) clearInterval(_dashboardPollInterval);
-  _dashboardPollInterval = setInterval(checkDashboard, 30000);
-}
-function stopDashboardPoll() {
-  if(_dashboardPollInterval) { clearInterval(_dashboardPollInterval); _dashboardPollInterval = null; }
-}
-
-// ── Run Pipeline ──────────────────────────────────────────────────────────
-async function runPipeline() {
-  var btn    = document.getElementById('runPipelineBtn');
-  var status = document.getElementById('runPipelineStatus');
-  if(!btn) return;
-  if(!_dashboardOnline) {
-    status.textContent = 'Dashboard offline — start dashboard.py first';
-    status.style.color = 'var(--red)';
-    setTimeout(function(){ status.textContent=''; }, 6000);
+function updateLastPipelineActivity() {
+  var dot   = document.getElementById('pipelineLastActivityDot');
+  var label = document.getElementById('pipelineLastActivityLabel');
+  if(!dot || !label) return;
+  if(!Array.isArray(_coursesData) || !_coursesData.length) {
+    dot.style.background = 'var(--ink3)';
+    label.textContent = 'Last pipeline activity: —';
+    label.style.color = 'var(--ink3)';
     return;
   }
-  btn.disabled = true;
-  status.textContent = 'Starting...';
-  status.style.color = 'var(--amber)';
-  try {
-    var r = await fetch(_pipelineLogBase + '/api/run_pipeline', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'}
-    });
-    var data = await r.json();
-    if(data.status === 'started') {
-      status.textContent = 'Pipeline started ✓';
-      status.style.color = 'var(--green)';
-      // Start polling log
-      if(!_pipelineLogVisible) togglePipelineLog();
-    } else if(data.status === 'already_running') {
-      status.textContent = 'Already running';
-      status.style.color = 'var(--amber)';
-    } else {
-      status.textContent = 'Error: ' + (data.message || 'unknown');
-      status.style.color = 'var(--red)';
-    }
-  } catch(e) {
-    status.textContent = 'Dashboard offline';
-    status.style.color = 'var(--red)';
+  // Find the most recent lastUpdated across all rows
+  var latest = 0;
+  _coursesData.forEach(function(a){
+    if(!a.lastUpdated) return;
+    var t = Date.parse(a.lastUpdated);
+    if(!isNaN(t) && t > latest) latest = t;
+  });
+  if(!latest) {
+    dot.style.background = 'var(--ink3)';
+    label.textContent = 'Last pipeline activity: —';
+    label.style.color = 'var(--ink3)';
+    return;
   }
-  setTimeout(function(){ btn.disabled = false; }, 5000);
-  setTimeout(function(){ status.textContent = ''; }, 8000);
-}
-
-
-function togglePipelineLog() {
-  _pipelineLogVisible = !_pipelineLogVisible;
-  document.getElementById('pipelineLogPanel').style.display = _pipelineLogVisible ? 'block' : 'none';
-  document.getElementById('pipelineLogToggleLabel').innerHTML = _pipelineLogVisible ? '&#9650; Hide' : '&#9660; Show';
-  if(_pipelineLogVisible) {
-    fetchPipelineLog();
-    _pipelineLogInterval = setInterval(fetchPipelineLog, 3000);
-  } else {
-    clearInterval(_pipelineLogInterval);
-    _pipelineLogInterval = null;
-  }
-}
-
-async function fetchPipelineLog() {
-  var statusEl = document.getElementById('pipelineLogStatus');
-  var bodyEl   = document.getElementById('pipelineLogBody');
-  try {
-    var r = await fetch(_pipelineLogBase + '/api/pipeline_log?n=60', {cache: 'no-store'});
-    if(!r.ok) throw new Error('HTTP ' + r.status);
-    var data = await r.json();
-    var lines = data.lines || [];
-    statusEl.textContent = data.log_date + '  (' + data.total + ' lines)';
-    bodyEl.innerHTML = lines.map(function(l) {
-      var col = '#c9d1d9';
-      if(l.includes(' [ERROR] ') || l.includes('failed') || l.includes('Failed')) col = '#ff7b72';
-      else if(l.includes(' [WARNING] ') || l.includes('QC failed') || l.includes('Skipping')) col = '#e3b341';
-      else if(l.includes('Generated in') || l.includes('awaiting_approval') || l.includes('Gate file updated')) col = '#7ee787';
-      else if(l.includes('Calling OpenRouter') || l.includes('Generating')) col = '#79c0ff';
-      return '<div style="color:' + col + '">' + esc(l) + '</div>';
-    }).join('') || '<span style="color:#6e7681;">No log entries yet.</span>';
-    bodyEl.scrollTop = bodyEl.scrollHeight;
-  } catch(e) {
-    statusEl.textContent = 'Dashboard offline';
-    bodyEl.innerHTML = '<span style="color:#6e7681;">Cannot reach dashboard at ' + _pipelineLogBase + '. Start dashboard.py to enable live log.</span>';
-  }
+  var ageMs = Date.now() - latest;
+  var ageMin = Math.floor(ageMs / 60000);
+  var text;
+  if(ageMin < 1)       text = 'just now';
+  else if(ageMin < 60) text = ageMin + 'm ago';
+  else if(ageMin < 1440){ var h=Math.floor(ageMin/60); text = h + 'h ago'; }
+  else                 { var d=Math.floor(ageMin/1440); text = d + 'd ago'; }
+  label.textContent = 'Last pipeline activity: ' + text;
+  // Green if within the last 10 minutes (within two cron ticks), amber if within an hour, grey otherwise
+  if(ageMin < 10)      { dot.style.background = 'var(--green)'; label.style.color = 'var(--green)'; }
+  else if(ageMin < 60) { dot.style.background = 'var(--amber)'; label.style.color = 'var(--amber)'; }
+  else                 { dot.style.background = 'var(--ink3)';  label.style.color = 'var(--ink3)';  }
 }
 
 // Auto-load when navigating to Courses or Review
 var _origShowScreen = showScreen;
 showScreen = function(name) {
   _origShowScreen(name);
-  if(name === 'courses' && isAuthed) { loadCoursesTab(false); startDashboardPoll(); }
-  else { stopDashboardPoll(); }
+  if(name === 'courses' && isAuthed) loadCoursesTab(false);
   if(name === 'review'  && isAuthed) loadReviewTab(false);
 };
 
@@ -2977,7 +2949,7 @@ document.addEventListener('click', function(e) {
   if(action==='cp-edit'){var cid=btn.getAttribute('data-cid');cpShowEdit(cid);}
   if(action==='cp-delete'){var cid=btn.getAttribute('data-cid');cpDelete(cid);}
   if(action==='welcome-getstarted') showScreen('convert');
-  if(action==='run-pipeline')      runPipeline();
+  // v1.1.5: 'run-pipeline' handler removed — pipeline runs via cron on Linux Mint
 });
 var _origSetAuthed=setAuthed;
 setAuthed=function(val,name){
@@ -3021,7 +2993,7 @@ async function gFindFile(name, parentId) {
   return (r.files && r.files[0]) ? r.files[0].id : null;
 }
 
-// ── Studio Setup v1.1.4 ──────────────────────────────────────────────────────
+// ── Studio Setup v1.1.5 ──────────────────────────────────────────────────────
 //
 // Two sections: Tenant (always visible) + Product Line (dropdown from Drive)
 // Drive is single source of truth — product line list read from Drive root.
@@ -3049,7 +3021,7 @@ var STUDIO_PL_FILE_LABELS = {
   pm:             'blueprints/pm.json',
   fg:             'blueprints/fg.json',
   dn:             'blueprints/dn.json',
-  activity_brief: 'blueprints/activity_brief.json',
+  // v1.1.5 H3: activity_brief removed — EE now uses pm.json uniformly
 };
 
 // ── Validation ────────────────────────────────────────────────────────────────
@@ -3079,7 +3051,8 @@ function studioValidatePl(key, obj, expectedFolderName) {
   } else if(key === 'pedagogy') {
     if(!obj.reflection) e.push('Missing: reflection');
     if(!obj.sections && !obj.participant_manual) e.push('Missing: sections or participant_manual block');
-  } else if(['pm','fg','dn','activity_brief'].indexOf(key) >= 0) {
+  // v1.1.5 H3: activity_brief removed from validation types (EE uses pm.json)
+  } else if(['pm','fg','dn'].indexOf(key) >= 0) {
     if(!obj.sections || !obj.sections.length) e.push('Missing: sections');
     if(!obj.product_line) e.push('Missing: product_line');
     if(!obj.document_type) e.push('Missing: document_type');
@@ -3109,7 +3082,7 @@ function studioDetectPlType(obj) {
   if(obj.document_type === 'participant_manual') return 'pm';
   if(obj.document_type === 'facilitator_guide')  return 'fg';
   if(obj.document_type === 'design_notes')       return 'dn';
-  if(obj.document_type === 'activity_brief')     return 'activity_brief';
+  // v1.1.5 H3: activity_brief detection removed — EE files with document_type='participant_manual' detect as 'pm'
   if(obj.reflection !== undefined)               return 'pedagogy';
   if(obj.document_types !== undefined || obj.delivery_mode !== undefined) return 'product_line';
   return null;
@@ -3353,9 +3326,9 @@ async function studioPlCheckDrive() {
       _sPlDrive[key]={found:!!fid,id:fid};
     }
     if(bpId){
-      for(var bkey of ['pm','fg','dn','activity_brief']){
-        var bfname=bkey==='activity_brief'?'activity_brief.json':bkey+'.json';
-        var bfid=await gFindFile(bfname,bpId);
+      // v1.1.5 H3: activity_brief check removed — uniform pm.json
+      for(var bkey of ['pm','fg','dn']){
+        var bfid=await gFindFile(bkey+'.json',bpId);
         _sPlDrive[bkey]={found:!!bfid,id:bfid};
       }
     }
@@ -3372,8 +3345,8 @@ function studioRenderPlFiles() {
   var plObj=_sPlSpec['product_line'];
   var docTypes=plObj&&plObj.document_types?plObj.document_types:['participant_manual','facilitator_guide','design_notes'];
   var keys=['product_line','pedagogy'];
-  if(docTypes.indexOf('activity_brief')>=0){keys.push('activity_brief');}else{keys.push('pm');}
-  keys.push('fg'); keys.push('dn');
+  // v1.1.5 H3: uniform pm.json across all product lines — no activity_brief branch
+  keys.push('pm'); keys.push('fg'); keys.push('dn');
   var onDrive=0, readyToSave=0, anyInvalid=false, rows='';
   keys.forEach(function(key){
     var loaded=!!_sPlSpec[key];
@@ -3428,7 +3401,8 @@ async function studioPlSave() {
     var err=studioValidatePl(key,_sPlSpec[key],key==='product_line'?_sPlSelected.name:null);
     var label=STUDIO_PL_FILE_LABELS[key]||key;
     if(err.length){items.push({label:label,state:'err',detail:err.join(', ')});}
-    else{toSave.push({key:key,label:label,inBp:['pm','fg','dn','activity_brief'].indexOf(key)>=0});items.push({label:label,state:'pending'});}
+    // v1.1.5 H3: activity_brief removed from blueprint key set
+    else{toSave.push({key:key,label:label,inBp:['pm','fg','dn'].indexOf(key)>=0});items.push({label:label,state:'pending'});}
   });
   if(!toSave.length){showToast('No valid files to save','err');progressEl.style.display='none';return;}
   progressEl.innerHTML=studioProgressHtml(items);
@@ -3445,7 +3419,7 @@ async function studioPlSave() {
         var fname;
         if(f.key==='product_line') fname='product_line.json';
         else if(f.key==='pedagogy') fname='pedagogy.json';
-        else if(f.key==='activity_brief') fname='activity_brief.json';
+        // v1.1.5 H3: activity_brief filename branch removed
         else fname=f.key+'.json';
         var result=await gWriteJson(folderId,fname,JSON.stringify(_sPlSpec[f.key],null,2));
         items[i].state='ok'; items[i].detail='ID: '+(result.id||'').substring(0,12)+'...'; saved++;
