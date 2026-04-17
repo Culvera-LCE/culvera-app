@@ -298,7 +298,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.1.5</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.1.7</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -356,7 +356,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.1.5 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.1.7 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -1770,7 +1770,8 @@ function cfParseCurriculum(text,filename){
   });
   flushAct();
   if(!identity['Course ID']||!activities.length){cfStatus('err','Could not parse curriculum. Ensure the file is from the Convert step.');return;}
-  cfParsed={identity:identity,activities:activities};
+  // v1.1.7: preserve source text and filename for course.json provenance + Studio/<source>.txt upload
+  cfParsed={identity:identity,activities:activities,source_text:text,source_filename:filename};
   cfPopulateReview(identity,activities,filename);
   cfLoadPlFolders(identity['Product Line']);
 }
@@ -1853,8 +1854,11 @@ function cfProceedToConfirm(){
   s+='<strong>Seed Company:</strong> '+(seed||'none')+'<br><br>';
   s+='<strong>Will create on Drive:</strong><br>';
   s+='&nbsp;&nbsp;• '+esc(cid+'  ·  '+cname)+'/ (course folder)<br>';
+  s+='&nbsp;&nbsp;• Studio/ (course-scope declarations)<br>';
   s+='&nbsp;&nbsp;• _Draft Initial Activity/, Prop Prompts/, Source Documents/<br>';
   s+='&nbsp;&nbsp;• '+acts.length+' activity folders + Source Documents<br>';
+  s+='&nbsp;&nbsp;• Studio/course.json (declarative course identity + folder IDs)<br>';
+  s+='&nbsp;&nbsp;• Studio/'+esc(cfParsed.source_filename||(cid+'_curriculum.txt'))+' (source artefact)<br>';
   s+='&nbsp;&nbsp;• Gates/Pending/GATE_'+(gateId?esc(gateId.id):'A01')+'.json<br>';
   s+='&nbsp;&nbsp;• Queue/gta_pipeline_queue.json (updated)<br><br>';
   s+='<strong>Will write to Sheets:</strong><br>';
@@ -1897,21 +1901,128 @@ async function cfRunConfirm(){
     var cfName=cid+'  ·  '+cname;
     var cfId=await gFindOrCreate(cfName,plFolderId);
     steps.push('✓ Course folder: '+cfName);
-    btn.textContent='Creating subfolders...';
+
+    // v1.1.7: Create Studio subfolder and check idempotency guard.
+    // If course.json already exists under Studio, abort the Confirm — the course
+    // has already been confirmed before, and silent overwrite would risk losing
+    // folder-ID bindings captured by prior Confirms.
+    btn.textContent='Creating Studio subfolder...';
+    var studioId=await gFindOrCreate('Studio',cfId);
+    var cjQuery=encodeURIComponent("name='course.json' and '"+studioId+"' in parents and trashed=false");
+    var cjCheck=await gApi('GET','https://www.googleapis.com/drive/v3/files?q='+cjQuery+'&fields=files(id)&pageSize=1');
+    if(cjCheck.files&&cjCheck.files.length){
+      throw new Error('A course.json already exists in this course\u2019s Studio folder. This course appears to have been confirmed before. Manual review required — either archive the existing declaration or delete it before re-confirming.');
+    }
+    steps.push('✓ Studio subfolder ready');
+
+    btn.textContent='Creating operational subfolders...';
     var draftId=await gFindOrCreate('_Draft Initial Activity',cfId);
-    await gFindOrCreate('Prop Prompts',cfId);
-    await gFindOrCreate('Source Documents',cfId);
+    var propPromptsId=await gFindOrCreate('Prop Prompts',cfId);
+    var courseSrcDocsId=await gFindOrCreate('Source Documents',cfId);
     steps.push('✓ Standard subfolders created');
+
     btn.textContent='Creating activity folders...';
     var actFolderIds={};
+    var actSrcDocsIds={};
     for(var i=0;i<acts.length;i++){
       var a=acts[i];
       var afName=a.id+'  ·  '+a.title;
       var afId=await gFindOrCreate(afName,cfId);
-      await gFindOrCreate('Source Documents',afId);
+      var afSrcId=await gFindOrCreate('Source Documents',afId);
       actFolderIds[a.id]=afId;
+      actSrcDocsIds[a.id]=afSrcId;
     }
     steps.push('✓ '+acts.length+' activity folders created');
+
+    // v1.1.7: Now that every folder exists, write course.json with real folder IDs embedded.
+    // This is the architecturally-significant change: the declaration is durable, names
+    // the folders authoritatively, and survives folder renames or queue clearing.
+    btn.textContent='Fetching user identity...';
+    var userEmail='';
+    try {
+      var me = await gApi('GET','https://www.googleapis.com/oauth2/v1/userinfo?alt=json');
+      userEmail = me.email||'';
+    } catch(e){}
+
+    btn.textContent='Hashing source artefact...';
+    var srcText=cfParsed.source_text||'';
+    var srcFilename=cfParsed.source_filename||(cid+'_curriculum.txt');
+    var contentHash='';
+    try { contentHash = 'sha256:'+(await sha256Hex(srcText)); } catch(e){ contentHash = ''; }
+
+    btn.textContent='Building course.json...';
+    var nowIsoCJ = new Date().toISOString();
+    var courseJson = {
+      schema_version: '1.0',
+      tenant_id: 'gta',
+      product_line: pl,
+      course_id: cid,
+      course_name: cname,
+
+      default_seed_company: seed||null,
+      delivery_mode: mode||null,
+      sector_override: sector||null,
+      stream_override: stream||null,
+
+      created_at: nowIsoCJ,
+      created_by: userEmail||null,
+
+      source_artefact: {
+        type: 'curriculum_txt',
+        filename: srcFilename,
+        content_hash: contentHash||null
+      },
+
+      folder_structure: {
+        product_line_folder_id: plFolderId,
+        course_folder_id: cfId,
+        course_studio_folder_id: studioId,
+        draft_folder_id: draftId,
+        prop_prompts_folder_id: propPromptsId,
+        course_source_documents_folder_id: courseSrcDocsId
+      },
+
+      expiration_policy_override: null,
+
+      activities: acts.map(function(a){
+        var overrideEl = document.getElementById('cfActSeed_'+a.id);
+        var actSeedOverride = overrideEl && overrideEl.value ? overrideEl.value : null;
+        // Parse duration to minutes: accept "45 min", "45 minutes", "45", bare number
+        var durMin = null;
+        if(a.duration){
+          var m = String(a.duration).match(/(\d+)/);
+          if(m) durMin = parseInt(m[1],10);
+        }
+        var isGate = a.id.endsWith('-A01');
+        return {
+          id: a.id,
+          title: a.title,
+          type: a.type||'',
+          duration_minutes: durMin,
+          is_gate: isGate,
+          description: a.description||'',
+          seed_company_override: actSeedOverride,
+          tool_bindings: [],
+          expiration_policy_override: null,
+          prop_mode: isGate ? 'fabricated' : 'live',
+          folder_id: actFolderIds[a.id]||'',
+          source_documents_folder_id: actSrcDocsIds[a.id]||''
+        };
+      })
+    };
+
+    btn.textContent='Writing course.json...';
+    await gWriteJson(studioId,'course.json',courseJson);
+    steps.push('✓ Studio/course.json written ('+acts.length+' activities)');
+
+    btn.textContent='Writing source artefact...';
+    try {
+      await gWriteText(studioId,srcFilename,srcText,'text/plain');
+      steps.push('✓ Studio/'+srcFilename+' written');
+    } catch(e) {
+      errors.push('Source .txt upload failed: '+e.message+' (course.json written successfully; source file can be uploaded manually)');
+    }
+
     btn.textContent='Writing register rows...';
     var due=cfDue(90);
     // v1.1.5 H1: 20 cols (A:T) with LastUpdated + GenerationId.
@@ -1981,10 +2092,64 @@ function cfReset(){
   cfSetStep(1);
 }
 // Google API helpers
+// v1.1.6: forensic 401 capture + conditional auto-signout
+// Rationale: on every 401 we record request context, token state, and response
+// headers/body to window.__culveraAuthDiagnostics (last 10). We only trigger
+// _handleAuthExpiry when the token is actually past _tokenExpiry — otherwise
+// the session stays alive and the caller sees the real Google error message,
+// which is critical for diagnosing scope vs permission vs revoked-token cases.
+window.__culveraAuthDiagnostics = window.__culveraAuthDiagnostics || [];
+function _recordAuthDiagnostic(rec){
+  window.__culveraAuthDiagnostics.push(rec);
+  if(window.__culveraAuthDiagnostics.length > 10) window.__culveraAuthDiagnostics.shift();
+  // Console log in a way that's easy to spot and expand
+  console.group('%c[Culvera v1.1.6] 401 diagnostic', 'color:#c93; font-weight:bold;');
+  console.log('method:       ', rec.method);
+  console.log('url:          ', rec.url);
+  console.log('token_present:', rec.token_present, '(length:', rec.token_length + ')');
+  console.log('token_expiry_delta_ms:', rec.token_expiry_delta_ms, '(' + rec.token_expiry_human + ')');
+  console.log('token_genuinely_expired:', rec.token_genuinely_expired);
+  console.log('www_authenticate:', rec.www_authenticate || '(not sent)');
+  console.log('response_body:', rec.response_body);
+  console.log('—');
+  console.log('Tip: window.__culveraAuthDiagnostics holds the last 10 of these.');
+  console.groupEnd();
+}
 function gApi(method,url,body){
+  var requestedAt = Date.now();
   return fetch(url,{method:method,headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined})
     .then(function(r){
-      if(r.status===401){_handleAuthExpiry();return r.json().then(function(e){throw new Error('Session expired — please sign in again');});}
+      if(r.status===401){
+        // Capture forensics before deciding what to do
+        var expiryDelta = _tokenExpiry - requestedAt;
+        var wwwAuth = r.headers.get('www-authenticate');
+        return r.text().then(function(bodyText){
+          var bodyJson = null;
+          try { bodyJson = JSON.parse(bodyText); } catch(_){ bodyJson = bodyText; }
+          var genuinelyExpired = (_tokenExpiry > 0 && expiryDelta <= 0);
+          _recordAuthDiagnostic({
+            timestamp:                new Date(requestedAt).toISOString(),
+            method:                   method,
+            url:                      url,
+            token_present:            !!authToken,
+            token_length:             authToken ? authToken.length : 0,
+            token_expiry_delta_ms:    expiryDelta,
+            token_expiry_human:       expiryDelta > 0 ? (Math.round(expiryDelta/1000) + 's remaining') : (Math.round(-expiryDelta/1000) + 's past expiry'),
+            token_genuinely_expired:  genuinelyExpired,
+            www_authenticate:         wwwAuth,
+            response_body:            bodyJson
+          });
+          if(genuinelyExpired){
+            // Token really is dead — sign out as before
+            _handleAuthExpiry();
+            throw new Error('Session expired — please sign in again');
+          }
+          // Token is live in our model but Google rejected it.
+          // Surface the real error so the user (and we) can see what Google actually said.
+          var msg = (bodyJson && bodyJson.error && bodyJson.error.message) ? bodyJson.error.message : '401 Unauthorized';
+          throw new Error('Authorization rejected by Google: ' + msg + ' (see console for diagnostic; token still considered live locally)');
+        });
+      }
       if(r.status===403){return r.json().then(function(e){throw new Error('Permission error — '+(e.error&&e.error.message||'access denied'));});}
       if(!r.ok)return r.json().then(function(e){throw new Error(e.error&&e.error.message||r.status);});
       return r.json();
@@ -2021,6 +2186,32 @@ async function gWriteJson(pid,filename,data){
   var r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Authorization':'Bearer '+authToken},body:form});
   if(!r.ok){var e=await r.json();throw new Error(e.error&&e.error.message||r.status);}
   return r.json();
+}
+// v1.1.7: gWriteText — upload a text file (curriculum source .txt etc).
+// Same delete-first pattern as gWriteJson for idempotency.
+async function gWriteText(pid,filename,text,mimeType){
+  var mt=mimeType||'text/plain';
+  var blob=new Blob([text],{type:mt});
+  var sn=filename.replace(/'/g,"\\'");
+  var q=encodeURIComponent("name='"+sn+"' and '"+pid+"' in parents and trashed=false");
+  var ex=await gApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id)&pageSize=10');
+  if(ex.files&&ex.files.length){
+    for(var i=0;i<ex.files.length;i++){
+      try{await gApi('DELETE','https://www.googleapis.com/drive/v3/files/'+ex.files[i].id);}catch(e){}
+    }
+  }
+  var meta=JSON.stringify({name:filename,parents:[pid],mimeType:mt});
+  var form=new FormData();form.append('metadata',new Blob([meta],{type:'application/json'}));form.append('file',blob);
+  var r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Authorization':'Bearer '+authToken},body:form});
+  if(!r.ok){var e=await r.json();throw new Error(e.error&&e.error.message||r.status);}
+  return r.json();
+}
+// v1.1.7: sha256Hex — hex digest of a string, for source artefact content_hash.
+async function sha256Hex(text){
+  var buf=new TextEncoder().encode(text);
+  var hashBuf=await crypto.subtle.digest('SHA-256',buf);
+  var arr=Array.from(new Uint8Array(hashBuf));
+  return arr.map(function(b){return b.toString(16).padStart(2,'0');}).join('');
 }
 async function gReadQueue(pid,tid){
   var fn=tid+'_pipeline_queue.json';var sn=fn.replace(/'/g,"\\'");
