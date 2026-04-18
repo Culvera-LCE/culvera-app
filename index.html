@@ -298,7 +298,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.1.7</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.1.10</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -356,7 +356,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.1.7 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.1.10 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -559,6 +559,14 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
               <div id="cf_e10_hint" style="display:none;background:var(--blue-light);border:1px solid #C8DDF5;border-radius:var(--r);padding:8px 12px;font-size:.78rem;color:var(--blue);margin-bottom:8px;">
                 &#9432; <strong>E10 convention:</strong> set the course default to <em>Safeguard Mutual Insurance</em> (short-term). For any <em>long-term</em> insurance activities, use the per-activity override below to switch to <em>Summit Life Assurance</em>.
               </div>
+              <!-- v1.1.9: Course-default tools selector (multi-select). Pre-populated from heuristic. -->
+              <div class="fr"><span class="fl">Default Tools</span>
+                <select class="fi" id="cf_default_tools" multiple size="4" style="height:auto;min-height:90px;" onchange="cfDefaultToolsChanged()">
+                </select></div>
+              <div style="font-size:.72rem;color:var(--ink3);margin-top:-4px;margin-bottom:8px;padding:0 2px;">
+                Hold <kbd style="background:var(--paper2);border:1px solid var(--line);border-radius:3px;padding:0 4px;font-size:.7rem;">Ctrl</kbd> (or <kbd style="background:var(--paper2);border:1px solid var(--line);border-radius:3px;padding:0 4px;font-size:.7rem;">Cmd</kbd> on Mac) to select multiple.
+                Activities whose titles do not mention a tool inherit these defaults. Per-activity overrides below.
+              </div>
             </div>
             <div class="card">
               <div class="card-title">Product line folder on Drive</div>
@@ -575,6 +583,8 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
               <div class="card-title">Activities to register — <span id="cfActCount">0</span> activities</div>
               <div id="cfActList" style="border:1px solid var(--paper3);border-radius:var(--r);overflow:hidden;"></div>
             </div>
+            <!-- v1.1.9: Tool validation banner. Populated by cfProceedToConfirm when any activity lacks a tool. -->
+            <div id="cfToolValidationMsg" style="display:none;margin-bottom:10px;"></div>
             <div id="cfReviewErr" class="err-banner" style="display:none;"></div>
             <div class="form-actions">
               <button class="btn btn-primary" onclick="cfProceedToConfirm()">Review complete — proceed →</button>
@@ -1495,13 +1505,18 @@ function convParseEE(lines,text,filename){
 // ── AI (AEX/AA) ───────────────────────────────────────────────────────────
 function convCallAI(text,filename,apiKey){
   var tr=text.length>12000?text.slice(0,12000)+'...[truncated]':text;
-  var prompt='You are the Culvera curriculum parser. Return ONLY a JSON object.\n\nShape: {"product_line":"AEX","course_id":"EX04","course_name":"","delivery_mode":"Live Zoom","duration":"4 hours","tools":"","seed_company":"","sector":"","stream":"","activities":[{"id":"EX04-A01","title":"","type":"Hands-on Practice","duration":"45 minutes","grouping":"","description":""}]}\n\nRules: product_line one of AEX/AA. Activity ID: AEX=EX04-A01, AA=AA-A01. type one of: Hands-on Practice, Discussion, Case Study, Assessment, Reflection, Demonstration. description: 2-4 sentences from document content only. seed_company: one of the four GTA companies or empty. Extract ALL activities. SA context.\n\nDocument:\n'+tr;
+  // v1.1.10: per-activity `tools` field added to extraction shape. The model
+  // is asked to pick tool names from the course-level list (maintaining
+  // consistency) and to default to the course tools when a specific activity
+  // doesn't name its own tool. Pipe-separator matches the existing Tools:
+  // format in the course header.
+  var prompt='You are the Culvera curriculum parser. Return ONLY a JSON object.\n\nShape: {"product_line":"AEX","course_id":"EX04","course_name":"","delivery_mode":"Live Zoom","duration":"4 hours","tools":"","seed_company":"","sector":"","stream":"","activities":[{"id":"EX04-A01","title":"","type":"Hands-on Practice","duration":"45 minutes","grouping":"","tools":"","description":""}]}\n\nRules: product_line one of AEX/AA. Activity ID: AEX=EX04-A01, AA=AA-A01. type one of: Hands-on Practice, Discussion, Case Study, Assessment, Reflection, Demonstration. description: 2-4 sentences from document content only. seed_company: one of the four GTA companies or empty. \ntools (course-level): pipe-separated list of all AI tools used across this course (e.g. "Perplexity | NotebookLM | Claude"). Valid tools: ChatGPT, Claude, Gemini, Microsoft Copilot, NotebookLM, Perplexity, Canva, Gamma, Bricks. \ntools (activity-level): pipe-separated tools for THIS specific activity, drawn from the course-level list. If the activity clearly uses only one tool name it alone. If multiple, name all. If the activity does not specify and appears to inherit the course tools, leave empty (the downstream will apply course defaults). \nExtract ALL activities. SA context.\n\nDocument:\n'+tr;
   var models=['deepseek/deepseek-chat','qwen/qwen-2.5-72b-instruct','moonshotai/kimi-k2','x-ai/grok-3-mini','google/gemini-2.0-flash-001'];
   function try_(i){
     if(i>=models.length){convStatus('err','All AI models failed. Check your OpenRouter key in Settings.');return;}
     fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',
       headers:{'Authorization':'Bearer '+apiKey,'Content-Type':'application/json','HTTP-Referer':'https://culvera.gemis.tech'},
-      body:JSON.stringify({model:models[i],max_tokens:1200,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({model:models[i],max_tokens:2000,messages:[{role:'user',content:prompt}]})
     }).then(function(r){return r.json();}).then(function(data){
       if(data.error)throw new Error();
       var raw=data.choices[0].message.content.trim().replace(/```json|```/g,'').trim();
@@ -1553,12 +1568,17 @@ function convShowTab(idx){
   content.appendChild(hdr);
 
   var pl=document.getElementById('hdr_pl').value;
-  if(pl==='AE'||pl==='EE'){
-    var mf=mk('div','');mf.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;';
-    mf.innerHTML='<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);display:block;margin-bottom:4px;">Duration</label><input class="fi" id="sec_dur_'+idx+'" value="'+esc(sec.meta.dur||'')+'" placeholder="e.g. 1 day"></div>'+
-      (pl==='AE'?'<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);display:block;margin-bottom:4px;">Tools</label><input class="fi" id="sec_tools_'+idx+'" value="'+esc(sec.meta.tools||'')+'" placeholder="e.g. Claude"></div>':'<div></div>');
-    content.appendChild(mf);
-  }
+  // v1.1.10: Tools field shown for all product lines (was AE-only). All four
+  // product lines declare tools at course level; the LLM extracts them; the
+  // user reviews them here before the .txt is emitted.
+  var mf=mk('div','');mf.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;';
+  var needsDuration = (pl==='AE'||pl==='EE');
+  mf.innerHTML =
+    (needsDuration
+      ? '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);display:block;margin-bottom:4px;">Duration</label><input class="fi" id="sec_dur_'+idx+'" value="'+esc(sec.meta.dur||'')+'" placeholder="e.g. 1 day"></div>'
+      : '<div></div>') +
+    '<div><label style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);display:block;margin-bottom:4px;">Tools (course-level, pipe-separated)</label><input class="fi" id="sec_tools_'+idx+'" value="'+esc(sec.meta.tools||'')+'" placeholder="e.g. Perplexity | NotebookLM | Claude"></div>';
+  content.appendChild(mf);
 
   var actWrap=mk('div','');actWrap.id='caw_'+idx;
   sec.activities.forEach(function(a,ai){actWrap.appendChild(convBuildActCard(idx,ai,a));});
@@ -1596,6 +1616,8 @@ function convBuildActCard(sidx,aidx,a){
       '<div class="fr"><span class="fl">Title</span><input class="fi" id="ca_t_'+key+'" value="'+esc(a.title||'')+'" oninput="convUpdAL(\''+key+'\')"></div>' +
       '<div class="fr"><span class="fl">Type</span><select class="fi" id="ca_tp_'+key+'">'+TO.map(function(t){return '<option'+(a.type===t?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div>' +
       '<div class="fr"><span class="fl">Duration</span><input class="fi" id="ca_dur_'+key+'" value="'+esc(a.duration||'')+'"></div>' +
+      // v1.1.10: per-activity Tools field. Blank means inherit course-level tools at Confirm time.
+      '<div class="fr"><span class="fl">Tools</span><input class="fi" id="ca_tools_'+key+'" value="'+esc(a.tools||'')+'" placeholder="pipe-separated; blank = inherit course tools"></div>' +
       '<div class="fr"><span class="fl">Description</span><textarea class="fi" id="ca_dsc_'+key+'">'+esc(a.description||'')+'</textarea></div>' +
       '<div style="text-align:right;margin-top:6px;"><button class="btn btn-sm btn-danger" onclick="document.getElementById(\'cac_'+key+'\').remove();convSections['+sidx+'].approved=false;convUpdABar('+sidx+');">Remove</button></div>' +
     '</div>';
@@ -1615,7 +1637,17 @@ function convCollectSection(idx){
     wrap.querySelectorAll('[id^="cac_"]').forEach(function(card){
       var k=card.id.replace('cac_','');
       var idEl=document.getElementById('ca_id_'+k);if(!idEl)return;
-      newActs.push({id:idEl.value.trim(),title:document.getElementById('ca_t_'+k).value.trim(),type:document.getElementById('ca_tp_'+k).value.trim(),duration:document.getElementById('ca_dur_'+k).value.trim(),grouping:'',description:document.getElementById('ca_dsc_'+k).value.trim()});
+      // v1.1.10: collect per-activity tools
+      var toolsInput=document.getElementById('ca_tools_'+k);
+      newActs.push({
+        id:idEl.value.trim(),
+        title:document.getElementById('ca_t_'+k).value.trim(),
+        type:document.getElementById('ca_tp_'+k).value.trim(),
+        duration:document.getElementById('ca_dur_'+k).value.trim(),
+        grouping:'',
+        tools:toolsInput?toolsInput.value.trim():'',
+        description:document.getElementById('ca_dsc_'+k).value.trim()
+      });
     });
     sec.activities=newActs;
   }
@@ -1706,6 +1738,9 @@ function convBuildText(pl,cid,cname,mode,dur,tools,seed,sector,stream,acts){
   acts.forEach(function(a){
     L.push((a.id||'')+'  \u00b7  '+(a.title||''));L.push('Type: '+(a.type||'Hands-on Practice'));
     L.push('Duration: '+(a.duration||''));if(a.grouping)L.push('Grouping: '+a.grouping);
+    // v1.1.10: per-activity Tools line, emitted only when a value is present.
+    // Absent means "inherit course-level Tools" — the Confirm parser handles that.
+    if(a.tools) L.push('Tools: '+a.tools);
     L.push('Description:');L.push(a.description||'');L.push('');
   });
   L.push('End of curriculum source document  \u00b7  GEMIS Technical Academy  \u00b7  gemis.tech');
@@ -1749,6 +1784,85 @@ function cfHandleFile(file){
   reader.onload=function(e){cfParseCurriculum(e.target.result,file.name);};
   reader.readAsText(file);
 }
+// v1.1.8: tool extraction from curriculum text.
+// Heuristic-based bridge between v1.1.7 declarative course.json (tool_bindings)
+// and the pipeline's current expectation of activity["tool"] on queue entries.
+// When the proper tool registry lands (Phase 5), this heuristic is replaced
+// by a lookup against Studio/tools/registry.json. Until then, we parse tool
+// identity from activity and course titles.
+//
+// Catalogue order matters: more-specific names (NotebookLM) must be tested
+// before prefixes that would also match (Note…). Keep the list alphabetical
+// within each specificity tier.
+var CULVERA_TOOL_CATALOGUE = [
+  // display_name -> canonical slug. Slug matches the eventual registry.json id.
+  { display: 'NotebookLM',          slug: 'notebooklm',        patterns: [/\bNotebookLM\b/i] },
+  { display: 'Microsoft Copilot',   slug: 'copilot_free',      patterns: [/\bMicrosoft Copilot\b/i, /\bM365 Copilot\b/i, /\bCopilot\b/i] },
+  { display: 'Perplexity',          slug: 'perplexity',        patterns: [/\bPerplexity\b/i] },
+  { display: 'ChatGPT',             slug: 'chatgpt_free',      patterns: [/\bChatGPT\b/i, /\bGPT-?4\b/i, /\bGPT-?5\b/i] },
+  { display: 'Claude',              slug: 'claude_free',       patterns: [/\bClaude\b/i] },
+  { display: 'Gemini',              slug: 'gemini_free',       patterns: [/\bGemini\b/i] },
+  { display: 'Canva',               slug: 'canva',             patterns: [/\bCanva\b/i] },
+  { display: 'Gamma',               slug: 'gamma',             patterns: [/\bGamma\b/i] },
+  { display: 'Bricks',              slug: 'bricks',            patterns: [/\bBricks\b/i] }
+];
+
+// Return array of { display, slug } — all catalogue entries that match, in
+// catalogue order. Empty array if nothing matched. v1.1.9 upgrade: some
+// activities genuinely teach multiple tools ("Comparing Claude and Gemini...").
+function cfExtractTools(text){
+  var out = [];
+  if(!text) return out;
+  for(var i=0;i<CULVERA_TOOL_CATALOGUE.length;i++){
+    var entry = CULVERA_TOOL_CATALOGUE[i];
+    for(var j=0;j<entry.patterns.length;j++){
+      if(entry.patterns[j].test(text)){
+        // Dedupe: don't add the same slug twice even if two patterns matched
+        var already = out.some(function(t){ return t.slug === entry.slug; });
+        if(!already) out.push({ display: entry.display, slug: entry.slug });
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+// v1.1.8 compat shim — retained in case anything else calls singular form.
+function cfExtractTool(text){
+  var arr = cfExtractTools(text);
+  return arr.length ? arr[0] : null;
+}
+
+// v1.1.10: parse a pipe/comma-separated Tools: string into catalogue entries.
+// Matches each fragment against the catalogue's display name or patterns.
+// Unrecognised fragments are ignored with a silent drop — the heuristic fallback
+// will run if nothing was recognised.
+function cfToolsFromString(s){
+  if(!s) return [];
+  // Split on pipe or comma, trim, drop empties
+  var fragments = String(s).split(/[|,]/).map(function(x){ return x.trim(); }).filter(Boolean);
+  var out = [];
+  var seen = {};
+  fragments.forEach(function(frag){
+    // Try display-name exact match first (case-insensitive)
+    var entry = CULVERA_TOOL_CATALOGUE.find(function(e){
+      return e.display.toLowerCase() === frag.toLowerCase();
+    });
+    // If no exact display match, try catalogue patterns against the fragment
+    if(!entry){
+      for(var i=0;i<CULVERA_TOOL_CATALOGUE.length;i++){
+        var e = CULVERA_TOOL_CATALOGUE[i];
+        if(e.patterns.some(function(p){ return p.test(frag); })){ entry = e; break; }
+      }
+    }
+    if(entry && !seen[entry.slug]){
+      seen[entry.slug] = true;
+      out.push({ display: entry.display, slug: entry.slug });
+    }
+  });
+  return out;
+}
+
 function cfParseCurriculum(text,filename){
   var lines=text.split('\n').map(function(l){return l.trim();});
   var identity={};var activities=[];var inActs=false;var curAct=null;var descBuf=[];
@@ -1760,10 +1874,14 @@ function cfParseCurriculum(text,filename){
     if(line.startsWith('---'))return;
     if(!inActs){var cm=line.match(/^([A-Za-z ]+):\s*(.+)/);if(cm)identity[cm[1].trim()]=cm[2].trim();return;}
     var am=line.match(/^([A-Z0-9\-]+)\s+[·—\-]+\s+(.+)/);
-    if(am&&am[1].match(/[A-Z].*-A\d{2}$/)){flushAct();curAct={id:am[1].trim(),title:am[2].trim(),type:'Hands-on Practice',duration:'',is_gate:am[1].endsWith('-A01')};descBuf=[];return;}
+    if(am&&am[1].match(/[A-Z].*-A\d{2}$/)){flushAct();curAct={id:am[1].trim(),title:am[2].trim(),type:'Hands-on Practice',duration:'',is_gate:am[1].endsWith('-A01'),declared_tools_str:''};descBuf=[];return;}
     if(curAct){
       if(line.startsWith('Type:'))    {curAct.type=line.slice(5).trim();return;}
       if(line.startsWith('Duration:')){curAct.duration=line.slice(9).trim();return;}
+      // v1.1.10: per-activity Tools: line (emitted by Convert v1.1.10+).
+      // Stored as a raw string here; parsed into slug objects below so the
+      // catalogue lookup shares a single code path with course-level tools.
+      if(line.startsWith('Tools:'))   {curAct.declared_tools_str=line.slice(6).trim();return;}
       if(line.startsWith('Description:')||line.startsWith('Grouping:')){return;}
       if(!line.startsWith('End of'))  descBuf.push(line);
     }
@@ -1771,7 +1889,54 @@ function cfParseCurriculum(text,filename){
   flushAct();
   if(!identity['Course ID']||!activities.length){cfStatus('err','Could not parse curriculum. Ensure the file is from the Convert step.');return;}
   // v1.1.7: preserve source text and filename for course.json provenance + Studio/<source>.txt upload
-  cfParsed={identity:identity,activities:activities,source_text:text,source_filename:filename};
+  // v1.1.10: declared-tools-first resolution chain. Order per activity:
+  //   1. Activity-level declared Tools: line     (Convert v1.1.10+ .txt)
+  //   2. Course-level declared Tools: line       (Convert v1.1.0+ .txt, inherited)
+  //   3. Heuristic over activity title + description
+  //   4. Heuristic fallback to course defaults (name, or first activity's title)
+  //   5. Empty array — validation may block at Confirm based on product line
+  // Declared sources are authoritative when present; heuristic is the back-compat
+  // path for older .txt files that don't carry explicit Tools lines.
+  var courseName = identity['Course Name'] || '';
+  var courseDeclaredStr = identity['Tools'] || '';
+  var courseDeclaredTools = cfToolsFromString(courseDeclaredStr);
+  // Heuristic course defaults (only used if declared is empty)
+  var courseHeuristicDefaults = cfExtractTools(courseName);
+  if(!courseHeuristicDefaults.length && activities[0]) courseHeuristicDefaults = cfExtractTools(activities[0].title);
+  // Final course defaults = declared if present, else heuristic
+  var courseDefaultTools = courseDeclaredTools.length ? courseDeclaredTools : courseHeuristicDefaults;
+
+  activities.forEach(function(a){
+    var actDeclaredTools = cfToolsFromString(a.declared_tools_str || '');
+    if(actDeclaredTools.length){
+      a.tools = actDeclaredTools;
+      a.tools_source = 'declared_activity';
+    } else if(courseDeclaredTools.length){
+      // Activity didn't declare its own — inherit course-level declared
+      a.tools = courseDeclaredTools.slice();
+      a.tools_source = 'declared_course';
+    } else {
+      // No declared tools anywhere — fall back to heuristic on title + description
+      var titleTools = cfExtractTools(a.title);
+      var descTools  = cfExtractTools(a.description);
+      var merged = [];
+      var seen = {};
+      titleTools.concat(descTools).forEach(function(t){ if(!seen[t.slug]){ seen[t.slug] = true; merged.push(t); } });
+      if(merged.length){
+        a.tools = merged;
+        a.tools_source = 'heuristic_activity';
+      } else if(courseHeuristicDefaults.length){
+        a.tools = courseHeuristicDefaults.slice();
+        a.tools_source = 'heuristic_course';
+      } else {
+        a.tools = [];
+        a.tools_source = 'none';
+      }
+    }
+    // v1.1.8 compat: keep a.tool pointing at first (or null) in case anything reads it
+    a.tool = a.tools.length ? a.tools[0] : null;
+  });
+  cfParsed={identity:identity,activities:activities,source_text:text,source_filename:filename,course_default_tools:courseDefaultTools,course_declared_tools:courseDeclaredTools};
   cfPopulateReview(identity,activities,filename);
   cfLoadPlFolders(identity['Product Line']);
 }
@@ -1790,6 +1955,21 @@ function cfPopulateReview(identity,activities,filename){
   var isE10=/^E10\b/.test(cid);
   var e10Hint=document.getElementById('cf_e10_hint');
   if(e10Hint) e10Hint.style.display=isE10?'block':'none';
+
+  // v1.1.9: populate course-default tools multi-select with full catalogue,
+  // pre-selecting whatever the heuristic found
+  var defSel = document.getElementById('cf_default_tools');
+  defSel.innerHTML = '';
+  var preselSlugs = {};
+  (cfParsed.course_default_tools||[]).forEach(function(t){ preselSlugs[t.slug] = true; });
+  CULVERA_TOOL_CATALOGUE.forEach(function(entry){
+    var opt = document.createElement('option');
+    opt.value = entry.slug;
+    opt.textContent = entry.display;
+    if(preselSlugs[entry.slug]) opt.selected = true;
+    defSel.appendChild(opt);
+  });
+
   // Seed company: user selects manually from dropdown
   document.getElementById('cfActCount').textContent=activities.length;
   var list=document.getElementById('cfActList');list.innerHTML='';
@@ -1804,15 +1984,160 @@ function cfPopulateReview(identity,activities,filename){
       _companyProfiles.forEach(function(p){opts+='<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>';});
       overrideHtml='<select class="fi" id="cfActSeed_'+esc(a.id)+'" style="font-size:.72rem;padding:3px 6px;height:auto;min-width:180px;flex-shrink:0;" title="Override seed company for this activity">'+opts+'</select>';
     }
+
+    // v1.1.9: per-activity tool badges (read-only summary of current selection,
+    // one badge per tool) + a small "Edit" button that expands an inline
+    // multi-select below the row. The multi-select is hidden by default to
+    // keep the screen compact; only appears when the user wants to correct
+    // a heuristic result.
+    // v1.1.10: badge styling reflects source — solid blue for declared (trust
+    // the Convert-level decision), outlined blue for heuristic-inferred (worth
+    // sanity-checking). A small source tag sits alongside the badges.
+    var src = a.tools_source || 'none';
+    var isDeclared = (src === 'declared_activity' || src === 'declared_course');
+    var srcTag = '';
+    if(src === 'declared_activity') srcTag = '<span style="font-size:.62rem;color:var(--ink3);margin-right:4px;" title="Tools came from the activity\'s own Tools: line in the .txt">declared</span>';
+    else if(src === 'declared_course') srcTag = '<span style="font-size:.62rem;color:var(--ink3);margin-right:4px;" title="Activity inherited course-level Tools: line">inherited</span>';
+    else if(src === 'heuristic_activity' || src === 'heuristic_course') srcTag = '<span style="font-size:.62rem;color:#c0504d;margin-right:4px;" title="Inferred by regex heuristic \u2014 verify before confirming">inferred</span>';
+
+    var badgesHtml = '';
+    if(a.tools && a.tools.length){
+      a.tools.forEach(function(t){
+        var badgeStyle = isDeclared
+          ? 'background:rgba(46,117,182,.2);color:#1F3864;border:1px solid rgba(46,117,182,.5);margin-right:3px;'
+          : 'background:rgba(46,117,182,.08);color:#2E75B6;border:1px dashed rgba(46,117,182,.4);margin-right:3px;';
+        var tip = isDeclared ? 'Declared in .txt Tools: line' : 'Inferred by heuristic \u2014 please verify';
+        badgesHtml += '<span class="badge" style="'+badgeStyle+'" title="'+tip+'">'+esc(t.display)+'</span>';
+      });
+    } else {
+      badgesHtml = '<span class="badge" id="cfActNoTool_'+esc(a.id)+'" style="background:rgba(192,80,77,.12);color:#c0504d;border:1px solid rgba(192,80,77,.3);" title="No tool detected \u2014 pipeline will warn">no tool</span>';
+    }
+    var toolsCellId = 'cfActToolsCell_'+esc(a.id);
+    var toolsSelectId = 'cfActTools_'+esc(a.id);
+    var toolsPanelId = 'cfActToolsPanel_'+esc(a.id);
+    var editBtnHtml = '<button type="button" class="btn btn-ghost" style="padding:1px 8px;font-size:.7rem;min-height:auto;line-height:1.5;" onclick="cfToggleActTools(\''+esc(a.id)+'\')" title="Edit tool bindings for this activity">Edit</button>';
+
     row.innerHTML='<span class="act-list-id">'+esc(a.id)+'</span>'
       +'<span class="act-list-title" style="flex:1;">'+esc(a.title)+'</span>'
       +(a.is_gate?'<span class="badge badge-gate">Gate A01</span>':'')
+      +'<span id="'+toolsCellId+'" style="display:inline-flex;gap:3px;align-items:center;flex-wrap:wrap;">'+srcTag+badgesHtml+'</span>'
+      +editBtnHtml
       +'<span class="act-list-status"><span class="badge" style="background:var(--paper2);color:var(--ink3);">'+esc(a.duration||'')+'</span></span>'
       +overrideHtml;
+
+    // Inline multi-select panel (hidden by default, spans full row width)
+    var panel = document.createElement('div');
+    panel.id = toolsPanelId;
+    panel.style.cssText = 'display:none;flex-basis:100%;padding:6px 0 2px 0;border-top:1px dashed var(--line);margin-top:4px;';
+    var selHtml = '<label style="font-size:.72rem;color:var(--ink3);display:block;margin-bottom:4px;">Tool bindings for '+esc(a.id)+' (Ctrl/Cmd-click for multi):</label>';
+    selHtml += '<select id="'+toolsSelectId+'" multiple size="4" style="width:100%;font-size:.78rem;padding:4px;" onchange="cfActToolsChanged(\''+esc(a.id)+'\')">';
+    var actSlugs = {};
+    (a.tools||[]).forEach(function(t){ actSlugs[t.slug] = true; });
+    CULVERA_TOOL_CATALOGUE.forEach(function(entry){
+      selHtml += '<option value="'+esc(entry.slug)+'"'+(actSlugs[entry.slug]?' selected':'')+'>'+esc(entry.display)+'</option>';
+    });
+    selHtml += '</select>';
+    panel.innerHTML = selHtml;
+
     list.appendChild(row);
+    list.appendChild(panel);
   });
   cfStatus('ok','Parsed '+activities.length+' activities from '+filename+'. Review details below.');
   document.getElementById('cfReviewContent').style.display='';
+}
+
+// v1.1.9: helper — toggle the per-activity tool-editing panel's visibility
+function cfToggleActTools(actId){
+  var panel = document.getElementById('cfActToolsPanel_'+actId);
+  if(!panel) return;
+  panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
+}
+
+// v1.1.9: apply changes from the per-activity tool multi-select back to
+// cfParsed.activities so cfRunConfirm sees the user's choices, and re-render
+// the badges in the row so the feedback is immediate.
+function cfActToolsChanged(actId){
+  var sel = document.getElementById('cfActTools_'+actId);
+  if(!sel) return;
+  var slugs = [];
+  for(var i=0;i<sel.options.length;i++){
+    if(sel.options[i].selected) slugs.push(sel.options[i].value);
+  }
+  var chosen = [];
+  slugs.forEach(function(slug){
+    var entry = CULVERA_TOOL_CATALOGUE.find(function(e){ return e.slug === slug; });
+    if(entry) chosen.push({ display: entry.display, slug: entry.slug });
+  });
+  var act = (cfParsed.activities||[]).find(function(a){ return a.id === actId; });
+  if(!act) return;
+  act.tools = chosen;
+  act.tool = chosen.length ? chosen[0] : null;
+  // v1.1.10: manual edits are authoritative — they count as declared for the
+  // purpose of cfDefaultToolsChanged protection. Badge style reflects this.
+  act.tools_source = 'user_override';
+  // Re-render the badges cell in place
+  var cell = document.getElementById('cfActToolsCell_'+actId);
+  if(cell){
+    if(chosen.length){
+      cell.innerHTML = '<span style="font-size:.62rem;color:var(--ink3);margin-right:4px;" title="Manually set by you">edited</span>' +
+        chosen.map(function(t){
+          return '<span class="badge" style="background:rgba(46,117,182,.2);color:#1F3864;border:1px solid rgba(46,117,182,.5);margin-right:3px;">'+esc(t.display)+'</span>';
+        }).join('');
+    } else {
+      cell.innerHTML = '<span class="badge" style="background:rgba(192,80,77,.12);color:#c0504d;border:1px solid rgba(192,80,77,.3);">no tool</span>';
+    }
+  }
+}
+
+// v1.1.9: when the course-default tool selection changes, update cfParsed
+// and re-resolve any activities that were *using the old default* so they
+// pick up the new default.
+// v1.1.10 refinement: only overwrite activities whose tools_source is
+// 'heuristic_course' — those are the ones genuinely inheriting the default.
+// Activities with declared tools (from .txt Tools: lines), declared_course
+// inheritance, or heuristic_activity matches have their own basis and must
+// not be silently rebound when the user changes the course default.
+function cfDefaultToolsChanged(){
+  var sel = document.getElementById('cf_default_tools');
+  if(!sel) return;
+  var newDefaults = [];
+  for(var i=0;i<sel.options.length;i++){
+    if(sel.options[i].selected){
+      var entry = CULVERA_TOOL_CATALOGUE.find(function(e){ return e.slug === sel.options[i].value; });
+      if(entry) newDefaults.push({ display: entry.display, slug: entry.slug });
+    }
+  }
+  cfParsed.course_default_tools = newDefaults;
+  (cfParsed.activities||[]).forEach(function(a){
+    // Only propagate to activities currently inheriting from the heuristic
+    // course default, or that had no source at all. Protected: declared_*,
+    // heuristic_activity (has own basis), user_override (explicit user edit).
+    if(a.tools_source !== 'heuristic_course' && a.tools_source !== 'none') return;
+    a.tools = newDefaults.slice();
+    a.tool = newDefaults.length ? newDefaults[0] : null;
+    a.tools_source = newDefaults.length ? 'heuristic_course' : 'none';
+    cfActRenderToolsCell(a.id, a.tools);
+    // Sync the activity's own multi-select if the panel exists
+    var actSel = document.getElementById('cfActTools_'+a.id);
+    if(actSel){
+      var wanted = {};
+      newDefaults.forEach(function(t){ wanted[t.slug] = true; });
+      for(var j=0;j<actSel.options.length;j++){
+        actSel.options[j].selected = !!wanted[actSel.options[j].value];
+      }
+    }
+  });
+}
+function cfActRenderToolsCell(actId, tools){
+  var cell = document.getElementById('cfActToolsCell_'+actId);
+  if(!cell) return;
+  if(tools && tools.length){
+    cell.innerHTML = tools.map(function(t){
+      return '<span class="badge" style="background:rgba(46,117,182,.15);color:#2E75B6;border:1px solid rgba(46,117,182,.3);margin-right:3px;">'+esc(t.display)+'</span>';
+    }).join('');
+  } else {
+    cell.innerHTML = '<span class="badge" style="background:rgba(192,80,77,.12);color:#c0504d;border:1px solid rgba(192,80,77,.3);">no tool</span>';
+  }
 }
 function cfLoadPlFolders(pl){
   var root=settings.drive_root||'1Lo65wGeI-kaImMxAwGvH4LCfGQ-f7lY7';
@@ -1837,21 +2162,75 @@ function cfProceedToConfirm(){
   var cname=document.getElementById('cf_cname').value.trim();
   var plId=document.getElementById('cf_pl_folder').value;
   var eb=document.getElementById('cfReviewErr');
+  var toolMsgEl=document.getElementById('cfToolValidationMsg');
   if(!cname){eb.textContent='Course Name is required.';eb.style.display='';return;}
   if(!plId){eb.textContent='Select a product line folder on Drive.';eb.style.display='';return;}
   eb.style.display='none';
   cfSeedChanged();
-  var cid=cfParsed.identity['Course ID'];
+
+  // v1.1.9: Tool-binding validation.
+  // Block for AEX/AA (always tool-centric); warn for AE/EE (sometimes tool-less).
+  // Acknowledgement flag persists across clicks: once the user has explicitly
+  // accepted the warning for AE/EE, Confirm can proceed.
   var pl=document.getElementById('cf_pl').value;
+  var acts=cfParsed.activities||[];
+  var actsWithoutTools = acts.filter(function(a){ return !a.tools || !a.tools.length; });
+  if(actsWithoutTools.length){
+    var msg = actsWithoutTools.length + ' of ' + acts.length + ' activities have no tool binding: ' +
+              actsWithoutTools.map(function(a){ return a.id; }).join(', ') + '. ' +
+              'Use the Edit button next to each to select a tool, or set course defaults above.';
+    if(pl==='AEX' || pl==='AA'){
+      toolMsgEl.className = 'err-banner';
+      toolMsgEl.style.display = '';
+      toolMsgEl.innerHTML = '<strong>Tool binding required.</strong> '+esc(msg)+
+        ' <span style="font-size:.75rem;color:var(--ink3);display:block;margin-top:6px;">'+esc(pl)+' activities must declare at least one tool. Blocked.</span>';
+      return;
+    } else {
+      // AE/EE: warn once, require a second click to proceed
+      if(!cfParsed._tool_warn_ack){
+        toolMsgEl.className = '';
+        toolMsgEl.style.cssText = 'background:var(--amber-light);border:1px solid #F5DFA0;border-radius:var(--r);padding:10px 14px;font-size:.82rem;color:var(--amber);margin-bottom:10px;display:block;';
+        toolMsgEl.innerHTML = '<strong>&#9888; Tool binding warning.</strong> '+esc(msg)+
+          ' <span style="font-size:.75rem;color:var(--ink3);display:block;margin-top:6px;">Click <em>Review complete \u2014 proceed</em> again to continue anyway ('+esc(pl)+' permits tool-less activities).</span>';
+        cfParsed._tool_warn_ack = true;
+        return;
+      }
+      // User clicked a second time — they've acknowledged, let it through.
+      toolMsgEl.style.display='none';
+    }
+  } else {
+    toolMsgEl.style.display='none';
+    cfParsed._tool_warn_ack = false;
+  }
+
+  var cid=cfParsed.identity['Course ID'];
   var seed=document.getElementById('cf_seed').value;
-  var acts=cfParsed.activities;
   var overrideCount=0;
   acts.forEach(function(a){var el=document.getElementById('cfActSeed_'+a.id);if(el&&el.value)overrideCount++;});
   var gateId=acts.length?acts.find(function(a){return a.id.endsWith('-A01');}):null;
+
+  // v1.1.10: tool summary for Confirm preview — which tools are going into
+  // course.json's default list, and a breakdown of where each activity's
+  // binding came from so the user can see heuristic-inferred rows at a glance.
+  var defaultToolsList = (cfParsed.course_default_tools || []).map(function(t){ return t.display; });
+  var sourceCounts = {};
+  acts.forEach(function(a){ var src = a.tools_source || 'none'; sourceCounts[src] = (sourceCounts[src]||0) + 1; });
+  var srcLabel = {
+    'declared_activity': 'declared per-activity',
+    'declared_course':   'inherited from course declaration',
+    'heuristic_activity':'inferred from title/description',
+    'heuristic_course':  'inferred from course defaults',
+    'user_override':     'manually set',
+    'none':              'none assigned'
+  };
+  var srcSummary = Object.keys(sourceCounts).map(function(k){ return sourceCounts[k]+' '+srcLabel[k]; }).join(', ');
+
   var s='<strong>Course:</strong> '+esc(cid)+' · '+esc(cname)+'<br>';
   s+='<strong>Product Line:</strong> '+esc(pl)+'<br>';
   s+='<strong>Activities:</strong> '+acts.length+'<br>';
-  s+='<strong>Seed Company:</strong> '+(seed||'none')+'<br><br>';
+  s+='<strong>Seed Company:</strong> '+(seed||'none')+'<br>';
+  s+='<strong>Default Tools:</strong> '+(defaultToolsList.length?esc(defaultToolsList.join(', ')):'<em>none</em>')+'<br>';
+  s+='<strong>Tool bindings:</strong> '+esc(srcSummary)+'<br><br>';
   s+='<strong>Will create on Drive:</strong><br>';
   s+='&nbsp;&nbsp;• '+esc(cid+'  ·  '+cname)+'/ (course folder)<br>';
   s+='&nbsp;&nbsp;• Studio/ (course-scope declarations)<br>';
@@ -1994,6 +2373,9 @@ async function cfRunConfirm(){
           if(m) durMin = parseInt(m[1],10);
         }
         var isGate = a.id.endsWith('-A01');
+        // v1.1.9: tool_bindings populated from plural a.tools (array of all
+        // bound tools). Empty array when no tool was detected or all user-cleared.
+        var toolBindings = (a.tools || []).map(function(t){ return t.slug; });
         return {
           id: a.id,
           title: a.title,
@@ -2002,7 +2384,7 @@ async function cfRunConfirm(){
           is_gate: isGate,
           description: a.description||'',
           seed_company_override: actSeedOverride,
-          tool_bindings: [],
+          tool_bindings: toolBindings,
           expiration_policy_override: null,
           prop_mode: isGate ? 'fabricated' : 'live',
           folder_id: actFolderIds[a.id]||'',
@@ -2058,7 +2440,35 @@ async function cfRunConfirm(){
     btn.textContent='Seeding queue...';
     var q=await gReadQueue(queueId,'gta');
     var eids=new Set((q.activities||[]).map(function(a){return a.id;}));
-    acts.forEach(function(a){if(!eids.has(a.id)){var overrideEl=document.getElementById('cfActSeed_'+a.id);var actSeed=overrideEl&&overrideEl.value?overrideEl.value:seed;var entry={id:a.id,course_id:cid,title:a.title,type:a.type||'',duration:a.duration||'',status:'queued',tenant_id:'gta',seed_company:actSeed,is_gate:a.id.endsWith('-A01'),named_folder_id:actFolderIds[a.id]||''};if(a.id.endsWith('-A01'))entry.draft_folder_id=draftId;q.activities.push(entry);}});
+    // v1.1.8: queue entry construction expanded to multi-line.
+    // Added `tool` field (display name, not slug) to satisfy pipeline expectation.
+    // This is a mirror of tool_bindings[0] from course.json — redundant until
+    // Phase 5 cuts pipeline over to reading course.json directly, then drops.
+    acts.forEach(function(a){
+      if(eids.has(a.id)) return;
+      var overrideEl = document.getElementById('cfActSeed_'+a.id);
+      var actSeed = overrideEl && overrideEl.value ? overrideEl.value : seed;
+      // v1.1.9: queue entry tool field carries comma-joined display names of
+      // all bound tools. Pipeline currently injects this string into prompts.
+      // When Phase 5 cuts pipeline over to reading course.json.tool_bindings
+      // directly, this queue field drops away.
+      var toolDisplay = (a.tools && a.tools.length) ? a.tools.map(function(t){ return t.display; }).join(', ') : '';
+      var entry = {
+        id: a.id,
+        course_id: cid,
+        title: a.title,
+        type: a.type||'',
+        duration: a.duration||'',
+        status: 'queued',
+        tenant_id: 'gta',
+        seed_company: actSeed,
+        tool: toolDisplay,
+        is_gate: a.id.endsWith('-A01'),
+        named_folder_id: actFolderIds[a.id]||''
+      };
+      if(a.id.endsWith('-A01')) entry.draft_folder_id = draftId;
+      q.activities.push(entry);
+    });
     q.updated_at=new Date().toISOString();
     await gWriteJson(queueId,'gta_pipeline_queue.json',q);
     steps.push('✓ Pipeline queue seeded');
