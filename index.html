@@ -298,7 +298,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.1.10</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.1.12</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -356,7 +356,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.1.10 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.1.12 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -445,7 +445,9 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
                 <option value="EE">EE — Education Excellence</option>
               </select></div>
             <div class="fr"><span class="fl">Course / Stream ID</span><input class="fi" id="hdr_id"></div>
-            <div class="fr"><span class="fl">Course / Stream Name</span><input class="fi" id="hdr_name"></div>
+            <div class="fr"><span class="fl">Course / Stream Name</span><input class="fi" id="hdr_name" oninput="convHdrNameChanged()"></div>
+            <!-- v1.1.11: course-name/activity-title collision warning for Convert -->
+            <div id="conv_name_collision_warn" style="display:none;background:var(--amber-light);border:1px solid #F5DFA0;border-radius:var(--r);padding:8px 12px;font-size:.78rem;color:var(--amber);margin-bottom:8px;"></div>
             <div class="fr" id="hdr_sector_row" style="display:none;"><span class="fl">Sector</span><input class="fi" id="hdr_sector"></div>
             <div class="fr" id="hdr_stream_row" style="display:none;"><span class="fl">EE Stream Code</span><input class="fi" id="hdr_stream"></div>
             <div class="fr"><span class="fl">Delivery Mode</span><input class="fi" id="hdr_mode"></div>
@@ -544,7 +546,9 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
               <div class="card-title">Course identity — confirm before proceeding</div>
               <div class="fr"><span class="fl">Product Line</span><input class="fi" id="cf_pl" readonly style="background:var(--paper2);"></div>
               <div class="fr"><span class="fl">Course ID</span><input class="fi" id="cf_cid" readonly style="background:var(--paper2);"></div>
-              <div class="fr"><span class="fl">Course Name</span><input class="fi" id="cf_cname"></div>
+              <div class="fr"><span class="fl">Course Name</span><input class="fi" id="cf_cname" oninput="cfCnameChanged()"></div>
+              <!-- v1.1.11: Course-name/activity-title collision warning. Shown when cfPopulateReview detects the extracted course name matches an activity title. -->
+              <div id="cf_name_collision_warn" style="display:none;background:var(--amber-light);border:1px solid #F5DFA0;border-radius:var(--r);padding:8px 12px;font-size:.78rem;color:var(--amber);margin-bottom:8px;"></div>
               <div class="fr"><span class="fl">Delivery Mode</span><input class="fi" id="cf_mode"></div>
               <div class="fr" id="cf_sector_row" style="display:none;"><span class="fl">Sector</span><input class="fi" id="cf_sector"></div>
               <div class="fr" id="cf_stream_row" style="display:none;"><span class="fl">Stream</span><input class="fi" id="cf_stream"></div>
@@ -974,6 +978,22 @@ var _tokenWarningTimer = null;
 var _tokenExpiryTimer = null;
 var settings = {};
 
+// v1.1.12: canonical-account guardrail. The platform currently operates as
+// a single-account multi-user system: every curator signs in as the same
+// Google account (gemis.curriculum) so that all Drive/Sheets writes land
+// under one owner and the pipeline (also running as this account) can
+// manage them. Signing in as any other account produces duplicate files,
+// cross-account delete failures, and silent data divergence. Until a
+// proper multi-tenant backend replaces this model, the web app enforces
+// the canonical identity at every sign-in and every API request.
+//
+// This constant is hardcoded deliberately. Moving it to Settings would let
+// a curator circumvent the check by editing Settings to their own email.
+// When the tenant model expands to support multiple tenants, this value
+// moves to a tenant.json field and Settings reads from there.
+var CANONICAL_ACCOUNT_EMAIL = 'gemis.curriculum@gmail.com';
+var _verifiedEmail = '';  // the email actually confirmed at last sign-in
+
 // Convert state
 var convSections = [];
 var convCurTab = 0;
@@ -1186,6 +1206,106 @@ function saveSettings() {
 }
 
 // ── Google Auth ───────────────────────────────────────────────────────────
+
+// v1.1.12: verify that a freshly-issued token belongs to the canonical
+// account. Called from every sign-in callback before setAuthed(true).
+// Returns { ok: bool, email: string, reason?: string }.
+async function verifyCanonicalAccount(token){
+  if(!token) return { ok: false, email: '', reason: 'no_token' };
+  try {
+    var r = await fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json',
+      { headers: { 'Authorization': 'Bearer ' + token } });
+    if(!r.ok){
+      return { ok: false, email: '', reason: 'userinfo_failed_' + r.status };
+    }
+    var info = await r.json();
+    var email = (info && info.email) ? info.email : '';
+    if(!email) return { ok: false, email: '', reason: 'no_email_in_userinfo' };
+    if(email.toLowerCase() !== CANONICAL_ACCOUNT_EMAIL.toLowerCase()){
+      return { ok: false, email: email, reason: 'wrong_account' };
+    }
+    return { ok: true, email: email };
+  } catch(e){
+    return { ok: false, email: '', reason: 'userinfo_threw:' + (e && e.message || e) };
+  }
+}
+
+// v1.1.12: revoke an OAuth token server-side so the user's Google session
+// is cleanly disassociated from this app. Best-effort — failure is silent
+// because the main goal (local state clear) is handled by the caller.
+async function _revokeGoogleToken(token){
+  if(!token) return;
+  try {
+    await fetch('https://oauth2.googleapis.com/revoke?token=' + encodeURIComponent(token),
+      { method: 'POST' });
+  } catch(e){ /* best-effort */ }
+}
+
+// v1.1.12: handle wrong-account sign-in. Revokes the token, clears state,
+// shows a clear wrong-account modal explaining what happened and what to do.
+async function handleWrongAccount(wrongEmail, reason){
+  // Clear auth state immediately — no further API calls should proceed
+  var tokToRevoke = authToken;
+  authToken = '';
+  _verifiedEmail = '';
+  _tokenExpiry = 0;
+  isAuthed = false;
+  if(_tokenWarningTimer){ clearInterval(_tokenWarningTimer); _tokenWarningTimer = null; }
+  if(_tokenExpiryTimer){ clearTimeout(_tokenExpiryTimer); _tokenExpiryTimer = null; }
+  // Revoke on Google's side (async, best-effort)
+  _revokeGoogleToken(tokToRevoke);
+  // UI refresh
+  try { setAuthed(false); } catch(e){}
+  // Surface the error to the user via modal
+  showWrongAccountModal(wrongEmail, reason);
+}
+
+// v1.1.12: render a modal explaining the wrong-account rejection and
+// how to recover. Uses a lightweight inline overlay — no new CSS needed
+// beyond the existing paper/line variables.
+function showWrongAccountModal(wrongEmail, reason){
+  // Remove any prior instance
+  var prior = document.getElementById('culveraWrongAccountModal');
+  if(prior) prior.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'culveraWrongAccountModal';
+  overlay.style.cssText =
+    'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);'+
+    'display:flex;align-items:center;justify-content:center;padding:20px;';
+  var displayEmail = wrongEmail || '(email unknown)';
+  overlay.innerHTML =
+    '<div style="background:var(--paper);border-radius:var(--r);box-shadow:0 20px 60px rgba(0,0,0,.3);'+
+      'max-width:560px;width:100%;padding:28px 32px;font-family:inherit;color:var(--ink);">'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">'+
+        '<span style="font-size:1.6rem;color:#c0504d;">&#9888;</span>'+
+        '<h2 style="margin:0;font-size:1.2rem;font-weight:600;color:var(--ink);">Wrong Google account</h2>'+
+      '</div>'+
+      '<p style="margin:0 0 12px;line-height:1.55;font-size:.92rem;color:var(--ink2);">'+
+        'This workspace is configured to work with <strong>'+esc(CANONICAL_ACCOUNT_EMAIL)+'</strong> only.'+
+      '</p>'+
+      '<p style="margin:0 0 16px;line-height:1.55;font-size:.92rem;color:var(--ink2);">'+
+        'You signed in as <strong>'+esc(displayEmail)+'</strong>. To protect data integrity, this account cannot be used.'+
+      '</p>'+
+      '<div style="background:var(--paper2);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;'+
+        'margin-bottom:18px;font-size:.85rem;line-height:1.6;color:var(--ink2);">'+
+        '<strong style="color:var(--ink);">How to fix this:</strong>'+
+        '<ol style="margin:6px 0 0;padding-left:22px;">'+
+          '<li>Click <em>Sign in again</em> below.</li>'+
+          '<li>When the Google sign-in window opens, choose <em>Use another account</em>.</li>'+
+          '<li>Enter <code style="background:var(--paper3);padding:1px 4px;border-radius:3px;">'+esc(CANONICAL_ACCOUNT_EMAIL)+'</code> and its password.</li>'+
+        '</ol>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;justify-content:flex-end;">'+
+        '<button class="btn btn-ghost" onclick="document.getElementById(\'culveraWrongAccountModal\').remove();">Close</button>'+
+        '<button class="btn btn-primary" onclick="document.getElementById(\'culveraWrongAccountModal\').remove();signIn();">Sign in again</button>'+
+      '</div>'+
+      (reason && reason !== 'wrong_account'
+        ? '<div style="margin-top:14px;font-size:.72rem;color:var(--ink3);font-family:DM Mono,monospace;">Diagnostic: '+esc(reason)+'</div>'
+        : '')+
+    '</div>';
+  document.body.appendChild(overlay);
+}
+
 function toggleAuth() {
   if(isAuthed) {
     signOut();
@@ -1218,20 +1338,30 @@ function signIn() {
       var hash = new URLSearchParams(popup.location.hash.slice(1));
       var token = hash.get('access_token');
       if(token) {
-        authToken = token;
         clearInterval(window._authInterval);
         popup.close();
-        // Set authed immediately — scope validation via tokeninfo removed
-        // (tokeninfo check was blocking valid tokens from gemis.curriculum)
-        _tokenExpiry = Date.now() + (parseInt('3600'))*1000;
-        setAuthed(true, 'Google account');
-        _startTokenTimer();
+        // v1.1.12: verify canonical account BEFORE accepting this token.
+        // Temporarily set authToken so verifyCanonicalAccount can make its
+        // userinfo call; if verification fails, handleWrongAccount clears
+        // everything and shows the modal.
+        authToken = token;
+        verifyCanonicalAccount(token).then(function(check){
+          if(!check.ok){
+            handleWrongAccount(check.email, check.reason);
+            return;
+          }
+          _verifiedEmail = check.email;
+          _tokenExpiry = Date.now() + (parseInt('3600'))*1000;
+          setAuthed(true, check.email);
+          _startTokenTimer();
+        });
       }
     } catch(e) {}
   }, 500);
 }
 function signOut() {
   isAuthed = false; authToken = ''; _tokenExpiry = 0;
+  _verifiedEmail = '';  // v1.1.12: clear verified identity
   if(_tokenWarningTimer){clearInterval(_tokenWarningTimer);_tokenWarningTimer=null;}
   if(_tokenExpiryTimer){clearTimeout(_tokenExpiryTimer);_tokenExpiryTimer=null;}
   document.getElementById('authStatus').style.color = '';
@@ -1241,6 +1371,7 @@ function signOut() {
 function _handleAuthExpiry() {
   if(!isAuthed) return;
   isAuthed = false; authToken = ''; _tokenExpiry = 0;
+  _verifiedEmail = '';  // v1.1.12: clear verified identity
   if(_tokenWarningTimer){clearInterval(_tokenWarningTimer);_tokenWarningTimer=null;}
   if(_tokenExpiryTimer){clearTimeout(_tokenExpiryTimer);_tokenExpiryTimer=null;}
   document.getElementById('authBtnIcon').textContent = '◯';
@@ -1293,12 +1424,20 @@ function setAuthed(val, name) {
       window.close();
     } else {
       // We are the main window (redirect flow fallback)
+      // v1.1.12: verify canonical account before accepting this token.
       authToken = token;
       var ei2=parseInt(new URLSearchParams(window.location.hash.slice(1)).get('expires_in')||'3600');
-      _tokenExpiry=Date.now()+ei2*1000;
       window.location.hash = '';
-      setAuthed(true, 'Google account');
-      _startTokenTimer();
+      verifyCanonicalAccount(token).then(function(check){
+        if(!check.ok){
+          handleWrongAccount(check.email, check.reason);
+          return;
+        }
+        _verifiedEmail = check.email;
+        _tokenExpiry = Date.now() + ei2*1000;
+        setAuthed(true, check.email);
+        _startTokenTimer();
+      });
     }
   }
 })();
@@ -1307,11 +1446,20 @@ function setAuthed(val, name) {
 window.addEventListener('message', function(e) {
   if(e.origin !== window.location.origin) return;
   if(e.data && e.data.type === 'oauth_token') {
+    // v1.1.12: verify canonical account before accepting this token.
     authToken = e.data.token;
-    _tokenExpiry = Date.now() + (e.data.expires_in||3600)*1000;
+    var expiresIn = e.data.expires_in || 3600;
     if(window._authInterval) { clearInterval(window._authInterval); window._authInterval = null; }
-    setAuthed(true, 'Google account');
-    _startTokenTimer();
+    verifyCanonicalAccount(e.data.token).then(function(check){
+      if(!check.ok){
+        handleWrongAccount(check.email, check.reason);
+        return;
+      }
+      _verifiedEmail = check.email;
+      _tokenExpiry = Date.now() + expiresIn*1000;
+      setAuthed(true, check.email);
+      _startTokenTimer();
+    });
   }
 });
 function updateAuthGates() {
@@ -1539,6 +1687,8 @@ function convCallAI(text,filename,apiKey){
 function convRenderReview(){
   document.getElementById('convReviewContent').style.display='';
   convBuildTabs();convShowTab(0);convUpdateProgress();
+  // v1.1.11: evaluate collision warning now that convSections is populated
+  convRenderCollisionWarn();
 }
 function convBuildTabs(){
   var bar=document.getElementById('convTabRow');bar.innerHTML='';
@@ -1626,6 +1776,58 @@ function convBuildActCard(sidx,aidx,a){
 function convTogAC(k){var b=document.getElementById('cab_'+k);var t=document.getElementById('catog_'+k);if(!b)return;b.classList.toggle('act-body');b.classList.toggle('act-body-closed');if(b.style.display==='none'){b.style.display='';t.textContent='\u25b2';}else{b.style.display='none';t.textContent='\u25bc';}}
 function convUpdAL(k){document.getElementById('caid_lbl_'+k).textContent=document.getElementById('ca_id_'+k).value||'new';document.getElementById('catl_lbl_'+k).textContent=document.getElementById('ca_t_'+k).value||'untitled';}
 
+// v1.1.11: course-name / activity-title collision check for Convert.
+// Called after LLM extraction, after structural parses, on edits to the
+// course-name field, and whenever section activities are updated.
+// Surfaces an amber banner under the course name field matching the
+// style of Confirm's equivalent.
+function convRenderCollisionWarn(){
+  var banner = document.getElementById('conv_name_collision_warn');
+  if(!banner) return;
+  var nameEl = document.getElementById('hdr_name');
+  if(!nameEl) { banner.style.display='none'; return; }
+  var courseName = nameEl.value.trim();
+  // Collect activities from all sections — a collision against any of them
+  // is worth flagging. convSections[*].activities carries the current
+  // extracted/edited list with id and title fields.
+  var allActivities = [];
+  (convSections||[]).forEach(function(sec){
+    (sec.activities||[]).forEach(function(a){
+      if(a && a.id && a.title) allActivities.push({ id: a.id, title: a.title });
+    });
+  });
+  var collision = checkCourseNameCollision(courseName, allActivities);
+  if(!collision){
+    banner.style.display = 'none';
+    banner.innerHTML = '';
+    return;
+  }
+  var msg;
+  if(collision.matchType === 'exact'){
+    msg = '&#9888; <strong>Course name matches activity title.</strong> The Course Name "'+esc(collision.courseName)+
+          '" is identical to activity '+esc(collision.activityId)+'\'s title. '+
+          'This usually means the LLM picked up an activity title instead of the course\u2019s broader name. '+
+          'Please check the source document and edit the Course / Stream Name field if incorrect.';
+  } else if(collision.matchType === 'course_in_activity'){
+    msg = '&#9888; <strong>Course name is contained in activity title.</strong> The Course Name "'+esc(collision.courseName)+
+          '" appears as a substring of activity '+esc(collision.activityId)+'\'s title ("'+esc(collision.activityTitle)+
+          '"). This may be intentional or may indicate an incomplete course name. Please verify.';
+  } else {
+    msg = '&#9888; <strong>Activity title is contained in course name.</strong> Activity '+esc(collision.activityId)+
+          '\'s title ("'+esc(collision.activityTitle)+'") appears as a substring of the Course Name "'+
+          esc(collision.courseName)+'". Please verify this is intentional.';
+  }
+  banner.innerHTML = msg;
+  banner.style.display = 'block';
+}
+
+// v1.1.11: re-evaluate the warning whenever the user types in the course
+// name field. Also re-evaluate after every approval / unapprove, since the
+// approval pipeline calls convCollectSection which may reshape activity titles.
+function convHdrNameChanged(){
+  convRenderCollisionWarn();
+}
+
 function convCollectSection(idx){
   var sec=convSections[idx];
   var durEl=document.getElementById('sec_dur_'+idx);var toolsEl=document.getElementById('sec_tools_'+idx);
@@ -1652,8 +1854,8 @@ function convCollectSection(idx){
     sec.activities=newActs;
   }
 }
-function convApprove(idx){convCollectSection(idx);convSections[idx].approved=true;convUpdABar(idx);convBuildTabs();convUpdateProgress();for(var i=idx+1;i<convSections.length;i++){if(!convSections[i].approved){convShowTab(i);return;}}convShowTab(idx);}
-function convUnapprove(idx){convSections[idx].approved=false;convUpdABar(idx);convBuildTabs();convUpdateProgress();convShowTab(idx);}
+function convApprove(idx){convCollectSection(idx);convSections[idx].approved=true;convUpdABar(idx);convBuildTabs();convUpdateProgress();convRenderCollisionWarn();for(var i=idx+1;i<convSections.length;i++){if(!convSections[i].approved){convShowTab(i);return;}}convShowTab(idx);}
+function convUnapprove(idx){convSections[idx].approved=false;convUpdABar(idx);convBuildTabs();convUpdateProgress();convRenderCollisionWarn();convShowTab(idx);}
 function convUpdABar(idx){
   var bar=document.getElementById('cabar_'+idx);if(!bar)return;
   var sec=convSections[idx];bar.className='approve-bar'+(sec.approved?' approved':'');
@@ -1754,6 +1956,9 @@ function convReset(){
   document.getElementById('convPhaseDone').style.display='none';
   document.getElementById('convReviewContent').style.display='none';
   document.getElementById('convDropLabel').textContent='Drop .docx file here or click to browse';
+  // v1.1.11: clear collision warning banner on reset so a new doc starts clean
+  var warn = document.getElementById('conv_name_collision_warn');
+  if(warn){ warn.style.display = 'none'; warn.innerHTML = ''; }
   convSetStep(1);
 }
 
@@ -1863,6 +2068,42 @@ function cfToolsFromString(s){
   return out;
 }
 
+// v1.1.11: detect when the extracted course name duplicates or heavily
+// overlaps an activity title. Common failure modes this catches:
+//   (a) .docx author typed an activity title into the Course Name field
+//   (b) LLM extraction picked a prominent activity title as the course name
+// Returns null for no collision, or an object { activityId, matchType,
+// activityTitle, courseName } where matchType is one of:
+//   'exact'               — courseName equals activity title (case/ws-insensitive)
+//   'course_in_activity'  — courseName is a substring of activity title
+//   'activity_in_course'  — activity title is a substring of courseName
+// Substring matches require the shorter string to be \u226515 characters
+// to avoid false positives on short generic names.
+function checkCourseNameCollision(courseName, activities){
+  if(!courseName || !activities || !activities.length) return null;
+  function norm(s){ return String(s||'').toLowerCase().replace(/\s+/g,' ').trim(); }
+  var cn = norm(courseName);
+  if(!cn) return null;
+  for(var i=0;i<activities.length;i++){
+    var a = activities[i];
+    var at = norm(a.title);
+    if(!at) continue;
+    if(cn === at){
+      return { activityId: a.id, matchType: 'exact', activityTitle: a.title, courseName: courseName };
+    }
+    // Substring checks — only when the shorter string is long enough
+    var shorter = cn.length < at.length ? cn : at;
+    if(shorter.length < 15) continue;
+    if(at.indexOf(cn) !== -1){
+      return { activityId: a.id, matchType: 'course_in_activity', activityTitle: a.title, courseName: courseName };
+    }
+    if(cn.indexOf(at) !== -1){
+      return { activityId: a.id, matchType: 'activity_in_course', activityTitle: a.title, courseName: courseName };
+    }
+  }
+  return null;
+}
+
 function cfParseCurriculum(text,filename){
   var lines=text.split('\n').map(function(l){return l.trim();});
   var identity={};var activities=[];var inActs=false;var curAct=null;var descBuf=[];
@@ -1955,6 +2196,9 @@ function cfPopulateReview(identity,activities,filename){
   var isE10=/^E10\b/.test(cid);
   var e10Hint=document.getElementById('cf_e10_hint');
   if(e10Hint) e10Hint.style.display=isE10?'block':'none';
+
+  // v1.1.11: course-name / activity-title collision check
+  cfRenderCollisionWarn();
 
   // v1.1.9: populate course-default tools multi-select with full catalogue,
   // pre-selecting whatever the heuristic found
@@ -2158,6 +2402,48 @@ function cfSeedChanged(){
   var rem=document.getElementById('cf_seed_reminder');
   if(rem) rem.style.display=(!sel||!sel.value)?'block':'none';
 }
+
+// v1.1.11: render the course-name/activity-title collision warning based on
+// the current cf_cname value and cfParsed.activities. Called on populate and
+// on every edit of the Course Name field.
+function cfRenderCollisionWarn(){
+  var banner = document.getElementById('cf_name_collision_warn');
+  if(!banner) return;
+  var cnameInput = document.getElementById('cf_cname');
+  if(!cnameInput) { banner.style.display='none'; return; }
+  var cname = cnameInput.value.trim();
+  var acts = (cfParsed && cfParsed.activities) || [];
+  var collision = checkCourseNameCollision(cname, acts);
+  if(!collision){
+    banner.style.display = 'none';
+    banner.innerHTML = '';
+    return;
+  }
+  var msg;
+  if(collision.matchType === 'exact'){
+    msg = '&#9888; <strong>Course name matches activity title.</strong> The Course Name "'+esc(collision.courseName)+
+          '" is identical to activity '+esc(collision.activityId)+'\'s title. '+
+          'This usually means the LLM picked up an activity title instead of the course\u2019s broader name. '+
+          'Please check the source document and edit the Course Name field if incorrect.';
+  } else if(collision.matchType === 'course_in_activity'){
+    msg = '&#9888; <strong>Course name is contained in activity title.</strong> The Course Name "'+esc(collision.courseName)+
+          '" appears as a substring of activity '+esc(collision.activityId)+'\'s title ("'+esc(collision.activityTitle)+
+          '"). This may be intentional or may indicate an incomplete course name. Please verify.';
+  } else {
+    msg = '&#9888; <strong>Activity title is contained in course name.</strong> Activity '+esc(collision.activityId)+
+          '\'s title ("'+esc(collision.activityTitle)+'") appears as a substring of the Course Name "'+
+          esc(collision.courseName)+'". Please verify this is intentional.';
+  }
+  banner.innerHTML = msg;
+  banner.style.display = 'block';
+}
+
+// v1.1.11: called on every input event on the Course Name field so the
+// collision warning stays in sync with the user\u2019s edits.
+function cfCnameChanged(){
+  cfRenderCollisionWarn();
+}
+
 function cfProceedToConfirm(){
   var cname=document.getElementById('cf_cname').value.trim();
   var plId=document.getElementById('cf_pl_folder').value;
@@ -2526,6 +2812,18 @@ function _recordAuthDiagnostic(rec){
   console.groupEnd();
 }
 function gApi(method,url,body){
+  // v1.1.12: defence-in-depth identity check. The sign-in flow verifies the
+  // canonical account before setAuthed(true), but this runtime guard catches
+  // any code path where authToken got set without verification (bug, race,
+  // cached state from a previous version). A string comparison is nearly
+  // free; a rejected request here is far cheaper than a wrong-account write
+  // to Drive that then can't be cleaned up.
+  if(isAuthed && _verifiedEmail && _verifiedEmail.toLowerCase() !== CANONICAL_ACCOUNT_EMAIL.toLowerCase()){
+    return Promise.reject(new Error(
+      'Canonical account mismatch: verified as '+_verifiedEmail+' but required '+CANONICAL_ACCOUNT_EMAIL+'. '+
+      'Refusing request. Please sign out and sign in with the correct account.'
+    ));
+  }
   var requestedAt = Date.now();
   return fetch(url,{method:method,headers:{'Authorization':'Bearer '+authToken,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined})
     .then(function(r){
@@ -2637,6 +2935,43 @@ async function gSheetsAppend(sid,range,row){
 // ── Courses Tab ───────────────────────────────────────────────────────────
 var _coursesData = []; // patch_courses_applied patch_doc_editor_applied patch_filefix_applied patch_folderfix_applied   // raw register rows
 var _coursesPl   = 'ALL'; // active PL filter
+// v1.1.11: cache of course.json documents keyed by course_id. Loaded alongside
+// the register so renderCourses can surface the authoritative course_name
+// rather than inferring it from A01 activity titles (which was unreliable —
+// e.g. EX02 A01 titled "Your First Professional Document with Claude"
+// produced that as the displayed course name instead of the actual
+// "Writing and Communication").
+var _courseJsonCache = {};
+
+// v1.1.11: load course.json files for every course referenced in the register.
+// Single Drive query for all files named course.json owned by this account,
+// each parsed to extract course_id/course_name. Result merged into
+// _courseJsonCache. Failures and missing files are tolerated — renderCourses
+// falls back to its pre-v1.1.11 derivation when no cached entry exists.
+async function loadCourseJsonCache(){
+  try {
+    var q = encodeURIComponent("name='course.json' and trashed=false");
+    var r = await gApi('GET', 'https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name,parents)&pageSize=100');
+    var files = (r && r.files) ? r.files : [];
+    // Fetch each file's content in parallel. These are small (under 10 KB each).
+    await Promise.all(files.map(function(f){
+      return fetch('https://www.googleapis.com/drive/v3/files/'+f.id+'?alt=media',
+        { headers: { 'Authorization': 'Bearer '+authToken } })
+        .then(function(resp){ return resp.ok ? resp.text() : null; })
+        .then(function(text){
+          if(!text) return;
+          try {
+            var cj = JSON.parse(text);
+            if(cj && cj.course_id) _courseJsonCache[cj.course_id] = cj;
+          } catch(e){ /* ignore malformed course.json */ }
+        })
+        .catch(function(){ /* ignore individual fetch failures */ });
+    }));
+  } catch(e) {
+    // Leaving the cache empty is acceptable — renderCourses falls back.
+    console.warn('loadCourseJsonCache failed:', e);
+  }
+}
 
 async function loadCoursesTab(force) {
   if(!isAuthed) return;
@@ -2694,6 +3029,9 @@ async function loadCoursesTab(force) {
       badge.style.display = 'none';
     }
     coursesHideStatus();
+    // v1.1.11: populate course.json cache so renderCourses can show authoritative
+    // course names. Runs after the register load completes; failure is tolerated.
+    await loadCourseJsonCache();
     renderCourses();
     updateLastPipelineActivity();  // v1.1.5: refresh last-activity indicator
   } catch(e) {
@@ -2753,7 +3091,16 @@ function renderCourses() {
     var generated = approved + awaiting;
     var pctTotal = total ? Math.round((generated/total)*100) : 0;
     var a01 = acts.filter(function(a){ return a.activityId.match(/-A01$/); })[0] || acts[0];
-    var courseName = a01 ? a01.title.replace(/\s*[—–].*/, '').trim() : cid;
+    // v1.1.11: prefer course.json course_name when available (authoritative).
+    // Fall back to the A01-derived heuristic for pre-v1.1.7 courses or when
+    // the cache is unpopulated (e.g. Drive query failed).
+    var courseName;
+    var cj = _courseJsonCache[cid];
+    if(cj && cj.course_name) {
+      courseName = cj.course_name;
+    } else {
+      courseName = a01 ? a01.title.replace(/\s*[—–].*/, '').trim() : cid;
+    }
     var plClass = 'pl-' + c.productLine.toLowerCase();
     var awaitingBadge = awaiting
       ? '<span class="pill pill-awaiting" style="margin-left:6px;">' + awaiting + ' awaiting</span>'
@@ -2788,8 +3135,13 @@ function openDrawer(cid) {
   if(!acts.length) return;
   document.getElementById('drawerCourseId').textContent = cid;
   var a01 = acts.filter(function(a){ return a.activityId.match(/-A01$/); })[0] || acts[0];
-  document.getElementById('drawerCourseName').textContent =
-    a01.title.replace(/\s*[\u2014\u2013].*/, '').trim();
+  // v1.1.11: same bug as renderCourses — prefer course.json course_name,
+  // fall back to A01-derived heuristic when cache is empty.
+  var cj = _courseJsonCache[cid];
+  var drawerName = (cj && cj.course_name)
+    ? cj.course_name
+    : a01.title.replace(/\s*[\u2014\u2013].*/, '').trim();
+  document.getElementById('drawerCourseName').textContent = drawerName;
   _docExpanded = null;
   _docEditing  = {};
   _docDirty    = {};
