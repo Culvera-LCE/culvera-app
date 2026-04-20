@@ -298,7 +298,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.1.12</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.2.0</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -356,7 +356,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.1.12 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.2.0 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -4210,7 +4210,12 @@ async function studioTenantSave() {
       try{
         var folderId=f.type==='seed'?scId:studioId;
         var fname=f.type==='seed'?f.slug+'.json':'tenant.json';
-        var result=await gWriteJson(folderId,fname,JSON.stringify(_sTenant[f.key],null,2));
+        // v1.2.0 fix: gWriteJson does its own JSON.stringify internally.
+        // Passing a pre-stringified value produced double-encoded JSON on
+        // Drive — every tenant.json and seed_companies/*.json written via
+        // this screen between v1.1.5 and v1.1.12 is corrupted as a result.
+        // Pass the raw object; gWriteJson serialises it correctly.
+        var result=await gWriteJson(folderId,fname,_sTenant[f.key]);
         items[i].state='ok'; items[i].detail='ID: '+(result.id||'').substring(0,12)+'...'; saved++;
       } catch(ex){items[i].state='err';items[i].detail=ex.message;}
       progressEl.innerHTML=studioProgressHtml(items);
@@ -4374,7 +4379,14 @@ async function studioPlSave() {
         else if(f.key==='pedagogy') fname='pedagogy.json';
         // v1.1.5 H3: activity_brief filename branch removed
         else fname=f.key+'.json';
-        var result=await gWriteJson(folderId,fname,JSON.stringify(_sPlSpec[f.key],null,2));
+        // v1.2.0 fix: gWriteJson does its own JSON.stringify internally.
+        // Passing a pre-stringified value produced double-encoded JSON on
+        // Drive — every product_line.json, pedagogy.json, and blueprints/*
+        // written via this screen between v1.1.5 and v1.1.12 is corrupted
+        // as a result. The pipeline reads these files and on double-encoded
+        // input parses them as a string rather than a dict, then falls back
+        // to defaults. Pass the raw object; gWriteJson serialises correctly.
+        var result=await gWriteJson(folderId,fname,_sPlSpec[f.key]);
         items[i].state='ok'; items[i].detail='ID: '+(result.id||'').substring(0,12)+'...'; saved++;
       } catch(ex){items[i].state='err';items[i].detail=ex.message;}
       progressEl.innerHTML=studioProgressHtml(items);
