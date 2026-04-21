@@ -298,7 +298,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.2.0</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.3.0</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -322,7 +322,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
     </div>
     <div class="nav-section" style="margin-top:8px;">Reference Data</div>
     <div class="nav-item" onclick="showScreen('companies')" id="nav-companies">
-      <span class="nav-icon">&#9632;</span> Company Profiles
+      <span class="nav-icon">&#9632;</span> Seed Companies
     </div>
     <div class="nav-item" onclick="showScreen('studio')" id="nav-studio">
       <span class="nav-icon">&#9670;</span> Studio Setup
@@ -356,7 +356,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.2.0 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.3.0 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -759,50 +759,53 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
 
     <!-- ══ SETTINGS ═══════════════════════════════════════════════════════ -->
     <div class="screen" id="screen-companies">
-      <div class="card">
-        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
-          <span>Company Profiles</span>
-          <button class="btn btn-sm btn-primary" onclick="cpShowAdd()">+ Add Company</button>
+      <!-- Action bar -->
+      <div class="card" style="padding:14px 18px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);margin-bottom:2px;">Seed Companies — Schema v2.0</div>
+            <div id="sc-status" style="font-size:.83rem;color:var(--ink3);">Sign in to load.</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="file" id="sc-bulk-input" accept=".json" multiple style="display:none;" onchange="scBulkUpload(event)">
+            <button class="btn btn-sm btn-ghost" onclick="document.getElementById('sc-bulk-input').click()" title="Upload one or more .json seed files to Reference Data">Bulk upload</button>
+            <button class="btn btn-sm btn-ghost" onclick="scRefresh()">Refresh</button>
+          </div>
         </div>
-        <div id="cp-status" style="font-size:.83rem;color:var(--color-text-secondary);margin-bottom:12px;"></div>
-        <div id="cp-list"></div>
       </div>
-      <!-- Add / Edit modal -->
-      <div id="cp-modal" style="display:none;">
-        <div class="card" style="margin-top:16px;">
-          <div class="card-title" id="cp-modal-title">Add Company</div>
-          <div style="display:grid;gap:10px;">
-            <div class="fr"><span class="fl">Company Name *</span><input class="fi" id="cp_name" placeholder="e.g. Hartland Consumer Goods"></div>
-            <div class="fr"><span class="fl">ID (slug) *</span><input class="fi" id="cp_id" placeholder="e.g. hartland_consumer_goods"></div>
-            <div class="fr"><span class="fl">Sector</span><input class="fi" id="cp_sector" placeholder="e.g. Consumer Goods"></div>
-            <div class="fr"><span class="fl">Sub-sector</span><input class="fi" id="cp_sub_sector" placeholder="e.g. FMCG"></div>
-            <div class="fr"><span class="fl">Size</span>
-              <select class="fi" id="cp_size">
-                <option value="small">Small</option>
-                <option value="mid-market">Mid-market</option>
-                <option value="large">Large</option>
-                <option value="enterprise">Enterprise</option>
-              </select></div>
-            <div class="fr"><span class="fl">HQ</span><input class="fi" id="cp_hq" placeholder="e.g. Johannesburg, South Africa"></div>
-            <div class="fr"><span class="fl">Founded</span><input class="fi" id="cp_founded" type="number" placeholder="e.g. 1994"></div>
-            <div class="fr"><span class="fl">Tagline</span><input class="fi" id="cp_tagline" placeholder="One sentence description"></div>
-            <div class="fr"><span class="fl">Prompt context *</span><textarea class="fi" id="cp_prompt_context" rows="3" placeholder="2-3 sentences injected into generation prompts. Describe the company, size, revenue, sector, reporting style."></textarea></div>
-            <div class="fr"><span class="fl">Reporting style</span>
-              <select class="fi" id="cp_reporting_style">
-                <option value="management">Management</option>
-                <option value="formal-board">Formal board</option>
-                <option value="operational">Operational</option>
-                <option value="ngo-impact">NGO impact</option>
-              </select></div>
-            <div class="fr"><span class="fl">Terminology</span><input class="fi" id="cp_terminology" placeholder="Comma-separated terms e.g. SKU, basket size, planogram"></div>
-            <div class="fr"><span class="fl">Avoid</span><input class="fi" id="cp_avoid" placeholder="Comma-separated words to avoid"></div>
-            <div id="cp-modal-err" style="display:none;color:var(--color-text-danger);font-size:.83rem;"></div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-primary" onclick="cpSave()">Save Company</button>
-              <button class="btn btn-ghost" onclick="cpCancelModal()">Cancel</button>
+
+      <!-- Two-pane layout -->
+      <div id="sc-layout" style="display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:start;">
+
+        <!-- Left pane: seed list -->
+        <div class="card" style="padding:14px 0;max-height:calc(100vh - 220px);overflow-y:auto;">
+          <div style="padding:0 16px 10px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ink3);">Seeds in Reference Data</div>
+          <div id="sc-list"></div>
+        </div>
+
+        <!-- Right pane: detail + edit -->
+        <div class="card" style="min-height:calc(100vh - 220px);">
+          <div id="sc-detail-toolbar" style="display:none;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;flex-wrap:wrap;">
+            <div>
+              <div id="sc-detail-name" style="font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--ink);line-height:1.2;"></div>
+              <div id="sc-detail-sub" style="font-size:.78rem;color:var(--ink3);margin-top:3px;"></div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span id="sc-modified" style="font-size:.72rem;color:var(--ink3);margin-right:6px;"></span>
+              <button class="btn btn-sm btn-ghost" id="sc-btn-edit" onclick="scToggleEdit()">Edit JSON</button>
+              <button class="btn btn-sm btn-primary" id="sc-btn-save" style="display:none;" onclick="scSaveEdit()">Save</button>
+              <button class="btn btn-sm btn-ghost" id="sc-btn-cancel" style="display:none;" onclick="scCancelEdit()">Cancel</button>
+              <button class="btn btn-sm btn-ghost" style="color:var(--red);" id="sc-btn-delete" onclick="scDelete()">Delete</button>
+            </div>
+          </div>
+          <div id="sc-detail-body">
+            <div style="text-align:center;padding:60px 20px;color:var(--ink3);">
+              <div style="font-size:2rem;opacity:.3;margin-bottom:8px;">&#9632;</div>
+              <div style="font-size:.88rem;">Select a seed on the left to view or edit.</div>
             </div>
           </div>
         </div>
+
       </div>
     </div>
 
@@ -969,7 +972,7 @@ var SCREENS = {
   'review':   {title:'Review & Manage', meta:'Approve, amend, queue activities'},
   'settings': {title:'Settings',      meta:'API keys and tenant configuration'},
   'studio':   {title:'Studio Setup',   meta:'Upload · Validate · Edit specification files'},
-  'companies':{title:'Company Profiles', meta:'Reference data · seed companies'},
+  'companies':{title:'Seed Companies', meta:'Reference data · seed company profiles (schema v2.0)'},
 };
 var isAuthed = false;
 var authToken = '';
@@ -1055,111 +1058,405 @@ async function populateSeedDropdown() {
   if(!profiles.length) sel.innerHTML='<option value="">No companies in Reference Data</option>';
 }
 
-// ── Company Profiles screen ────────────────────────────────────────────────
-var _cpEditing = null;
+// ── Seed Companies screen — schema v2.0 ────────────────────────────────────
+// Replaces v1.2.0 Company Profiles (shallow modal). Rich detail view with raw
+// JSON edit. Single-account editing model (gemis.curriculum@gmail.com).
+var _scSelected = null;   // currently-selected seed profile (_fileId set)
+var _scEditing = false;   // toggle: detail view vs JSON textarea
+var _scEditBuffer = '';   // JSON string under edit
+
+var SC_INSTITUTION_TYPES = [
+  'Corporate', 'Independent_Practice', 'NPO', 'Insurer',
+  'School', 'University', 'Government_SOE', 'Healthcare'
+];
 
 async function loadCompaniesScreen() {
-  var listEl = document.getElementById('cp-list');
-  var statusEl = document.getElementById('cp-status');
-  if(!isAuthed){statusEl.textContent='Sign in to manage company profiles.';return;}
-  statusEl.textContent='Loading...';
-  var profiles = await loadCompanyProfiles();
-  statusEl.textContent = profiles.length+' company profile'+(profiles.length===1?'':'s')+' in Reference Data/';
-  listEl.innerHTML='';
-  if(!profiles.length){
-    listEl.innerHTML='<div style="color:var(--color-text-tertiary);font-size:.85rem;padding:12px 0;">No company profiles found. Add one to get started.</div>';
+  var statusEl = document.getElementById('sc-status');
+  if(!isAuthed) {
+    statusEl.textContent = 'Sign in to manage seed companies.';
     return;
   }
+  statusEl.textContent = 'Loading from Reference Data/...';
+  var profiles = await loadCompanyProfiles();
+  var v2count = 0, v1count = 0;
   profiles.forEach(function(p){
-    var div=document.createElement('div');
-    div.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--color-border-tertiary);';
-    div.innerHTML='<div><div style="font-weight:500;font-size:.9rem;">'+esc(p.name)+'</div>'
-      +'<div style="font-size:.78rem;color:var(--color-text-tertiary);">'+esc(p.sector||'')+(p.sub_sector?' — '+esc(p.sub_sector):'')+'  ·  '+esc(p.hq||'')+'</div></div>'
-      +'<div style="display:flex;gap:6px;">'
-      +'<button class="btn btn-sm btn-ghost" data-action="cp-edit" data-cid="'+esc(p.id)+'">Edit</button>'
-      +'<button class="btn btn-sm btn-ghost" style="color:var(--color-text-danger)" data-action="cp-delete" data-cid="'+esc(p.id)+'">Delete</button>'
+    if(p.schema_version === '2.0') v2count++;
+    else v1count++;
+  });
+  var sv = v2count + (v1count ? ' · ' + v1count + ' legacy v1.0' : '');
+  statusEl.textContent = profiles.length + ' seed' + (profiles.length===1?'':'s') + ' in Reference Data/  ·  ' + v2count + ' schema v2.0';
+  if(v1count) statusEl.textContent += ', ' + v1count + ' legacy v1.0';
+  scRenderList(profiles);
+  // Keep current selection if still in list, else clear
+  if(_scSelected) {
+    var still = profiles.find(function(x){return x.id === _scSelected.id;});
+    if(still) scSelectSeed(still.id);
+    else scClearDetail();
+  }
+}
+
+function scRefresh() {
+  _refDataFolderId = null;
+  _companyProfiles = [];
+  loadCompaniesScreen();
+}
+
+function scRenderList(profiles) {
+  var listEl = document.getElementById('sc-list');
+  listEl.innerHTML = '';
+  if(!profiles.length) {
+    listEl.innerHTML = '<div style="padding:20px 16px;color:var(--ink3);font-size:.85rem;">No seed profiles found. Use Bulk upload to add them.</div>';
+    return;
+  }
+  // Sort: by name
+  profiles.slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'');}).forEach(function(p){
+    var row = document.createElement('div');
+    var isSel = _scSelected && _scSelected.id === p.id;
+    var selStyle = isSel ? 'background:var(--gold-light);border-left:3px solid var(--gold);' : 'border-left:3px solid transparent;';
+    row.style.cssText = 'padding:10px 14px 10px 13px;cursor:pointer;border-bottom:1px solid var(--paper3);transition:background .12s;' + selStyle;
+    row.onmouseover = function(){ if(!isSel) row.style.background = 'var(--paper2)'; };
+    row.onmouseout = function(){ if(!isSel) row.style.background = ''; };
+    row.onclick = function(){ scSelectSeed(p.id); };
+    var typeBadge = p.institution_type
+      ? '<span style="display:inline-block;font-size:.62rem;font-weight:600;padding:1px 6px;border-radius:3px;background:var(--blue-light);color:var(--blue);letter-spacing:.3px;">'+esc(p.institution_type)+'</span>'
+      : '<span style="display:inline-block;font-size:.62rem;font-weight:600;padding:1px 6px;border-radius:3px;background:var(--amber-light);color:var(--amber);letter-spacing:.3px;">v1.0</span>';
+    var schemaBadge = (p.schema_version === '2.0')
+      ? ''
+      : '<span style="display:inline-block;font-size:.6rem;color:var(--amber);margin-left:4px;">legacy</span>';
+    row.innerHTML = '<div style="font-weight:500;font-size:.88rem;line-height:1.3;">'+esc(p.name||p.id)+schemaBadge+'</div>'
+      +'<div style="font-size:.72rem;color:var(--ink3);margin-top:3px;display:flex;gap:6px;align-items:center;">'
+      + typeBadge
+      + '<span>'+esc(p.sector||'')+(p.sub_sector?' · '+esc(p.sub_sector):'')+'</span>'
       +'</div>';
-    listEl.appendChild(div);
+    listEl.appendChild(row);
   });
 }
 
-function cpShowAdd(){
-  _cpEditing=null;
-  document.getElementById('cp-modal-title').textContent='Add Company';
-  ['cp_name','cp_id','cp_sector','cp_sub_sector','cp_hq','cp_tagline','cp_prompt_context','cp_terminology','cp_avoid'].forEach(function(id){document.getElementById(id).value='';});
-  document.getElementById('cp_size').value='mid-market';
-  document.getElementById('cp_reporting_style').value='management';
-  document.getElementById('cp_founded').value='';
-  document.getElementById('cp-modal-err').style.display='none';
-  document.getElementById('cp-modal').style.display='';
-  document.getElementById('cp_name').focus();
+function scClearDetail() {
+  _scSelected = null;
+  _scEditing = false;
+  document.getElementById('sc-detail-toolbar').style.display = 'none';
+  document.getElementById('sc-detail-body').innerHTML =
+    '<div style="text-align:center;padding:60px 20px;color:var(--ink3);">'
+    +'<div style="font-size:2rem;opacity:.3;margin-bottom:8px;">&#9632;</div>'
+    +'<div style="font-size:.88rem;">Select a seed on the left to view or edit.</div>'
+    +'</div>';
 }
 
-function cpShowEdit(cid){
-  var p=_companyProfiles.find(function(x){return x.id===cid;});
-  if(!p)return;
-  _cpEditing=p;
-  document.getElementById('cp-modal-title').textContent='Edit — '+p.name;
-  document.getElementById('cp_name').value=p.name||'';
-  document.getElementById('cp_id').value=p.id||'';
-  document.getElementById('cp_sector').value=p.sector||'';
-  document.getElementById('cp_sub_sector').value=p.sub_sector||'';
-  document.getElementById('cp_size').value=p.size||'mid-market';
-  document.getElementById('cp_hq').value=p.hq||'';
-  document.getElementById('cp_founded').value=p.founded||'';
-  document.getElementById('cp_tagline').value=p.tagline||'';
-  document.getElementById('cp_prompt_context').value=(p.voice&&p.voice.prompt_context)||'';
-  document.getElementById('cp_reporting_style').value=(p.voice&&p.voice.reporting_style)||'management';
-  document.getElementById('cp_terminology').value=((p.voice&&p.voice.terminology)||[]).join(', ');
-  document.getElementById('cp_avoid').value=((p.voice&&p.voice.avoid)||[]).join(', ');
-  document.getElementById('cp-modal-err').style.display='none';
-  document.getElementById('cp-modal').style.display='';
+function scSelectSeed(sid) {
+  var p = _companyProfiles.find(function(x){return x.id === sid;});
+  if(!p) return;
+  _scSelected = p;
+  _scEditing = false;
+  // Update toolbar
+  document.getElementById('sc-detail-toolbar').style.display = 'flex';
+  document.getElementById('sc-detail-name').textContent = p.name || p.id;
+  var subParts = [];
+  if(p.institution_type) subParts.push(p.institution_type);
+  if(p.sector) subParts.push(p.sector);
+  if(p.hq) subParts.push(p.hq);
+  if(p.schema_version) subParts.push('schema v' + p.schema_version);
+  document.getElementById('sc-detail-sub').textContent = subParts.join(' · ');
+  document.getElementById('sc-modified').textContent = '';
+  // Fetch modifiedTime (best-effort, do not block render)
+  if(p._fileId) {
+    gApi('GET', 'https://www.googleapis.com/drive/v3/files/' + p._fileId + '?fields=modifiedTime,owners').then(function(m){
+      if(m.modifiedTime) {
+        var d = new Date(m.modifiedTime);
+        document.getElementById('sc-modified').textContent = 'Modified ' + d.toLocaleString();
+      }
+    }).catch(function(){});
+  }
+  // Reset buttons
+  document.getElementById('sc-btn-edit').style.display = '';
+  document.getElementById('sc-btn-edit').textContent = 'Edit JSON';
+  document.getElementById('sc-btn-save').style.display = 'none';
+  document.getElementById('sc-btn-cancel').style.display = 'none';
+  // Render detail
+  scRenderDetail(p);
+  // Re-render list to update selected highlight
+  scRenderList(_companyProfiles);
 }
 
-function cpCancelModal(){document.getElementById('cp-modal').style.display='none';_cpEditing=null;}
+function scRenderDetail(p) {
+  var body = document.getElementById('sc-detail-body');
+  var html = '';
 
-async function cpSave(){
-  var name=document.getElementById('cp_name').value.trim();
-  var id=document.getElementById('cp_id').value.trim();
-  var errEl=document.getElementById('cp-modal-err');
-  if(!name||!id){errEl.textContent='Company Name and ID are required.';errEl.style.display='';return;}
-  if(!document.getElementById('cp_prompt_context').value.trim()){errEl.textContent='Prompt context is required.';errEl.style.display='';return;}
-  var fid=await getRefDataFolderId();
-  if(!fid){errEl.textContent='Reference Data/ folder not found on Drive. Create it first.';errEl.style.display='';return;}
-  var profile={
-    schema_version:'1.0',tenant_id:'gta',
-    id:id,name:name,
-    sector:document.getElementById('cp_sector').value.trim(),
-    sub_sector:document.getElementById('cp_sub_sector').value.trim(),
-    size:document.getElementById('cp_size').value,
-    founded:parseInt(document.getElementById('cp_founded').value)||null,
-    hq:document.getElementById('cp_hq').value.trim(),
-    tagline:document.getElementById('cp_tagline').value.trim(),
-    voice:{
-      prompt_context:document.getElementById('cp_prompt_context').value.trim(),
-      reporting_style:document.getElementById('cp_reporting_style').value,
-      terminology:document.getElementById('cp_terminology').value.split(',').map(function(s){return s.trim();}).filter(Boolean),
-      avoid:document.getElementById('cp_avoid').value.split(',').map(function(s){return s.trim();}).filter(Boolean)
+  // Render each top-level field, in a structured order
+  var fieldOrder = [
+    'schema_version', 'tenant_id', 'id', 'name', 'institution_type',
+    'sector', 'sub_sector', 'size', 'founded', 'hq', 'tagline',
+    'operations', 'people', 'financials', 'datasets', 'voice', 'specialty_profile'
+  ];
+  var rendered = {};
+  fieldOrder.forEach(function(k){
+    if(k in p && !k.startsWith('_')) {
+      html += scRenderField(k, p[k], 0);
+      rendered[k] = true;
     }
-  };
-  try {
-    await gWriteJson(fid, id+'.json', profile);
-    _companyProfiles=[];_refDataFolderId=null;
-    document.getElementById('cp-modal').style.display='none';
-    _cpEditing=null;
-    await loadCompaniesScreen();
-  } catch(e){errEl.textContent='Save failed: '+e;errEl.style.display='';}
+  });
+  // Any remaining top-level fields (future extensions)
+  Object.keys(p).forEach(function(k){
+    if(!rendered[k] && !k.startsWith('_') && k !== '_fileId') {
+      html += scRenderField(k, p[k], 0);
+    }
+  });
+
+  body.innerHTML = html;
 }
 
-async function cpDelete(cid){
-  var p=_companyProfiles.find(function(x){return x.id===cid;});
-  if(!p||!p._fileId)return;
-  if(!confirm('Delete company profile for '+p.name+'? This cannot be undone.'))return;
+function scRenderField(key, val, depth) {
+  if(key.startsWith('_')) return ''; // skip commentary fields
+  var label = key.replace(/_/g, ' ');
+  label = label.charAt(0).toUpperCase() + label.slice(1);
+
+  if(val === null || val === undefined) {
+    return scFieldRow(label, '<span style="color:var(--ink3);font-style:italic;">(null)</span>', depth);
+  }
+  if(typeof val === 'boolean') {
+    return scFieldRow(label, val ? '<span style="color:var(--green);">yes</span>' : '<span style="color:var(--ink3);">no</span>', depth);
+  }
+  if(typeof val === 'number') {
+    return scFieldRow(label, String(val), depth);
+  }
+  if(typeof val === 'string') {
+    // Long prose — render as wrapped paragraph
+    if(val.length > 80) {
+      return scFieldRow(label, '<div style="white-space:pre-wrap;line-height:1.5;">'+esc(val)+'</div>', depth);
+    }
+    return scFieldRow(label, esc(val), depth);
+  }
+  if(Array.isArray(val)) {
+    if(val.length === 0) {
+      return scFieldRow(label, '<span style="color:var(--ink3);font-style:italic;">(empty)</span>', depth);
+    }
+    // Array of primitives
+    if(typeof val[0] !== 'object') {
+      var chips = val.map(function(v){
+        return '<span style="display:inline-block;padding:2px 9px;margin:2px 4px 2px 0;background:var(--paper2);border-radius:11px;font-size:.78rem;">'+esc(v)+'</span>';
+      }).join('');
+      return scFieldRow(label, chips, depth);
+    }
+    // Array of objects
+    var arrHtml = '<div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">';
+    val.forEach(function(item, idx){
+      arrHtml += '<div style="padding:10px 12px;background:var(--paper2);border-radius:var(--r);border-left:2px solid var(--paper3);">';
+      arrHtml += '<div style="font-size:.68rem;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Item ' + (idx+1) + '</div>';
+      Object.keys(item).forEach(function(ik){
+        if(ik.startsWith('_')) return;
+        arrHtml += scRenderField(ik, item[ik], depth + 1);
+      });
+      arrHtml += '</div>';
+    });
+    arrHtml += '</div>';
+    return scFieldRow(label, arrHtml, depth);
+  }
+  if(typeof val === 'object') {
+    // Object — render as nested section
+    var objHtml = '<div style="margin-top:6px;padding:10px 14px;background:var(--paper2);border-radius:var(--r);">';
+    var anyField = false;
+    Object.keys(val).forEach(function(ok){
+      if(ok.startsWith('_')) return;
+      anyField = true;
+      objHtml += scRenderField(ok, val[ok], depth + 1);
+    });
+    if(!anyField) objHtml += '<span style="color:var(--ink3);font-style:italic;font-size:.8rem;">(no fields)</span>';
+    objHtml += '</div>';
+    return scFieldRow(label, objHtml, depth);
+  }
+  return scFieldRow(label, esc(String(val)), depth);
+}
+
+function scFieldRow(label, valueHtml, depth) {
+  if(depth === 0) {
+    // Top-level: bold section header with value below
+    return '<div style="margin-bottom:18px;">'
+      + '<div style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ink2);margin-bottom:6px;">'+esc(label)+'</div>'
+      + '<div style="font-size:.88rem;color:var(--ink);line-height:1.5;">'+valueHtml+'</div>'
+      + '</div>';
+  }
+  // Nested: inline row
+  return '<div style="display:grid;grid-template-columns:180px 1fr;gap:10px;margin-bottom:8px;align-items:start;">'
+    + '<div style="font-size:.74rem;font-weight:500;color:var(--ink3);padding-top:2px;">'+esc(label)+'</div>'
+    + '<div style="font-size:.82rem;color:var(--ink);line-height:1.45;">'+valueHtml+'</div>'
+    + '</div>';
+}
+
+function scToggleEdit() {
+  if(!_scSelected) return;
+  _scEditing = true;
+  // Serialise current selection, hiding the _fileId helper field
+  var clean = {};
+  Object.keys(_scSelected).forEach(function(k){ if(k !== '_fileId') clean[k] = _scSelected[k]; });
+  _scEditBuffer = JSON.stringify(clean, null, 2);
+  var body = document.getElementById('sc-detail-body');
+  body.innerHTML = '<textarea id="sc-json-editor" class="fi" style="font-family:\'DM Mono\',monospace;font-size:.8rem;line-height:1.5;min-height:calc(100vh - 280px);width:100%;" spellcheck="false"></textarea>'
+    + '<div id="sc-edit-err" style="display:none;color:var(--red);font-size:.83rem;margin-top:10px;padding:10px 12px;background:var(--red-light);border-radius:var(--r);"></div>'
+    + '<div id="sc-edit-warn" style="display:none;color:var(--amber);font-size:.83rem;margin-top:10px;padding:10px 12px;background:var(--amber-light);border-radius:var(--r);"></div>';
+  document.getElementById('sc-json-editor').value = _scEditBuffer;
+  document.getElementById('sc-btn-edit').style.display = 'none';
+  document.getElementById('sc-btn-save').style.display = '';
+  document.getElementById('sc-btn-cancel').style.display = '';
+}
+
+function scCancelEdit() {
+  _scEditing = false;
+  scSelectSeed(_scSelected.id); // re-render detail view
+}
+
+async function scSaveEdit() {
+  var errEl = document.getElementById('sc-edit-err');
+  var warnEl = document.getElementById('sc-edit-warn');
+  errEl.style.display = 'none';
+  warnEl.style.display = 'none';
+  var text = document.getElementById('sc-json-editor').value;
+
+  // 1. JSON parse
+  var parsed;
+  try { parsed = JSON.parse(text); }
+  catch(e) {
+    errEl.textContent = 'JSON parse error: ' + e.message;
+    errEl.style.display = '';
+    return;
+  }
+
+  // 2. Hard validation
+  if(!parsed.id || typeof parsed.id !== 'string') {
+    errEl.textContent = 'Required field missing: "id" must be a non-empty string.';
+    errEl.style.display = '';
+    return;
+  }
+  if(parsed.id !== _scSelected.id) {
+    errEl.textContent = 'Cannot rename seed via JSON edit. "id" must remain "' + _scSelected.id + '". Delete and re-upload to rename.';
+    errEl.style.display = '';
+    return;
+  }
+  if(!parsed.name || typeof parsed.name !== 'string') {
+    errEl.textContent = 'Required field missing: "name" must be a non-empty string.';
+    errEl.style.display = '';
+    return;
+  }
+  if(parsed.institution_type !== undefined && SC_INSTITUTION_TYPES.indexOf(parsed.institution_type) === -1) {
+    errEl.textContent = 'Invalid institution_type: "' + parsed.institution_type + '". Must be one of: ' + SC_INSTITUTION_TYPES.join(', ') + '.';
+    errEl.style.display = '';
+    return;
+  }
+
+  // 3. Soft validation (warnings only — save proceeds)
+  var warnings = [];
+  if(parsed.schema_version !== '2.0') warnings.push('schema_version is not "2.0" (currently: ' + parsed.schema_version + ')');
+  if(!parsed.institution_type) warnings.push('institution_type is missing — required for schema v2.0');
+  if(!parsed.voice || !parsed.voice.prompt_context) {
+    warnings.push('voice.prompt_context is missing — this is the highest-leverage field in the profile');
+  } else {
+    var wc = parsed.voice.prompt_context.trim().split(/\s+/).length;
+    if(wc < 80 || wc > 120) warnings.push('voice.prompt_context is ' + wc + ' words — target is 80-120');
+  }
+  if(!parsed.people || !Array.isArray(parsed.people.key_people) || parsed.people.key_people.length === 0) {
+    warnings.push('people.key_people is empty — Pipeline 1 expects named leadership');
+  }
+  if(!parsed.specialty_profile) warnings.push('specialty_profile is missing — required for schema v2.0');
+
+  // 4. Write to Drive
+  var fid = await getRefDataFolderId();
+  if(!fid) {
+    errEl.textContent = 'Reference Data/ folder not found on Drive.';
+    errEl.style.display = '';
+    return;
+  }
+  // Strip any _* keys the user may have introduced
+  Object.keys(parsed).forEach(function(k){ if(k.startsWith('_')) delete parsed[k]; });
+
+  document.getElementById('sc-btn-save').textContent = 'Saving...';
+  document.getElementById('sc-btn-save').disabled = true;
   try {
-    await gApi('DELETE','https://www.googleapis.com/drive/v3/files/'+p._fileId);
-    _companyProfiles=[];_refDataFolderId=null;
+    await gWriteJson(fid, parsed.id + '.json', parsed);
+    // Reset cache so next read picks up the updated file
+    _companyProfiles = [];
+    _refDataFolderId = null;
+    _scEditing = false;
     await loadCompaniesScreen();
-  } catch(e){alert('Delete failed: '+e);}
+    // After reload, re-select
+    scSelectSeed(parsed.id);
+    if(warnings.length) {
+      // Show warnings briefly on the detail view
+      var wBar = document.createElement('div');
+      wBar.style.cssText = 'margin-bottom:14px;padding:10px 12px;background:var(--amber-light);color:var(--amber);border-radius:var(--r);font-size:.82rem;line-height:1.5;';
+      wBar.innerHTML = '<strong>Saved with warnings:</strong><ul style="margin:6px 0 0 18px;">' + warnings.map(function(w){return '<li>'+esc(w)+'</li>';}).join('') + '</ul>';
+      var body = document.getElementById('sc-detail-body');
+      body.insertBefore(wBar, body.firstChild);
+    }
+  } catch(e) {
+    errEl.textContent = 'Save failed: ' + (e.message || e);
+    errEl.style.display = '';
+  } finally {
+    document.getElementById('sc-btn-save').textContent = 'Save';
+    document.getElementById('sc-btn-save').disabled = false;
+  }
+}
+
+async function scDelete() {
+  if(!_scSelected) return;
+  var name = _scSelected.name || _scSelected.id;
+  if(!confirm('Delete seed "' + name + '" from Drive? This cannot be undone.')) return;
+  if(!_scSelected._fileId) {
+    alert('Cannot delete — file ID not known for this seed.');
+    return;
+  }
+  try {
+    await gApi('DELETE', 'https://www.googleapis.com/drive/v3/files/' + _scSelected._fileId);
+    _companyProfiles = [];
+    _refDataFolderId = null;
+    _scSelected = null;
+    await loadCompaniesScreen();
+    scClearDetail();
+  } catch(e) {
+    alert('Delete failed: ' + (e.message || e));
+  }
+}
+
+async function scBulkUpload(event) {
+  var files = event.target.files;
+  if(!files || !files.length) return;
+  if(!isAuthed) {
+    alert('Sign in first.');
+    return;
+  }
+  var fid = await getRefDataFolderId();
+  if(!fid) {
+    alert('Reference Data/ folder not found on Drive.');
+    return;
+  }
+  var statusEl = document.getElementById('sc-status');
+  var ok = 0, fail = 0, errs = [];
+  for(var i = 0; i < files.length; i++) {
+    var f = files[i];
+    statusEl.textContent = 'Uploading ' + (i+1) + ' of ' + files.length + ': ' + f.name + '...';
+    try {
+      var text = await f.text();
+      var parsed = JSON.parse(text);
+      if(!parsed.id) {
+        fail++; errs.push(f.name + ': missing "id" field'); continue;
+      }
+      // Strip _* commentary keys
+      Object.keys(parsed).forEach(function(k){ if(k.startsWith('_')) delete parsed[k]; });
+      await gWriteJson(fid, parsed.id + '.json', parsed);
+      ok++;
+    } catch(e) {
+      fail++;
+      errs.push(f.name + ': ' + (e.message || e));
+    }
+  }
+  // Reset input so re-selecting same files works
+  event.target.value = '';
+  _companyProfiles = [];
+  _refDataFolderId = null;
+  await loadCompaniesScreen();
+  if(fail === 0) {
+    statusEl.textContent = 'Uploaded ' + ok + ' seed' + (ok===1?'':'s') + ' successfully.';
+  } else {
+    alert('Uploaded ' + ok + ' / ' + files.length + ' seeds.\n\nFailures:\n' + errs.join('\n'));
+  }
 }
 
 function showScreen(name) {
@@ -3899,10 +4196,9 @@ document.addEventListener('click', function(e) {
   if(!btn) return;
   var action=btn.getAttribute('data-action');
   if(action==='welcome-signin')    signIn();
-  if(action==='cp-edit'){var cid=btn.getAttribute('data-cid');cpShowEdit(cid);}
-  if(action==='cp-delete'){var cid=btn.getAttribute('data-cid');cpDelete(cid);}
   if(action==='welcome-getstarted') showScreen('convert');
   // v1.1.5: 'run-pipeline' handler removed — pipeline runs via cron on Linux Mint
+  // v1.3.0: 'cp-edit' and 'cp-delete' handlers removed — Seed Companies screen uses direct onclick
 });
 var _origSetAuthed=setAuthed;
 setAuthed=function(val,name){
