@@ -324,7 +324,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.2.0</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.2.1</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -389,7 +389,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.2.0 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.2.1 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -1155,7 +1155,7 @@ async function populateSeedDropdown() {
 }
 
 // ── Seed Companies screen — schema v2.0 ────────────────────────────────────
-// Replaces v1.2.0 Company Profiles (shallow modal). Rich detail view with raw
+// Replaces v1.2.1 Company Profiles (shallow modal). Rich detail view with raw
 // JSON edit. Single-account editing model (gemis.curriculum@gmail.com).
 var _scSelected = null;   // currently-selected seed profile (_fileId set)
 var _scEditing = false;   // toggle: detail view vs JSON textarea
@@ -3743,7 +3743,7 @@ async function loadCoursesTab(force) {
         model:        r[colIdx['GenerationModel']]|| '',
         // v1.1.5: LastUpdated (col S) powers the "Last pipeline activity" display
         lastUpdated:  r[colIdx['LastUpdated']] || '',
-        // v1.2.0: extract folder ID from DriveURL for direct Drive API access
+        // v1.2.1: extract folder ID from DriveURL for direct Drive API access
         namedFolderId: (function(){ var u = r[colIdx['DriveURL']] || ''; var m = u.match(/folders\/([a-zA-Z0-9_-]+)/); return m ? m[1] : ''; }()),
       };
     });
@@ -3891,7 +3891,7 @@ function renderDrawerList(acts) {
     var gateIcon = a.isGate
       ? '<span style="font-size:.65rem;color:var(--gold);font-weight:700;margin-right:4px;">GATE</span>' : '';
     var isExpandable = a.driveUrl || true;
-    // v1.2.0: Regenerate button — only shown for awaiting_approval activities
+    // v1.2.1: Regenerate button — only shown for awaiting_approval activities
     var regenBtn = (a.status === 'awaiting_approval' || a.status === 'approved')
       ? '<button class="btn btn-sm btn-danger" data-action="regen-act" data-aid="' + esc(a.activityId) + '" data-cid="' + esc(a.courseId) + '" style="margin-left:6px;" title="Regenerate this activity">↺ Redo</button>'
       : '';
@@ -4012,7 +4012,7 @@ function renderDocContent(aid, tab, fileId, contentEl) {
     toolbar += '<button class="btn btn-sm btn-gold" data-action="doc-save" data-aid="' + esc(aid) + '" data-tab="' + tab + '" data-fid="' + esc(fileId) + '">Save</button>';
     toolbar += '<button class="btn btn-sm btn-ghost" data-action="doc-cancel" data-aid="' + esc(aid) + '" data-tab="' + tab + '">Cancel</button>';
   }
-  // v1.2.0: Download button — opens Drive download URL in new tab
+  // v1.2.1: Download button — opens Drive download URL in new tab
   if(fileId && !isEditing) {
     toolbar += '<a class="btn btn-sm btn-ghost" href="https://www.googleapis.com/drive/v3/files/' + esc(fileId) + '?alt=media&access_token=' + encodeURIComponent(authToken) + '" download target="_blank" title="Download ' + tab.toUpperCase() + '">&#8659; Download</a>';
   }
@@ -4048,7 +4048,7 @@ var _activityFolderIds = {
 
 async function fetchActivityFileIds(aid) {
   var aidUpper = aid.toUpperCase();
-  // v1.2.0: prefer namedFolderId from register (populated from DriveURL column)
+  // v1.2.1: prefer namedFolderId from register (populated from DriveURL column)
   var actData = _coursesData.filter(function(a){ return a.activityId === aid; })[0];
   var folderId = (actData && actData.namedFolderId) || _activityFolderIds[aid] || _activityFolderIds[aidUpper];
   var files = [];
@@ -4142,7 +4142,7 @@ document.addEventListener('click', function(e) {
     if(act === 'open-drawer')    { openDrawer(el.getAttribute('data-tid')); return; }
     if(act === 'toggle-act')     { e.stopPropagation(); toggleActDocs(aid); return; }
     if(act === 'switch-doc-tab') { e.stopPropagation(); switchDocTab(aid, tab); return; }
-    // v1.2.0: Regenerate activity
+    // v1.2.1: Regenerate activity
     if(act === 'regen-act') {
       e.stopPropagation();
       var cid = el.getAttribute('data-cid');
@@ -4185,7 +4185,7 @@ document.addEventListener('click', function(e) {
 
 
 
-// ── v1.2.0: Regenerate Activity ───────────────────────────────────────────
+// ── v1.2.1: Regenerate Activity ───────────────────────────────────────────
 // Flow: confirm → delete PM/FG/DN from activity folder → reset register status
 // → set queue file to triggered so pipeline picks it up on next cron tick.
 
@@ -4263,7 +4263,7 @@ async function regenActivity(aid, cid) {
   }
 }
 
-// ── v1.2.0: Dashboard ─────────────────────────────────────────────────────
+// ── v1.2.1: Dashboard ─────────────────────────────────────────────────────
 var _dashLoaded = false;
 
 async function loadDashboard(force) {
@@ -5192,7 +5192,7 @@ async function studioTenantSave() {
       try{
         var folderId=f.type==='seed'?scId:studioId;
         var fname=f.type==='seed'?f.slug+'.json':'tenant.json';
-        // v1.2.0 fix: gWriteJson does its own JSON.stringify internally.
+        // v1.2.1 fix: gWriteJson does its own JSON.stringify internally.
         // Passing a pre-stringified value produced double-encoded JSON on
         // Drive — every tenant.json and seed_companies/*.json written via
         // this screen between v1.1.5 and v1.1.12 is corrupted as a result.
@@ -5361,7 +5361,7 @@ async function studioPlSave() {
         else if(f.key==='pedagogy') fname='pedagogy.json';
         // v1.1.5 H3: activity_brief filename branch removed
         else fname=f.key+'.json';
-        // v1.2.0 fix: gWriteJson does its own JSON.stringify internally.
+        // v1.2.1 fix: gWriteJson does its own JSON.stringify internally.
         // Passing a pre-stringified value produced double-encoded JSON on
         // Drive — every product_line.json, pedagogy.json, and blueprints/*
         // written via this screen between v1.1.5 and v1.1.12 is corrupted
