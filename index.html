@@ -324,7 +324,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.2.1</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.3.1</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -389,7 +389,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.2.1 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.3.1 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -2700,6 +2700,7 @@ function cfParseSourceDoc(text, filename){
   cfLoadPlFolders(plDisplay);
 }
 
+function cfPopulateReview(identity, activities, filename){ // patch_cfPopulateReview_header_v1_applied
   document.getElementById('cf_pl').value=identity['Product Line']||'';
   document.getElementById('cf_cid').value=identity['Course ID']||'';
   document.getElementById('cf_cname').value=identity['Course Name']||'';
@@ -4214,7 +4215,7 @@ async function regenActivity(aid, cid) {
     }
 
     // Step 3: Find and update the queue file for this course
-    var pqFolderId = settings.pipeline_queue_folder_id || '';
+    var pqFolderId = settings.pq_folder_id || '';  // patch_regen_settings_key_v1_applied
     if(pqFolderId) {
       var qq = encodeURIComponent('"' + pqFolderId + '" in parents and name contains "' + cid.replace('-','_') + '" and trashed=false');
       var qr = await gApi('GET', 'https://www.googleapis.com/drive/v3/files?q=' + qq + '&fields=files(id,name)&pageSize=5');
