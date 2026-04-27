@@ -287,6 +287,32 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--paper3);border-radius:3px;}
+
+/* ── Dashboard ───────────────────────────────────────────────────────── */
+.dash-pl-block{margin-bottom:28px;}
+.dash-pl-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.dash-pl-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);}
+.dash-course-table{width:100%;border-collapse:collapse;background:white;border:1px solid var(--paper3);border-radius:var(--r2);overflow:hidden;box-shadow:var(--shadow);}
+.dash-course-table th{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ink3);padding:9px 14px;background:var(--paper2);border-bottom:1px solid var(--paper3);text-align:left;white-space:nowrap;}
+.dash-course-table td{padding:10px 14px;border-bottom:1px solid var(--paper3);font-size:.82rem;vertical-align:middle;}
+.dash-course-table tr:last-child td{border-bottom:none;}
+.dash-course-table tr:hover td{background:var(--paper);}
+.dash-course-id{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--blue);font-weight:500;white-space:nowrap;}
+.dash-course-name{font-size:.82rem;color:var(--ink);font-weight:500;max-width:280px;}
+.dash-prog-wrap{display:flex;align-items:center;gap:8px;min-width:140px;}
+.dash-prog-bar{flex:1;height:5px;background:var(--paper3);border-radius:3px;overflow:hidden;}
+.dash-prog-fill{height:100%;border-radius:3px;background:var(--green);transition:width .4s;}
+.dash-prog-label{font-size:.72rem;color:var(--ink3);white-space:nowrap;min-width:54px;text-align:right;}
+.dash-due{font-size:.75rem;font-weight:600;white-space:nowrap;}
+.dash-due.overdue{color:var(--red);}
+.dash-due.soon{color:var(--amber);}
+.dash-due.safe{color:var(--green);}
+.dash-due.none{color:var(--ink3);font-weight:400;}
+.dash-pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:.67rem;font-weight:700;white-space:nowrap;}
+.dash-pill-complete{background:var(--green-light);color:var(--green);}
+.dash-pill-inprogress{background:var(--amber-light);color:var(--amber);}
+.dash-pill-empty{background:var(--paper3);color:var(--ink3);}
+.dash-pill-error{background:var(--red-light);color:var(--red);}
 </style>
 </head>
 <body>
@@ -298,7 +324,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
   <div class="sidebar-logo">
     <div class="sidebar-logo-mark">Culvera</div>
     <div class="sidebar-logo-sub">Living Curriculum Infrastructure</div>
-    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.3.0</div>
+    <div style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:'DM Mono',monospace;margin-top:3px;letter-spacing:.5px;">v1.2.0</div>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Curriculum</div>
@@ -312,6 +338,13 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
       <span class="nav-icon">⊕</span> Confirm
     </div>
     <div class="nav-section" style="margin-top:8px;">Pipeline</div>
+    <div class="nav-item" onclick="showScreen('dashboard')" id="nav-dashboard">
+      <span class="nav-icon">&#9635;</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showScreen('pipelinequeue')" id="nav-pipelinequeue">
+      <span class="nav-icon">&#9654;</span> Pipeline Queue
+      <span class="nav-badge" id="navBadgePQ" style="display:none">0</span>
+    </div>
     <div class="nav-item" onclick="showScreen('courses')" id="nav-courses">
       <span class="nav-icon">◫</span> Courses
       <span class="nav-badge" id="navBadgeCourses" style="display:none">0</span>
@@ -356,7 +389,7 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           <div class="welcome-brand">
             <div class="welcome-wordmark">Culvera</div>
             <div class="welcome-tagline">Living Curriculum Infrastructure for GEMIS Technical Academy &mdash; convert source documents into structured learning activities at scale.</div>
-            <span class="welcome-version">v1.3.0 &nbsp;&middot;&nbsp; gemis.tech</span>
+            <span class="welcome-version">v1.2.0 &nbsp;&middot;&nbsp; gemis.tech</span>
           </div>
           <div class="welcome-status-panel">
             <div class="welcome-status-title">Setup checklist</div>
@@ -520,10 +553,10 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
         <!-- Phase 1: Upload -->
         <div id="cfPhaseUpload">
           <div class="card">
-            <div class="card-title">Upload validated curriculum document</div>
+            <div class="card-title">Upload curriculum source file</div>
             <p style="font-size:.83rem;color:var(--ink3);margin-bottom:16px;line-height:1.6;">
-              Upload a <strong>.txt</strong> curriculum document that has passed the Validate step.
-              This will create Drive folders, write register rows, seed the pipeline queue, and create the A01 gate file.
+              Upload a <strong>confirmed_source_documents.json</strong> (new format) or a legacy <strong>.txt</strong> curriculum document from the Convert step.
+              This will create Drive folders, write register rows, seed the pipeline queue, and create gate files.
             </p>
             <div class="upload-zone" id="cfDropZone"
                  onclick="document.getElementById('cfFile').click()"
@@ -531,10 +564,10 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
                  ondragleave="this.classList.remove('drag-over')"
                  ondrop="cfDrop(event)">
               <div class="upload-zone-icon">📋</div>
-              <div class="upload-zone-label" id="cfDropLabel">Drop .txt curriculum file here or click to browse</div>
-              <div class="upload-zone-sub">Supported: .txt (from Convert + Validate steps)</div>
+              <div class="upload-zone-label" id="cfDropLabel">Drop confirmed_source_documents.json or .txt file here</div>
+              <div class="upload-zone-sub">Supported: .json (confirmed_source_documents) · .txt (legacy Convert output)</div>
             </div>
-            <input type="file" id="cfFile" accept=".txt" style="display:none" onchange="cfHandleFile(this.files[0])">
+            <input type="file" id="cfFile" accept=".txt,.json" style="display:none" onchange="cfHandleFile(this.files[0])">
           </div>
         </div>
 
@@ -678,6 +711,59 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
             <div id="drawerActList" style="padding:0;"></div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- ══ DASHBOARD ══════════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-dashboard">
+      <div id="dashAuthGate" style="display:none;">
+        <div class="placeholder-screen">
+          <div class="placeholder-icon">&#9635;</div>
+          <div class="placeholder-title">Sign in to view Dashboard</div>
+          <div class="placeholder-sub">Dashboard reads from the Activity Register in Google Sheets.</div>
+          <button class="btn btn-primary" onclick="toggleAuth()" style="margin-top:16px;">Sign in with Google</button>
+        </div>
+      </div>
+      <div id="dashContent" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap;">
+          <div id="dashSummaryBar" style="display:flex;gap:18px;flex-wrap:wrap;font-size:.8rem;color:var(--ink3);"></div>
+          <button class="btn btn-sm btn-ghost" onclick="loadDashboard(true)">↺ Refresh</button>
+        </div>
+        <div id="dashStatus" style="display:none;" class="status-bar wait">
+          <div class="status-dot"></div><span id="dashStatusMsg">Loading...</span>
+        </div>
+        <div id="dashBody"></div>
+      </div>
+    </div>
+
+    <!-- ══ PIPELINE QUEUE ═══════════════════════════════════════════════════ -->
+    <div class="screen" id="screen-pipelinequeue">
+      <div id="pqAuthGate" style="display:none;">
+        <div class="placeholder-screen">
+          <div class="placeholder-icon">&#9654;</div>
+          <div class="placeholder-title">Sign in to use Pipeline Queue</div>
+          <div class="placeholder-sub">Reading and triggering courses requires access to Google Drive.</div>
+          <button class="btn btn-primary" onclick="toggleAuth()" style="margin-top:16px;">Sign in with Google</button>
+        </div>
+      </div>
+      <div id="pqContent" style="display:none;">
+        <!-- toolbar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:.83rem;color:var(--ink3);" id="pqSubtitle">Courses in PipelineQueue/</div>
+          </div>
+          <button class="btn btn-sm btn-ghost" onclick="pqLoad(true)">&#8635; Refresh</button>
+        </div>
+        <!-- status bar -->
+        <div id="pqStatus" style="display:none;" class="status-bar wait">
+          <div class="status-dot"></div><span id="pqStatusMsg">Loading...</span>
+        </div>
+        <!-- missing folder id warning -->
+        <div id="pqNoFolderWarn" style="display:none;background:var(--amber-light);border:1px solid #F5DFA0;border-radius:var(--r);padding:10px 14px;font-size:.83rem;color:var(--amber);margin-bottom:16px;">
+          &#9888; <strong>PipelineQueue Folder ID not set.</strong> Add it in Settings to use this screen.
+        </div>
+        <!-- queue list -->
+        <div id="pqList"></div>
       </div>
     </div>
 
@@ -884,6 +970,15 @@ textarea.fi{min-height:68px;resize:vertical;line-height:1.5;}
           </div>
           <div class="settings-control">
             <input type="text" class="fi" id="set_gates_released_folder_id" placeholder="Paste Drive folder ID">
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <div class="settings-label-title">Pipeline Queue Folder ID</div>
+            <div class="settings-label-sub">Drive ID of PipelineQueue/ — where confirmed_source_documents.json files are uploaded. Used by the Pipeline Queue screen to list and trigger courses.</div>
+          </div>
+          <div class="settings-control">
+            <input type="text" class="fi" id="set_pq_folder_id" placeholder="1OsdMqntydY2F74LIb4EDTrxRrtqizmpR">
             <div style="margin-top:6px;">
               <button class="btn btn-sm btn-primary" onclick="saveSettings()">Save all settings</button>
             </div>
@@ -967,8 +1062,9 @@ var SCREENS = {
   'welcome':  {title:'Welcome',       meta:'GEMIS Technical Academy · gemis.tech'},
   'convert':  {title:'Convert',       meta:'Source doc → compliant doc'},
   'validate': {title:'Validate',      meta:'Compliant doc → validation report'},
-  'confirm':  {title:'Confirm',       meta:'Validated doc → Drive folders + pipeline'},
-  'courses':  {title:'Courses',       meta:'Pipeline status dashboard'},
+  'confirm':      {title:'Confirm',        meta:'Source doc → Drive folders + pipeline'},
+  'dashboard':  {title:'Dashboard',     meta:'Product line · course · activity progress'},
+  'courses':      {title:'Courses',        meta:'Pipeline status dashboard'},
   'review':   {title:'Review & Manage', meta:'Approve, amend, queue activities'},
   'settings': {title:'Settings',      meta:'API keys and tenant configuration'},
   'studio':   {title:'Studio Setup',   meta:'Upload · Validate · Edit specification files'},
@@ -1466,6 +1562,8 @@ function showScreen(name) {
   if(screenEl) screenEl.classList.add('active');
   if(name==='companies') loadCompaniesScreen();
   if(name==='confirm') populateSeedDropdown();
+  if(name==='pipelinequeue') pqLoad();
+  if(name==='dashboard') loadDashboard();
   var navEl = document.getElementById('nav-'+name);
   if(navEl) navEl.classList.add('active');
   var sc = SCREENS[name];
@@ -1473,9 +1571,10 @@ function showScreen(name) {
     document.getElementById('topbarTitle').textContent = sc.title;
     document.getElementById('topbarMeta').textContent = sc.meta;
   }
-  if(name === 'confirm')  updateAuthGates();
-  if(name === 'courses')  updateAuthGates();
-  if(name === 'review')   updateAuthGates();
+  if(name === 'confirm')   updateAuthGates();
+  if(name === 'courses')   updateAuthGates();
+  if(name === 'review')    updateAuthGates();
+  if(name === 'dashboard') updateAuthGates();
 }
 // ── Settings ──────────────────────────────────────────────────────────────
 function loadSettings() {
@@ -1487,6 +1586,9 @@ function loadSettings() {
   if(settings.sheet_id)          document.getElementById('set_sheet_id').value          = settings.sheet_id;
   if(settings.gates_pending_folder_id)  document.getElementById('set_gates_pending_folder_id').value  = settings.gates_pending_folder_id;
   if(settings.gates_released_folder_id) document.getElementById('set_gates_released_folder_id').value = settings.gates_released_folder_id;
+  if(settings.pq_folder_id)             document.getElementById('set_pq_folder_id').value             = settings.pq_folder_id;
+  // Pre-populate PQ folder ID default if not yet set
+  if(!settings.pq_folder_id) document.getElementById('set_pq_folder_id').placeholder = '1OsdMqntydY2F74LIb4EDTrxRrtqizmpR';
 }
 function saveSettings() {
   settings.openrouter        = document.getElementById('set_openrouter').value.trim();
@@ -1496,6 +1598,7 @@ function saveSettings() {
   settings.sheet_id          = document.getElementById('set_sheet_id').value.trim();
   settings.gates_pending_folder_id  = document.getElementById('set_gates_pending_folder_id').value.trim();
   settings.gates_released_folder_id = document.getElementById('set_gates_released_folder_id').value.trim();
+  settings.pq_folder_id             = document.getElementById('set_pq_folder_id').value.trim();
   localStorage.setItem('culvera_settings', JSON.stringify(settings));
   var el = document.getElementById('settingsSaved');
   el.style.display = 'flex';
@@ -1760,7 +1863,7 @@ window.addEventListener('message', function(e) {
   }
 });
 function updateAuthGates() {
-  ['confirm','courses','review'].forEach(function(name){
+  ['confirm','courses','review','pipelinequeue','dash'].forEach(function(name){
     var gate = document.getElementById(name+'AuthGate');
     var content = document.getElementById(name+'Content') || document.getElementById(name+'Content2');
     if(!gate) return;
@@ -2277,14 +2380,27 @@ function cfStatus(type,msg){
 }
 function cfDrop(e){e.preventDefault();document.getElementById('cfDropZone').classList.remove('drag-over');cfHandleFile(e.dataTransfer.files[0]);}
 function cfHandleFile(file){
-  if(!file||!file.name.toLowerCase().endsWith('.txt')){alert('Upload a .txt curriculum file from the Convert step.');return;}
-  document.getElementById('cfDropLabel').textContent=file.name;
-  document.getElementById('cfPhaseUpload').style.display='none';
-  document.getElementById('cfPhaseReview').style.display='';
-  cfSetStep(2);cfStatus('wait','Parsing '+file.name+'...');
-  var reader=new FileReader();
-  reader.onload=function(e){cfParseCurriculum(e.target.result,file.name);};
-  reader.readAsText(file);
+  if(!file) return;
+  var name = file.name.toLowerCase();
+  if(name.endsWith('.json')){
+    document.getElementById('cfDropLabel').textContent=file.name;
+    document.getElementById('cfPhaseUpload').style.display='none';
+    document.getElementById('cfPhaseReview').style.display='';
+    cfSetStep(2);cfStatus('wait','Parsing '+file.name+'...');
+    var reader=new FileReader();
+    reader.onload=function(e){cfParseSourceDoc(e.target.result,file.name);};
+    reader.readAsText(file);
+  } else if(name.endsWith('.txt')){
+    document.getElementById('cfDropLabel').textContent=file.name;
+    document.getElementById('cfPhaseUpload').style.display='none';
+    document.getElementById('cfPhaseReview').style.display='';
+    cfSetStep(2);cfStatus('wait','Parsing '+file.name+'...');
+    var reader=new FileReader();
+    reader.onload=function(e){cfParseCurriculum(e.target.result,file.name);};
+    reader.readAsText(file);
+  } else {
+    alert('Upload a confirmed_source_documents.json or a .txt curriculum file.');
+  }
 }
 // v1.1.8: tool extraction from curriculum text.
 // Heuristic-based bridge between v1.1.7 declarative course.json (tool_bindings)
@@ -2478,7 +2594,112 @@ function cfParseCurriculum(text,filename){
   cfPopulateReview(identity,activities,filename);
   cfLoadPlFolders(identity['Product Line']);
 }
-function cfPopulateReview(identity,activities,filename){
+
+// ── cfParseSourceDoc — parse confirmed_source_documents.json into cfParsed ──
+// Maps the new confirmed_source_documents.json schema to the same cfParsed
+// structure that cfPopulateReview() and cfRunConfirm() already read.
+// Tool resolution: heuristic against seed_domain_variant_note + activity_title.
+// No .txt parsing needed — course identity comes from JSON top-level fields.
+function cfParseSourceDoc(text, filename){
+  var d;
+  try { d = JSON.parse(text); } catch(e){
+    cfStatus('err','Could not parse JSON: '+e.message);
+    return;
+  }
+  var courseId    = d.course_id || '';
+  var courseTitle = d.course_title || '';
+  var pl          = (d.product_line || '').toUpperCase();
+  // Map product_line slug to the Confirm display value
+  var plMap = { AEX:'AEX', AA:'AA', AE:'AE', EE:'EE' };
+  var plDisplay = plMap[pl] || pl;
+
+  if(!courseId || !d.activities || !d.activities.length){
+    cfStatus('err','Invalid confirmed_source_documents.json — missing course_id or activities.');
+    return;
+  }
+
+  // Build identity in the same shape cfPopulateReview expects
+  var identity = {
+    'Product Line':  plDisplay,
+    'Course ID':     courseId,
+    'Course Name':   courseTitle,
+    'Delivery Mode': pl === 'AE' ? 'onsite' : (pl === 'EE' ? 'blended' : 'zoom'),
+    'Sector':        '',
+    'Stream':        ''
+  };
+
+  // Extract per-activity tool heuristic from seed_domain_variant_note + title.
+  // The note reliably contains tool names ("Tools: Claude, Perplexity, Gamma").
+  // Tool for AE-E01 is always Microsoft Copilot.
+  var isCopilotCourse = (courseId === 'AE-E01');
+
+  // Derive course-level default tools from first activity's variant note
+  var firstNote = (d.activities[0] || {}).seed_domain_variant_note || '';
+  var courseDeclaredTools = [];
+  if(isCopilotCourse){
+    var copilotEntry = CULVERA_TOOL_CATALOGUE.find(function(e){return e.slug==='copilot_free';});
+    if(copilotEntry) courseDeclaredTools = [copilotEntry];
+  } else {
+    // Extract from "Tools: Claude, Perplexity and Gamma" in the note
+    var toolsMatch = firstNote.match(/Tools:\s*([^\n\.]+)/i);
+    if(toolsMatch) courseDeclaredTools = cfToolsFromString(toolsMatch[1]);
+    if(!courseDeclaredTools.length) courseDeclaredTools = cfExtractTools(firstNote);
+  }
+
+  var activities = d.activities.map(function(a){
+    var actId    = a.activity_id || '';
+    var actTitle = a.activity_title || actId;
+    var note     = a.seed_domain_variant_note || '';
+    var seed     = a.seed_company || '';
+
+    // Tool resolution: per-activity heuristic first, fall back to course defaults
+    var actTools = [];
+    if(isCopilotCourse){
+      var ce = CULVERA_TOOL_CATALOGUE.find(function(e){return e.slug==='copilot_free';});
+      if(ce) actTools = [ce];
+    } else {
+      // Try extracting from activity title first (most specific)
+      actTools = cfExtractTools(actTitle);
+      // If nothing in title, try the note
+      if(!actTools.length){
+        var nm = note.match(/Tools:\s*([^\n\.]+)/i);
+        actTools = nm ? cfToolsFromString(nm[1]) : cfExtractTools(note);
+      }
+      // Fall back to course defaults
+      if(!actTools.length) actTools = courseDeclaredTools.slice();
+    }
+
+    return {
+      id:                   actId,
+      title:                actTitle,
+      type:                 'Hands-on Practice',
+      duration:             '45',
+      is_gate:              actId.endsWith('-A01'),
+      description:          a.seed_domain_variant_note || '',
+      tools:                actTools,
+      tool:                 actTools.length ? actTools[0] : null,
+      tools_source:         actTools.length ? 'heuristic_activity' : 'none',
+      declared_tools_str:   '',
+      // Preserve seed company from JSON for per-activity override UI
+      _seed_company:        seed
+    };
+  });
+
+  cfParsed = {
+    identity:             identity,
+    activities:           activities,
+    source_text:          text,
+    source_filename:      filename,
+    course_default_tools: courseDeclaredTools,
+    course_declared_tools:courseDeclaredTools,
+    _from_source_doc_json:true,
+    _source_doc_data:     d
+  };
+
+  cfPopulateReview(identity, activities, filename);
+  cfLoadPlFolders(plDisplay);
+}
+
   document.getElementById('cf_pl').value=identity['Product Line']||'';
   document.getElementById('cf_cid').value=identity['Course ID']||'';
   document.getElementById('cf_cname').value=identity['Course Name']||'';
@@ -3081,9 +3302,223 @@ function cfReset(){
   ['cfPhaseReview','cfPhaseConfirm','cfPhaseDone'].forEach(function(id){document.getElementById(id).style.display='none';});
   document.getElementById('cfPhaseUpload').style.display='';
   document.getElementById('cfReviewContent').style.display='none';
-  document.getElementById('cfDropLabel').textContent='Drop .txt curriculum file here or click to browse';
+  document.getElementById('cfDropLabel').textContent='Drop confirmed_source_documents.json or .txt file here';
   cfSetStep(1);
 }
+// ── Pipeline Queue ────────────────────────────────────────────────────────
+// Reads PipelineQueue/ folder on Drive, lists confirmed_source_documents.json
+// files, and allows Leon to trigger each course for pipeline processing.
+// The Trigger button writes pipeline_status, triggered_at, triggered_by into
+// the JSON on Drive. The pipeline (cron) picks it up on its next poll.
+
+var _pqData = [];       // array of {fileId, name, data, status}
+var _pqLoading = false;
+
+function pqLoad(force){
+  if(!isAuthed){
+    document.getElementById('pqAuthGate').style.display = 'block';
+    document.getElementById('pqContent').style.display = 'none';
+    return;
+  }
+  document.getElementById('pqAuthGate').style.display = 'none';
+  document.getElementById('pqContent').style.display = 'block';
+
+  var folderId = settings.pq_folder_id || '1OsdMqntydY2F74LIb4EDTrxRrtqizmpR';
+  if(!folderId){
+    document.getElementById('pqNoFolderWarn').style.display = 'block';
+    return;
+  }
+  document.getElementById('pqNoFolderWarn').style.display = 'none';
+
+  if(_pqLoading) return;
+  _pqLoading = true;
+  pqShowStatus('wait','Loading PipelineQueue/...');
+
+  var q = encodeURIComponent("'"+folderId+"' in parents and mimeType='application/json' and trashed=false");
+  gApi('GET','https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name,modifiedTime)&orderBy=name&pageSize=100')
+    .then(function(r){
+      var files = r.files || [];
+      if(!files.length){
+        _pqData = [];
+        pqHideStatus();
+        pqRender();
+        document.getElementById('pqSubtitle').textContent = '0 files in PipelineQueue/';
+        _pqLoading = false;
+        return;
+      }
+      // Download each file to read its pipeline_status
+      document.getElementById('pqSubtitle').textContent = 'Loading '+files.length+' files...';
+      var promises = files.map(function(f){
+        return fetch('https://www.googleapis.com/drive/v3/files/'+f.id+'?alt=media',
+          {headers:{'Authorization':'Bearer '+authToken}})
+          .then(function(res){ return res.json(); })
+          .then(function(data){
+            return {fileId:f.id, name:f.name, modifiedTime:f.modifiedTime, data:data,
+              status: data.pipeline_status || 'ready'};
+          })
+          .catch(function(){ return {fileId:f.id, name:f.name, modifiedTime:f.modifiedTime, data:{}, status:'error'}; });
+      });
+      return Promise.all(promises);
+    })
+    .then(function(items){
+      if(!items) return;
+      _pqData = items;
+      // Sort: triggered first (by triggered_at desc), then ready alpha, then complete
+      _pqData.sort(function(a,b){
+        var order = {triggered:0, running:1, ready:2, complete:3, error:4};
+        var oa = order[a.status]||2, ob = order[b.status]||2;
+        if(oa !== ob) return oa - ob;
+        return (a.name||'').localeCompare(b.name||'');
+      });
+      var readyCount = _pqData.filter(function(x){return x.status==='ready';}).length;
+      var triggeredCount = _pqData.filter(function(x){return x.status==='triggered'||x.status==='running';}).length;
+      document.getElementById('pqSubtitle').textContent =
+        _pqData.length+' course'+(+_pqData.length===1?'':'s')+' in PipelineQueue/'
+        + (triggeredCount ? ' · '+triggeredCount+' triggered' : '')
+        + (readyCount ? ' · '+readyCount+' ready' : '');
+      // Update sidebar badge with ready count
+      var badge = document.getElementById('navBadgePQ');
+      if(readyCount > 0){ badge.textContent = readyCount; badge.style.display = ''; }
+      else { badge.style.display = 'none'; }
+      pqHideStatus();
+      pqRender();
+      _pqLoading = false;
+    })
+    .catch(function(e){
+      pqShowStatus('err','Failed to load PipelineQueue/: '+e.message);
+      _pqLoading = false;
+    });
+}
+
+function pqShowStatus(type,msg){
+  var el=document.getElementById('pqStatus');
+  var tx=document.getElementById('pqStatusMsg');
+  el.className='status-bar '+type; tx.textContent=msg; el.style.display='flex';
+}
+function pqHideStatus(){
+  document.getElementById('pqStatus').style.display='none';
+}
+
+function pqStatusBadge(status){
+  var map = {
+    ready:     {cls:'background:var(--blue-light);color:var(--blue);',        label:'Ready'},
+    triggered: {cls:'background:var(--amber-light);color:var(--amber);',      label:'Triggered'},
+    running:   {cls:'background:var(--gold-light);color:var(--gold);',        label:'Running'},
+    complete:  {cls:'background:var(--green-light);color:var(--green);',      label:'Complete'},
+    error:     {cls:'background:var(--red-light);color:var(--red);',          label:'Error'},
+  };
+  var m = map[status] || {cls:'background:var(--paper2);color:var(--ink3);', label:status||'Unknown'};
+  return '<span style="font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:4px;'+m.cls+'">'+esc(m.label)+'</span>';
+}
+
+function pqRender(){
+  var el = document.getElementById('pqList');
+  if(!_pqData.length){
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9654;</div>'
+      +'<div class="empty-title">No files in PipelineQueue/</div>'
+      +'<div class="empty-sub">Upload confirmed_source_documents.json files to the PipelineQueue/ folder on Drive, then refresh.</div>'
+      +'</div>';
+    return;
+  }
+  var html = '';
+  _pqData.forEach(function(item, idx){
+    var d = item.data || {};
+    var cid   = d.course_id   || item.name.replace('_confirmed_source_documents.json','').replace(/_/g,'-');
+    var title = d.course_title || '—';
+    var pl    = (d.product_line||'').toUpperCase();
+    var acts  = (d.activities||[]).length;
+    var triggeredAt = d.triggered_at ? new Date(d.triggered_at).toLocaleString() : '';
+    var completedAt = d.completed_at ? new Date(d.completed_at).toLocaleString() : '';
+    var canTrigger  = (item.status === 'ready');
+    var isTriggered = (item.status === 'triggered' || item.status === 'running');
+    var isComplete  = (item.status === 'complete');
+
+    html += '<div style="background:white;border:1px solid var(--paper3);border-radius:var(--r2);padding:16px 20px;margin-bottom:12px;box-shadow:var(--shadow);">';
+    html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">';
+
+    // Left: course info
+    html += '<div style="flex:1;min-width:220px;">';
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
+    html += pqStatusBadge(item.status);
+    if(pl) html += '<span style="font-size:.7rem;font-weight:600;padding:2px 7px;border-radius:4px;background:var(--paper2);color:var(--ink3);">'+esc(pl)+'</span>';
+    html += '</div>';
+    html += '<div style="font-family:\'DM Mono\',monospace;font-size:.78rem;color:var(--blue);margin-bottom:2px;">'+esc(cid)+'</div>';
+    html += '<div style="font-size:.92rem;font-weight:600;color:var(--ink);margin-bottom:4px;">'+esc(title)+'</div>';
+    html += '<div style="font-size:.75rem;color:var(--ink3);">'+acts+' activit'+(acts===1?'y':'ies');
+    if(triggeredAt) html += ' &nbsp;·&nbsp; Triggered: '+esc(triggeredAt);
+    if(completedAt) html += ' &nbsp;·&nbsp; Completed: '+esc(completedAt);
+    html += '</div>';
+    html += '</div>';
+
+    // Right: action buttons
+    html += '<div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">';
+    if(canTrigger){
+      html += '<button class="btn btn-primary btn-sm" onclick="pqTrigger('+idx+')">&#9654; Trigger</button>';
+    } else if(isTriggered){
+      html += '<button class="btn btn-sm btn-ghost" disabled style="opacity:.5;">Triggered</button>';
+      html += '<button class="btn btn-sm btn-ghost" onclick="pqUntrigger('+idx+')" title="Reset to ready">&#8635; Reset</button>';
+    } else if(isComplete){
+      html += '<button class="btn btn-sm btn-ghost" onclick="pqUntrigger('+idx+')" title="Reset to ready for re-run">&#8635; Re-run</button>';
+    }
+    html += '</div>';
+
+    html += '</div>';
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+async function pqTrigger(idx){
+  var item = _pqData[idx];
+  if(!item) return;
+  var folderId = settings.pq_folder_id || '1OsdMqntydY2F74LIb4EDTrxRrtqizmpR';
+  var userEmail = '';
+  try {
+    var me = await gApi('GET','https://www.googleapis.com/oauth2/v1/userinfo?alt=json');
+    userEmail = me.email || '';
+  } catch(e){}
+  var updated = Object.assign({}, item.data, {
+    pipeline_status: 'triggered',
+    triggered_at:    new Date().toISOString(),
+    triggered_by:    userEmail || CANONICAL_ACCOUNT_EMAIL
+  });
+  // Remove complete fields if re-triggering
+  delete updated.completed_at;
+  try {
+    await gWriteJson(folderId, item.name, updated);
+    item.data = updated;
+    item.status = 'triggered';
+    pqRender();
+    // Update subtitle
+    var triggeredCount = _pqData.filter(function(x){return x.status==='triggered'||x.status==='running';}).length;
+    document.getElementById('pqSubtitle').textContent =
+      _pqData.length+' course'+(_pqData.length===1?'':'s')+' in PipelineQueue/'
+      + (triggeredCount ? ' · '+triggeredCount+' triggered' : '');
+  } catch(e){
+    alert('Failed to trigger course: '+e.message);
+  }
+}
+
+async function pqUntrigger(idx){
+  var item = _pqData[idx];
+  if(!item) return;
+  if(!confirm('Reset "'+item.data.course_id+'" to ready? This will clear the triggered/complete status.')) return;
+  var folderId = settings.pq_folder_id || '1OsdMqntydY2F74LIb4EDTrxRrtqizmpR';
+  var updated = Object.assign({}, item.data);
+  delete updated.pipeline_status;
+  delete updated.triggered_at;
+  delete updated.triggered_by;
+  delete updated.completed_at;
+  try {
+    await gWriteJson(folderId, item.name, updated);
+    item.data = updated;
+    item.status = 'ready';
+    pqRender();
+  } catch(e){
+    alert('Failed to reset course: '+e.message);
+  }
+}
+
 // Google API helpers
 // v1.1.6: forensic 401 capture + conditional auto-signout
 // Rationale: on every 401 we record request context, token state, and response
@@ -3308,6 +3743,8 @@ async function loadCoursesTab(force) {
         model:        r[colIdx['GenerationModel']]|| '',
         // v1.1.5: LastUpdated (col S) powers the "Last pipeline activity" display
         lastUpdated:  r[colIdx['LastUpdated']] || '',
+        // v1.2.0: extract folder ID from DriveURL for direct Drive API access
+        namedFolderId: (function(){ var u = r[colIdx['DriveURL']] || ''; var m = u.match(/folders\/([a-zA-Z0-9_-]+)/); return m ? m[1] : ''; }()),
       };
     });
     // Dedup: keep last row per ActivityID (pipeline appends on every status change)
@@ -3454,11 +3891,15 @@ function renderDrawerList(acts) {
     var gateIcon = a.isGate
       ? '<span style="font-size:.65rem;color:var(--gold);font-weight:700;margin-right:4px;">GATE</span>' : '';
     var isExpandable = a.driveUrl || true;
-    return '<div class="act-list-item act-row-expand" data-action="toggle-act" data-aid="' + esc(a.activityId) + '">'
+    // v1.2.0: Regenerate button — only shown for awaiting_approval activities
+    var regenBtn = (a.status === 'awaiting_approval' || a.status === 'approved')
+      ? '<button class="btn btn-sm btn-danger" data-action="regen-act" data-aid="' + esc(a.activityId) + '" data-cid="' + esc(a.courseId) + '" style="margin-left:6px;" title="Regenerate this activity">↺ Redo</button>'
+      : '';
+    return '<div class="act-list-item act-row-expand" data-action="toggle-act" data-aid="' + esc(a.activityId) + '" style="padding:10px 14px;">'
       + '<span class="act-expand-icon" id="expicon-' + esc(a.activityId) + '">&#9654;</span>'
       + '<div class="act-list-id">' + esc(a.activityId) + '</div>'
       + '<div class="act-list-title">' + gateIcon + esc(a.title) + '</div>'
-      + '<div class="act-list-status" style="display:flex;align-items:center;gap:6px;">' + pill + '</div>'
+      + '<div class="act-list-status" style="display:flex;align-items:center;gap:6px;">' + pill + regenBtn + '</div>'
       + '</div>'
       + '<div class="act-doc-panel" id="docpanel-' + esc(a.activityId) + '"></div>';
   }).join('');
@@ -3571,6 +4012,10 @@ function renderDocContent(aid, tab, fileId, contentEl) {
     toolbar += '<button class="btn btn-sm btn-gold" data-action="doc-save" data-aid="' + esc(aid) + '" data-tab="' + tab + '" data-fid="' + esc(fileId) + '">Save</button>';
     toolbar += '<button class="btn btn-sm btn-ghost" data-action="doc-cancel" data-aid="' + esc(aid) + '" data-tab="' + tab + '">Cancel</button>';
   }
+  // v1.2.0: Download button — opens Drive download URL in new tab
+  if(fileId && !isEditing) {
+    toolbar += '<a class="btn btn-sm btn-ghost" href="https://www.googleapis.com/drive/v3/files/' + esc(fileId) + '?alt=media&access_token=' + encodeURIComponent(authToken) + '" download target="_blank" title="Download ' + tab.toUpperCase() + '">&#8659; Download</a>';
+  }
   toolbar += '<span class="doc-save-status" id="docsavestatus-' + esc(aid) + '-' + tab + '"></span>';
   if(!isEditing) {
     toolbar += '<div class="doc-toolbar-right">'
@@ -3603,7 +4048,9 @@ var _activityFolderIds = {
 
 async function fetchActivityFileIds(aid) {
   var aidUpper = aid.toUpperCase();
-  var folderId = _activityFolderIds[aid] || _activityFolderIds[aidUpper];
+  // v1.2.0: prefer namedFolderId from register (populated from DriveURL column)
+  var actData = _coursesData.filter(function(a){ return a.activityId === aid; })[0];
+  var folderId = (actData && actData.namedFolderId) || _activityFolderIds[aid] || _activityFolderIds[aidUpper];
   var files = [];
   if(folderId) {
     var q = encodeURIComponent(
@@ -3695,6 +4142,13 @@ document.addEventListener('click', function(e) {
     if(act === 'open-drawer')    { openDrawer(el.getAttribute('data-tid')); return; }
     if(act === 'toggle-act')     { e.stopPropagation(); toggleActDocs(aid); return; }
     if(act === 'switch-doc-tab') { e.stopPropagation(); switchDocTab(aid, tab); return; }
+    // v1.2.0: Regenerate activity
+    if(act === 'regen-act') {
+      e.stopPropagation();
+      var cid = el.getAttribute('data-cid');
+      regenActivity(aid, cid);
+      return;
+    }
     if(act === 'doc-edit') {
       e.stopPropagation();
       _docEditing[aid+':'+tab] = true;
@@ -3730,6 +4184,238 @@ document.addEventListener('click', function(e) {
 });
 
 
+
+// ── v1.2.0: Regenerate Activity ───────────────────────────────────────────
+// Flow: confirm → delete PM/FG/DN from activity folder → reset register status
+// → set queue file to triggered so pipeline picks it up on next cron tick.
+
+async function regenActivity(aid, cid) {
+  if(!confirm('Regenerate ' + aid + '?\n\nThis will delete the existing PM, FG and DN documents and reset the activity for the pipeline to regenerate on the next cron tick.\n\nThis cannot be undone.')) return;
+
+  var statusKey = 'regen-' + aid;
+  var actData = _coursesData.filter(function(a){ return a.activityId === aid; })[0];
+  if(!actData) { alert('Activity not found in register.'); return; }
+
+  var folderId = actData.namedFolderId;
+  if(!folderId) { alert('No Drive folder ID found for ' + aid + '. Check the DriveURL column in the register.'); return; }
+
+  try {
+    // Step 1: List files in activity folder
+    var q = encodeURIComponent('"' + folderId + '" in parents and mimeType != "application/vnd.google-apps.folder" and trashed=false');
+    var r = await gApi('GET', 'https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id,name)&pageSize=20');
+    var files = (r.files || []).filter(function(f){
+      var n = f.name.toUpperCase();
+      return n.indexOf('-PM-') > -1 || n.indexOf('-FG-') > -1 || n.indexOf('-DN-') > -1;
+    });
+
+    // Step 2: Delete PM, FG, DN
+    for(var i = 0; i < files.length; i++) {
+      await gApi('DELETE', 'https://www.googleapis.com/drive/v3/files/' + files[i].id);
+    }
+
+    // Step 3: Find and update the queue file for this course
+    var pqFolderId = settings.pipeline_queue_folder_id || '';
+    if(pqFolderId) {
+      var qq = encodeURIComponent('"' + pqFolderId + '" in parents and name contains "' + cid.replace('-','_') + '" and trashed=false');
+      var qr = await gApi('GET', 'https://www.googleapis.com/drive/v3/files?q=' + qq + '&fields=files(id,name)&pageSize=5');
+      var qFiles = qr.files || [];
+      // Also try underscore variant
+      if(!qFiles.length) {
+        var qFallback = encodeURIComponent('"' + pqFolderId + '" in parents and trashed=false');
+        var qrFall = await gApi('GET', 'https://www.googleapis.com/drive/v3/files?q=' + qFallback + '&fields=files(id,name)&pageSize=50');
+        qFiles = (qrFall.files || []).filter(function(f){
+          return f.name.indexOf(cid.replace(/-/g,'_')) > -1 || f.name.indexOf(cid) > -1;
+        });
+      }
+      if(qFiles.length) {
+        var qFileId = qFiles[0].id;
+        // Download current queue file content
+        var qContent = await fetch('https://www.googleapis.com/drive/v3/files/' + qFileId + '?alt=media',
+          { headers: { 'Authorization': 'Bearer ' + authToken } }).then(function(r){ return r.json(); });
+        // Update status and resume pointer
+        qContent.pipeline_status = 'triggered';
+        qContent.resumed_from_stuck_at = aid;
+        delete qContent.run_started_at;
+        // Upload updated queue file (delete-first)
+        await gApi('DELETE', 'https://www.googleapis.com/drive/v3/files/' + qFileId);
+        var blob = new Blob([JSON.stringify(qContent, null, 2)], { type: 'application/json' });
+        var form = new FormData();
+        var meta = { name: qFiles[0].name, parents: [pqFolderId] };
+        form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+        form.append('file', blob);
+        await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+          { method: 'POST', headers: { 'Authorization': 'Bearer ' + authToken }, body: form });
+      }
+    }
+
+    // Step 4: Clear doc cache for this activity so next expand refetches
+    delete _docFileIds[aid];
+    delete _docCache[aid];
+
+    // Step 5: Update local data so UI reflects the reset
+    if(actData) actData.status = 'queued';
+    renderDrawerList(_coursesData.filter(function(a){ return a.courseId === cid; }));
+    renderCourses();
+
+    alert('✓ ' + aid + ' queued for regeneration.\n\nThe pipeline will pick it up on the next cron tick (within 5 minutes).');
+  } catch(e) {
+    alert('Error during regeneration: ' + e.message);
+  }
+}
+
+// ── v1.2.0: Dashboard ─────────────────────────────────────────────────────
+var _dashLoaded = false;
+
+async function loadDashboard(force) {
+  if(!isAuthed) return;
+  // Reuse register data if already loaded by Courses tab
+  if(!force && _dashLoaded && _coursesData.length) { renderDashboard(); return; }
+  var sheetId = settings.sheet_id || '1Zy76ERiYbOJ7zozlz2nf8AMVICvYCI5gvjBsb6kxxIQ';
+  dashShowStatus('wait', 'Loading activity register...');
+  try {
+    // Load register if not already loaded
+    if(!_coursesData.length || force) {
+      await loadCoursesTab(force);
+    }
+    _dashLoaded = true;
+    dashHideStatus();
+    renderDashboard();
+  } catch(e) {
+    dashShowStatus('err', 'Failed to load: ' + e.message);
+  }
+}
+
+function dashShowStatus(type, msg) {
+  var el = document.getElementById('dashStatus');
+  el.className = 'status-bar ' + type;
+  document.getElementById('dashStatusMsg').textContent = msg;
+  el.style.display = 'flex';
+}
+function dashHideStatus() {
+  document.getElementById('dashStatus').style.display = 'none';
+}
+
+function renderDashboard() {
+  var today = new Date();
+  today.setHours(0,0,0,0);
+
+  // Build product line → course → activities map
+  var plMap = {};
+  var plOrder = [];
+  _coursesData.forEach(function(a) {
+    if(!a.productLine || !a.courseId) return;
+    if(!plMap[a.productLine]) { plMap[a.productLine] = {}; plOrder.push(a.productLine); }
+    if(!plMap[a.productLine][a.courseId]) plMap[a.productLine][a.courseId] = [];
+    plMap[a.productLine][a.courseId].push(a);
+  });
+
+  // Summary bar totals
+  var totalActs = _coursesData.length;
+  var totalComplete = _coursesData.filter(function(a){
+    return a.status === 'awaiting_approval' || a.status === 'approved';
+  }).length;
+  var totalCourses = 0;
+
+  var html = '';
+
+  plOrder.forEach(function(pl) {
+    var courses = plMap[pl];
+    var courseIds = Object.keys(courses).sort();
+    totalCourses += courseIds.length;
+
+    html += '<div class="dash-pl-block">'
+      + '<div class="dash-pl-header">'
+      + '<span class="dash-pl-label">' + esc(pl) + '</span>'
+      + '<span class="dash-pl-chip">' + courseIds.length + ' course' + (courseIds.length===1?'':'s') + '</span>'
+      + '</div>'
+      + '<table class="dash-course-table">'
+      + '<thead><tr>'
+      + '<th>Course</th><th>Name</th><th>Progress</th><th>Status</th>'
+      + '<th>Earliest Review Due</th><th>Days</th>'
+      + '</tr></thead><tbody>';
+
+    courseIds.forEach(function(cid) {
+      var acts = courses[cid];
+      var total = acts.length;
+      var complete = acts.filter(function(a){
+        return a.status === 'awaiting_approval' || a.status === 'approved';
+      }).length;
+      var pct = total ? Math.round((complete/total)*100) : 0;
+
+      // Course name from cache or A01 heuristic
+      var cj = _courseJsonCache[cid];
+      var courseName = (cj && cj.course_name)
+        ? cj.course_name
+        : (function(){
+            var a01 = acts.filter(function(a){ return a.activityId.match(/-A01$/); })[0] || acts[0];
+            return a01 ? a01.title.replace(/\s*[—–\-].*/, '').trim() : cid;
+          }());
+
+      // Status pill
+      var statusPillHtml;
+      if(complete === 0)      statusPillHtml = '<span class="dash-pill dash-pill-empty">Empty</span>';
+      else if(complete < total) statusPillHtml = '<span class="dash-pill dash-pill-inprogress">In Progress</span>';
+      else                    statusPillHtml = '<span class="dash-pill dash-pill-complete">Complete</span>';
+
+      // Earliest review due date across all activities with a date
+      var dueDates = acts
+        .filter(function(a){ return a.reviewDue; })
+        .map(function(a){ return new Date(a.reviewDue); })
+        .filter(function(d){ return !isNaN(d.getTime()); })
+        .sort(function(a,b){ return a-b; });
+
+      var dueCellHtml, daysCellHtml;
+      if(!dueDates.length) {
+        dueCellHtml = '<span class="dash-due none">—</span>';
+        daysCellHtml = '<span class="dash-due none">—</span>';
+      } else {
+        var earliest = dueDates[0];
+        var diffMs = earliest.getTime() - today.getTime();
+        var diffDays = Math.round(diffMs / 86400000);
+        var dueClass = diffDays < 0 ? 'overdue' : diffDays <= 14 ? 'soon' : 'safe';
+        var dueStr = earliest.toLocaleDateString('en-ZA', {day:'2-digit',month:'short',year:'numeric'});
+        var daysStr = diffDays < 0
+          ? Math.abs(diffDays) + 'd overdue'
+          : diffDays === 0 ? 'Today'
+          : diffDays + 'd';
+        dueCellHtml  = '<span class="dash-due ' + dueClass + '">' + esc(dueStr) + '</span>';
+        daysCellHtml = '<span class="dash-due ' + dueClass + '">' + esc(daysStr) + '</span>';
+      }
+
+      html += '<tr>'
+        + '<td><div class="dash-course-id">' + esc(cid) + '</div></td>'
+        + '<td><div class="dash-course-name">' + esc(courseName) + '</div></td>'
+        + '<td><div class="dash-prog-wrap">'
+          + '<div class="dash-prog-bar"><div class="dash-prog-fill" style="width:' + pct + '%;"></div></div>'
+          + '<span class="dash-prog-label">' + complete + ' / ' + total + '</span>'
+          + '</div></td>'
+        + '<td>' + statusPillHtml + '</td>'
+        + '<td>' + dueCellHtml + '</td>'
+        + '<td>' + daysCellHtml + '</td>'
+        + '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+  });
+
+  if(!html) {
+    html = '<div class="empty-state"><div class="empty-icon">&#9635;</div>'
+      + '<div class="empty-title">No data</div>'
+      + '<div class="empty-sub">No activities found in the register.</div></div>';
+  }
+
+  // Summary bar
+  var summaryHtml = ''
+    + '<span><strong>' + totalActs + '</strong> activities</span>'
+    + '<span style="color:var(--paper3)">|</span>'
+    + '<span><strong>' + totalCourses + '</strong> courses</span>'
+    + '<span style="color:var(--paper3)">|</span>'
+    + '<span style="color:var(--green);"><strong>' + totalComplete + '</strong> complete</span>'
+    + '<span style="color:var(--paper3)">|</span>'
+    + '<span style="color:var(--ink3);">' + (totalActs - totalComplete) + ' pending</span>';
+  document.getElementById('dashSummaryBar').innerHTML = summaryHtml;
+  document.getElementById('dashBody').innerHTML = html;
+}
 
 // ── Review & Manage Tab ───────────────────────────────────────────────────
 var _reviewGates    = [];   // array of gate objects
